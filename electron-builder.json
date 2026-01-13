@@ -1,0 +1,31 @@
+{
+  "appId": "com.axora.app",
+  "productName": "Axora",
+  "directories": {
+    "output": "release",
+    "buildResources": "resources"
+  },
+  "files": [
+    "out/**/*"
+  ],
+  "mac": {
+    "category": "public.app-category.medical",
+    "icon": "resources/icon.icns",
+    "target": ["dmg", "zip"],
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false
+  },
+  "win": {
+    "icon": "resources/icon.ico",
+    "target": ["nsis", "portable"]
+  },
+  "linux": {
+    "icon": "resources/icon.png",
+    "category": "Medical",
+    "target": ["AppImage", "deb"]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  }
+}

@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Override pour l'Island - fond totalement transparent */
+html, body, #root {
+  background: transparent !important;
+  background-color: transparent !important;
+}
