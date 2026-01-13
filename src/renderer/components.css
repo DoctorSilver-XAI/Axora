@@ -1,0 +1,197 @@
+/* 
+ * Axora Components Style Library
+ * Centralised styles for reusable components
+ */
+
+/* === Glass Card === */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--glass-brd);
+    box-shadow: var(--card-shadow);
+    border-radius: 14px;
+    color: var(--text);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.glass-card--active {
+    background: linear-gradient(145deg, rgba(67, 215, 226, 0.12), rgba(91, 134, 229, 0.15));
+    border-color: rgba(67, 215, 226, 0.35);
+    box-shadow: 0 8px 20px -6px rgba(67, 215, 226, 0.25);
+}
+
+.glass-card--alert {
+    background: rgba(255, 94, 94, 0.12);
+    border-color: rgba(255, 94, 94, 0.35);
+    color: #ffb7b7;
+}
+
+/* === Neon Buttons === */
+.neon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    font-family: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    -webkit-app-region: no-drag;
+}
+
+.neon-button--primary {
+    background: linear-gradient(135deg, rgba(67, 215, 226, 0.25), rgba(91, 134, 229, 0.25));
+    border-color: rgba(67, 215, 226, 0.6);
+    color: var(--text-primary);
+    box-shadow: 0 4px 12px rgba(67, 215, 226, 0.15);
+}
+
+.neon-button--primary:hover {
+    background: linear-gradient(135deg, rgba(67, 215, 226, 0.35), rgba(91, 134, 229, 0.35));
+    box-shadow: 0 6px 16px rgba(67, 215, 226, 0.3);
+    transform: translateY(-1px);
+}
+
+.neon-button--danger {
+    background: rgba(255, 0, 85, 0.1);
+    border-color: var(--neon-alert);
+    color: var(--neon-alert);
+}
+
+.neon-button--ghost {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+.neon-button--ghost:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+/* === Icon Buttons === */
+.icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--neon-cyan);
+    transition: all 0.2s;
+    opacity: 0.8;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.icon-button:hover {
+    opacity: 1;
+    filter: drop-shadow(0 0 5px var(--neon-cyan));
+}
+
+.icon-button:focus-visible {
+    outline: 2px solid var(--neon-cyan);
+    outline-offset: 2px;
+}
+
+/* === Status Indicators === */
+.status-dot {
+    position: relative;
+    border-radius: 50%;
+}
+
+.status-dot__glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    opacity: 0.6;
+    filter: blur(4px);
+}
+
+.status-dot__glow--animated {
+    animation: pulse 2s infinite;
+}
+
+.status-dot__core {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* === Input Fields === */
+.glass-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 15px 20px;
+    color: white;
+    font-size: 1rem;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.glass-input:focus {
+    border-color: var(--neon-violet);
+}
+
+.glass-input::placeholder {
+    color: var(--text-secondary);
+}
+
+/* === Animation Classes === */
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out forwards;
+}
+
+/* === Reduced Motion Support === */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .status-dot__glow--animated {
+        animation: none;
+    }
+}
+
+/* === Low Performance Mode === */
+.reduced-effects .glass-card,
+.reduced-effects .glass-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(10, 10, 15, 0.95);
+}
