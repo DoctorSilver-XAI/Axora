@@ -68,6 +68,15 @@ export const IPC_CHANNELS = {
     CAPTURE_SCREEN: 'ppp:capture-screen',
   },
 
+  // Cash Register (Calcul de Caisse)
+  CASH_REGISTER: {
+    GET_ALL: 'cash-register:get-all',
+    GET_BY_DATE: 'cash-register:get-by-date',
+    GET_LATEST: 'cash-register:get-latest',
+    SAVE: 'cash-register:save',
+    DELETE: 'cash-register:delete',
+  },
+
   // Inter-window
   INTER_WINDOW: 'inter-window',
   BROADCAST: 'broadcast',

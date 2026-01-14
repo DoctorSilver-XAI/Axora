@@ -119,6 +119,27 @@ const axoraAPI = {
     captureScreen: () => ipcRenderer.invoke(IPC_CHANNELS.PPP.CAPTURE_SCREEN),
   },
 
+  // Cash Register (Calcul de Caisse)
+  cashRegister: {
+    getAll: (limit?: number) =>
+      ipcRenderer.invoke(IPC_CHANNELS.CASH_REGISTER.GET_ALL, limit),
+    getByDate: (date: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.CASH_REGISTER.GET_BY_DATE, date),
+    getLatest: () => ipcRenderer.invoke(IPC_CHANNELS.CASH_REGISTER.GET_LATEST),
+    save: (data: {
+      date: string
+      fondsCaisses: Record<string, number | string>
+      totalPieces: number
+      billetsRetires: Record<string, number | string>
+      fondVeille: number
+      montantLGPI: number
+      results: Record<string, number>
+      notes?: string
+    }) => ipcRenderer.invoke(IPC_CHANNELS.CASH_REGISTER.SAVE, data),
+    delete: (id: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.CASH_REGISTER.DELETE, id),
+  },
+
   // Platform info
   platform: process.platform,
 }

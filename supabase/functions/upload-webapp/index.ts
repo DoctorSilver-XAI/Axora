@@ -13,6 +13,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Headers pour les réponses HTML - force l'affichage inline et autorise scripts/styles
+const htmlHeaders = {
+  ...corsHeaders,
+  'Content-Type': 'text/html; charset=utf-8',
+  'Content-Disposition': 'inline',
+  'X-Content-Type-Options': 'nosniff',
+  // Override le CSP restrictif de Supabase - sandbox avec permissions
+  'Content-Security-Policy': "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline';",
+}
+
 // HTML de la mini webapp mobile
 const getUploadPage = (token: string, error?: string, success?: boolean) => `
 <!DOCTYPE html>
@@ -428,24 +438,77 @@ const getUploadPage = (token: string, error?: string, success?: boolean) => `
 </html>
 `
 
+// Page d'erreur HTML simple
+const getErrorPage = (message: string) => `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erreur - Axora</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #1a1a2e;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      margin: 0;
+    }
+    .error-box {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      max-width: 400px;
+    }
+    .error-icon { font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    p { color: rgba(255,255,255,0.7); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="error-box">
+    <div class="error-icon">⚠️</div>
+    <h1>Erreur</h1>
+    <p>${message}</p>
+  </div>
+</body>
+</html>
+`
+
 serve(async (req) => {
-  const url = new URL(req.url)
-  const token = url.searchParams.get('token')
+  try {
+    const url = new URL(req.url)
+    const token = url.searchParams.get('token')
 
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+      return new Response('ok', { headers: corsHeaders })
+    }
 
-  // Validate token
-  if (!token) {
-    return new Response(
-      getUploadPage('', 'Token manquant. Veuillez rescanner le QR code.'),
-      { headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' } }
-    )
-  }
+    // Vérifier les variables d'environnement
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing env vars:', { SUPABASE_URL: !!SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: !!SUPABASE_SERVICE_ROLE_KEY })
+      return new Response(
+        getErrorPage('Configuration serveur incomplète. Contactez le support.'),
+        { headers: htmlHeaders }
+      )
+    }
 
-  const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
+    // Validate token
+    if (!token) {
+      return new Response(
+        getUploadPage('', 'Token manquant. Veuillez rescanner le QR code.'),
+        { headers: htmlHeaders }
+      )
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
   // Check session exists and is valid
   const { data: session, error: sessionError } = await supabase
@@ -457,7 +520,7 @@ serve(async (req) => {
   if (sessionError || !session) {
     return new Response(
       getUploadPage(token, 'Session invalide ou expirée. Veuillez générer un nouveau QR code.'),
-      { headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' } }
+      { headers: htmlHeaders }
     )
   }
 
@@ -465,7 +528,7 @@ serve(async (req) => {
   if (new Date(session.expires_at) < new Date()) {
     return new Response(
       getUploadPage(token, 'Session expirée. Veuillez générer un nouveau QR code.'),
-      { headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' } }
+      { headers: htmlHeaders }
     )
   }
 
@@ -474,7 +537,7 @@ serve(async (req) => {
     const isCompleted = session.status === 'completed'
     return new Response(
       getUploadPage(token, undefined, isCompleted),
-      { headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' } }
+      { headers: htmlHeaders }
     )
   }
 
@@ -556,5 +619,13 @@ serve(async (req) => {
     }
   }
 
-  return new Response('Method not allowed', { status: 405 })
+    return new Response('Method not allowed', { status: 405 })
+
+  } catch (error) {
+    console.error('Unhandled error:', error)
+    return new Response(
+      getErrorPage('Une erreur inattendue est survenue. Veuillez réessayer.'),
+      { status: 500, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    )
+  }
 })

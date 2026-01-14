@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   Calculator,
   Euro,
@@ -11,6 +11,11 @@ import {
   TrendingUp,
   TrendingDown,
   Wallet,
+  Save,
+  History,
+  Sparkles,
+  X,
+  ChevronRight,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@shared/utils/cn'
@@ -21,22 +26,47 @@ import {
   CashRegisterResults,
   BILLETS_CONFIG,
 } from '../types'
+import type { CashClosureData } from '@shared/types/electron'
+import { CashClosurePrintView } from './CashClosurePrintView'
 
 // Formatage monétaire français compact
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount)
 
-// TODO(human): Implémenter la fonction de calcul des résultats
 function calculateResults(state: CashRegisterState): CashRegisterResults {
-  // Cette fonction doit calculer tous les résultats de la caisse
-  // À toi de jouer !
+  // 1. Total des espèces dans les 4 tiroirs-caisses
+  const totalFondEspeces = Object.values(state.fondsCaisses).reduce(
+    (acc, val) => acc + (parseFloat(String(val)) || 0),
+    0
+  )
+
+  // 2. Total des pièces (valeur directe)
+  const valTotalPieces = parseFloat(String(state.totalPieces)) || 0
+
+  // 3. Valeur des billets retirés pour la banque
+  const valeurBilletsRetires = BILLETS_CONFIG.reduce((acc, billet) => {
+    const qty = Number(state.billetsRetires[billet.key]) || 0
+    return acc + qty * billet.value
+  }, 0)
+
+  // 4. Somme totale physique = tout l'argent compté
+  const sommeTotalePhysique = totalFondEspeces + valTotalPieces + valeurBilletsRetires
+
+  // 5. Espèces générées = argent d'aujourd'hui (on soustrait le fond de la veille)
+  const fondVeille = parseFloat(String(state.fondVeille)) || 0
+  const especesGenerees = sommeTotalePhysique - fondVeille
+
+  // 6. Écart = différence entre le réel et ce que LGPI dit
+  const montantLGPI = parseFloat(String(state.montantLGPI)) || 0
+  const ecart = especesGenerees - montantLGPI
+
   return {
-    totalFondEspeces: 0,
-    valTotalPieces: 0,
-    valeurBilletsRetires: 0,
-    sommeTotalePhysique: 0,
-    especesGenerees: 0,
-    ecart: 0,
+    totalFondEspeces,
+    valTotalPieces,
+    valeurBilletsRetires,
+    sommeTotalePhysique,
+    especesGenerees,
+    ecart,
   }
 }
 
@@ -57,10 +87,54 @@ const EMPTY_STATE: CashRegisterState = {
   montantLGPI: '',
 }
 
+// Helper pour formater une date ISO en format lisible
+const formatDateShort = (isoDate: string) => {
+  const date = new Date(isoDate)
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+}
+
+// Helper pour obtenir la date d'aujourd'hui en ISO
+const getTodayISO = () => new Date().toISOString().split('T')[0]
+
 export function CashRegisterCalculator() {
   const [state, setState] = useState<CashRegisterState>(EMPTY_STATE)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [currentDate, setCurrentDate] = useState('')
+  const [todayISO, setTodayISO] = useState('')
+
+  // États pour la persistance
+  const [fondVeilleAuto, setFondVeilleAuto] = useState<number | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [closureHistory, setClosureHistory] = useState<CashClosureData[]>([])
+  const [showPrintView, setShowPrintView] = useState(false)
+
+  // Charger le fond de veille automatique depuis la dernière clôture
+  useEffect(() => {
+    const loadLastClosure = async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const api = (window.axora as any)?.cashRegister
+        if (!api) return
+
+        const latest = await api.getLatest()
+        if (latest) {
+          const parsedResults = JSON.parse(latest.results_json)
+          // Le fond de veille d'aujourd'hui = somme totale physique d'hier
+          setFondVeilleAuto(parsedResults.sommeTotalePhysique)
+          // Pré-remplir si le champ est vide
+          setState(prev => ({
+            ...prev,
+            fondVeille: prev.fondVeille === '' ? parsedResults.sommeTotalePhysique : prev.fondVeille
+          }))
+        }
+      } catch (error) {
+        console.error('[CashRegister] Failed to load last closure:', error)
+      }
+    }
+    loadLastClosure()
+  }, [])
 
   useEffect(() => {
     setCurrentDate(
@@ -70,9 +144,77 @@ export function CashRegisterCalculator() {
         month: 'long',
       })
     )
+    setTodayISO(getTodayISO())
   }, [])
 
   const results = useMemo(() => calculateResults(state), [state])
+
+  // Sauvegarder la clôture
+  const handleSave = useCallback(async () => {
+    setIsSaving(true)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const api = (window.axora as any)?.cashRegister
+      if (!api) throw new Error('API non disponible')
+
+      // Convertir les valeurs en nombres
+      const fondsCaissesNum: Record<string, number> = {}
+      for (const [key, val] of Object.entries(state.fondsCaisses)) {
+        fondsCaissesNum[key] = parseFloat(String(val)) || 0
+      }
+
+      const billetsRetiresNum: Record<string, number> = {}
+      for (const [key, val] of Object.entries(state.billetsRetires)) {
+        billetsRetiresNum[key] = parseInt(String(val)) || 0
+      }
+
+      await api.save({
+        date: todayISO,
+        fondsCaisses: fondsCaissesNum,
+        totalPieces: parseFloat(String(state.totalPieces)) || 0,
+        billetsRetires: billetsRetiresNum,
+        fondVeille: parseFloat(String(state.fondVeille)) || 0,
+        montantLGPI: parseFloat(String(state.montantLGPI)) || 0,
+        results,
+      })
+
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 2000)
+    } catch (error) {
+      console.error('[CashRegister] Failed to save:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }, [state, results, todayISO])
+
+  // Charger l'historique
+  const loadHistory = useCallback(async () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const api = (window.axora as any)?.cashRegister
+      if (!api) return
+
+      const history = await api.getAll(30)
+      setClosureHistory(history)
+    } catch (error) {
+      console.error('[CashRegister] Failed to load history:', error)
+    }
+  }, [])
+
+  // Charger une clôture depuis l'historique
+  const loadClosure = useCallback((closure: CashClosureData) => {
+    const fondsCaisses = JSON.parse(closure.fonds_caisses_json)
+    const billetsRetires = JSON.parse(closure.billets_retires_json)
+
+    setState({
+      fondsCaisses,
+      totalPieces: closure.total_pieces,
+      billetsRetires,
+      fondVeille: closure.fond_veille,
+      montantLGPI: closure.montant_lgpi,
+    })
+    setShowHistory(false)
+  }, [])
 
   const handleCaisseChange = (key: keyof FondsCaisses, value: string) => {
     setState((prev) => ({
@@ -116,6 +258,23 @@ export function CashRegisterCalculator() {
         </div>
 
         <div className="flex items-center gap-2 print:hidden">
+          {/* Indicateur fond veille auto */}
+          {fondVeilleAuto !== null && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <Sparkles className="w-3 h-3 text-emerald-400" />
+              <span className="text-[10px] text-emerald-400 font-medium">Fond veille auto</span>
+            </div>
+          )}
+          <button
+            onClick={() => {
+              setShowHistory(true)
+              loadHistory()
+            }}
+            className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
+            title="Historique"
+          >
+            <History className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={() => setState(DEFAULT_STATE)}
             className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
@@ -123,8 +282,9 @@ export function CashRegisterCalculator() {
             Exemple
           </button>
           <button
-            onClick={() => window.print()}
+            onClick={() => setShowPrintView(true)}
             className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
+            title="Imprimer"
           >
             <Printer className="w-3.5 h-3.5" />
           </button>
@@ -136,8 +296,33 @@ export function CashRegisterCalculator() {
                 ? 'bg-red-500 text-white'
                 : 'bg-white/5 border border-white/10 text-white/60 hover:bg-red-500/20 hover:text-red-400'
             )}
+            title="Réinitialiser"
           >
             {showResetConfirm ? <Check className="w-3.5 h-3.5" /> : <RotateCcw className="w-3.5 h-3.5" />}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-xs transition-all',
+              saveSuccess
+                ? 'bg-emerald-500 text-white'
+                : 'bg-axora-500 hover:bg-axora-600 text-white'
+            )}
+          >
+            {saveSuccess ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                Enregistré
+              </>
+            ) : isSaving ? (
+              'Enregistrement...'
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" />
+                Enregistrer
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -386,6 +571,114 @@ export function CashRegisterCalculator() {
           </div>
         </div>
       </div>
+
+      {/* Vue d'impression */}
+      {showPrintView && (
+        <CashClosurePrintView
+          state={state}
+          results={results}
+          date={todayISO}
+          onClose={() => setShowPrintView(false)}
+        />
+      )}
+
+      {/* Modal Historique */}
+      <AnimatePresence>
+        {showHistory && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 z-50"
+              onClick={() => setShowHistory(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[80vh] bg-surface-100 border border-white/10 rounded-2xl z-50 overflow-hidden flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <History className="w-4 h-4 text-axora-400" />
+                  <h3 className="font-semibold text-white">Historique des clôtures</h3>
+                </div>
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-white/60"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Liste */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                {closureHistory.length === 0 ? (
+                  <div className="text-center py-8 text-white/40">
+                    <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Aucune clôture enregistrée</p>
+                  </div>
+                ) : (
+                  closureHistory.map((closure) => {
+                    const closureResults = JSON.parse(closure.results_json)
+                    const isToday = closure.date === todayISO
+                    return (
+                      <button
+                        key={closure.id}
+                        onClick={() => loadClosure(closure)}
+                        className={cn(
+                          'w-full p-3 rounded-xl border text-left transition-all hover:bg-white/5',
+                          isToday
+                            ? 'bg-axora-500/10 border-axora-500/30'
+                            : 'bg-white/[0.02] border-white/10'
+                        )}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-white">
+                              {formatDateShort(closure.date)}
+                            </span>
+                            {isToday && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-axora-500/20 text-axora-400 font-medium">
+                                Aujourd'hui
+                              </span>
+                            )}
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-white/30" />
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-white/50">Espèces générées</span>
+                          <span className="font-mono text-white">
+                            {formatCurrency(closureResults.especesGenerees)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs mt-1">
+                          <span className="text-white/50">Écart</span>
+                          <span
+                            className={cn(
+                              'font-mono font-medium',
+                              Math.abs(closureResults.ecart) < 0.05
+                                ? 'text-emerald-400'
+                                : closureResults.ecart > 0
+                                ? 'text-blue-400'
+                                : 'text-red-400'
+                            )}
+                          >
+                            {closureResults.ecart > 0 ? '+' : ''}
+                            {closureResults.ecart.toFixed(2)} €
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

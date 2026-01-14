@@ -2,9 +2,11 @@ import { ipcMain, BrowserWindow, desktopCapturer, screen } from 'electron'
 import { IPC_CHANNELS } from './channels'
 import { WindowManager } from '../windows/WindowManager'
 import { LocalConversationRepository } from '../database/LocalConversationRepository'
+import { CashRegisterRepository } from '../database/CashRegisterRepository'
 
 export function registerIpcHandlers(windowManager: WindowManager): void {
   const localRepo = new LocalConversationRepository()
+  const cashRegisterRepo = new CashRegisterRepository()
   // Window handlers
   ipcMain.on(IPC_CHANNELS.WINDOW.OPEN_HUB, () => {
     windowManager.openHub()
@@ -294,5 +296,41 @@ export function registerIpcHandlers(windowManager: WindowManager): void {
       if (islandWasVisible && islandWindow && !islandWindow.isDestroyed()) islandWindow.show()
       throw e
     }
+  })
+
+  // Cash Register handlers
+  ipcMain.handle(IPC_CHANNELS.CASH_REGISTER.GET_ALL, async (_event, limit?: number) => {
+    return cashRegisterRepo.getAll(limit)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.CASH_REGISTER.GET_BY_DATE, async (_event, date: string) => {
+    return cashRegisterRepo.getByDate(date)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.CASH_REGISTER.GET_LATEST, async () => {
+    return cashRegisterRepo.getLatest()
+  })
+
+  ipcMain.handle(
+    IPC_CHANNELS.CASH_REGISTER.SAVE,
+    async (
+      _event,
+      data: {
+        date: string
+        fondsCaisses: Record<string, number | string>
+        totalPieces: number
+        billetsRetires: Record<string, number | string>
+        fondVeille: number
+        montantLGPI: number
+        results: Record<string, number>
+        notes?: string
+      }
+    ) => {
+      return cashRegisterRepo.save(data)
+    }
+  )
+
+  ipcMain.handle(IPC_CHANNELS.CASH_REGISTER.DELETE, async (_event, id: string) => {
+    return cashRegisterRepo.delete(id)
   })
 }

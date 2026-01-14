@@ -61,12 +61,11 @@ function generateToken(): string {
 
 /**
  * Construit l'URL de la webapp d'upload pour le QR code
+ * Utilise GitHub Pages pour éviter les problèmes CSP de Safari iOS
  */
 function buildUploadUrl(token: string): string {
-  // L'URL de l'Edge Function Supabase
-  // Format: https://<project-ref>.supabase.co/functions/v1/upload-webapp?token=<token>
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
-  return `${supabaseUrl}/functions/v1/upload-webapp?token=${token}`
+  // GitHub Pages URL - Safari iOS le traite comme un site de confiance
+  return `https://doctorsilver-xai.github.io/Axora/upload.html?token=${token}`
 }
 
 /**

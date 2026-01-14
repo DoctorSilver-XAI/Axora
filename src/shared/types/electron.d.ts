@@ -60,6 +60,23 @@ export interface AxoraAPI {
     captureScreen: () => Promise<string>
   }
 
+  cashRegister: {
+    getAll: (limit?: number) => Promise<CashClosureData[]>
+    getByDate: (date: string) => Promise<CashClosureData | null>
+    getLatest: () => Promise<CashClosureData | null>
+    save: (data: {
+      date: string
+      fondsCaisses: Record<string, number | string>
+      totalPieces: number
+      billetsRetires: Record<string, number | string>
+      fondVeille: number
+      montantLGPI: number
+      results: Record<string, number>
+      notes?: string
+    }) => Promise<CashClosureData>
+    delete: (id: string) => Promise<void>
+  }
+
   platform: NodeJS.Platform
 }
 
@@ -86,6 +103,19 @@ export interface LocalMessage {
 
 export interface LocalConversationWithMessages extends LocalConversation {
   messages: LocalMessage[]
+}
+
+export interface CashClosureData {
+  id: string
+  date: string
+  fonds_caisses_json: string
+  total_pieces: number
+  billets_retires_json: string
+  fond_veille: number
+  montant_lgpi: number
+  results_json: string
+  notes: string | null
+  created_at: string
 }
 
 export interface IslandAPI {

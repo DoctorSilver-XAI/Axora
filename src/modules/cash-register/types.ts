@@ -50,3 +50,25 @@ export interface CashRegisterResults {
   especesGenerees: number
   ecart: number
 }
+
+// Types pour la persistance des clôtures de caisse
+export interface CashClosure {
+  id: string
+  date: string // ISO date (YYYY-MM-DD)
+  fondsCaisses: FondsCaisses
+  totalPieces: number
+  billetsRetires: BilletsRetires
+  fondVeille: number
+  montantLGPI: number
+  results: CashRegisterResults
+  created_at: string
+  notes?: string
+}
+
+export interface CashClosureSummary {
+  id: string
+  date: string
+  especesGenerees: number
+  ecart: number
+  created_at: string
+}
