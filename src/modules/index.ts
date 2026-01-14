@@ -1,6 +1,7 @@
 // Import all modules to trigger their registration
 import './posology'
 import './notes'
+import './ppp'
 
 // Re-export core utilities
 export { ModuleRegistry, registerModule } from './core/ModuleRegistry'

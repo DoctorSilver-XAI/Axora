@@ -17,6 +17,16 @@ const islandAPI = {
   phivision: {
     trigger: () => ipcRenderer.invoke(IPC_CHANNELS.PHIVISION.TRIGGER),
     close: () => ipcRenderer.send(IPC_CHANNELS.PHIVISION.CLOSE),
+    // Broadcaster le statut depuis l'Island vers toutes les fenêtres
+    setStatus: (status: string) => ipcRenderer.send(IPC_CHANNELS.PHIVISION.STATUS, status),
+    // Broadcaster le résultat d'analyse vers le Hub
+    broadcastAnalysisResult: (result: unknown) =>
+      ipcRenderer.send(IPC_CHANNELS.PHIVISION.ANALYSIS_RESULT, result),
+    onTrigger: (callback: () => void) => {
+      const handler = () => callback()
+      ipcRenderer.on(IPC_CHANNELS.PHIVISION.TRIGGER, handler)
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.PHIVISION.TRIGGER, handler)
+    },
     onStatusChange: (callback: (status: string) => void) => {
       const handler = (_: Electron.IpcRendererEvent, status: string) => callback(status)
       ipcRenderer.on(IPC_CHANNELS.PHIVISION.STATUS, handler)

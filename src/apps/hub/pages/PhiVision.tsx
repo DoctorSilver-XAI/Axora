@@ -1,9 +1,9 @@
-import { useRef } from 'react'
-import { motion } from 'framer-motion'
-import { Scan, Image, Clock, Trash2, Upload, Sparkles, Copy, Check, AlertCircle, Pill } from 'lucide-react'
+import { useRef, useState, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Scan, Image, Clock, Trash2, Upload, Sparkles, Copy, Check, AlertCircle, Pill, Star, Pencil, X, ArrowLeft } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
 import { usePhiVision } from '@shared/contexts/PhiVisionContext'
-import { useState } from 'react'
+import { CaptureService, Capture } from '@features/phivision/services/CaptureService'
 
 export function PhiVisionPage() {
   const {
@@ -16,12 +16,28 @@ export function PhiVisionPage() {
     analyzeCapture,
     clearCapture,
     setManualImage,
+    deleteCapture,
+    toggleFavorite,
+    loadHistory,
   } = usePhiVision()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [copied, setCopied] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [selectedCapture, setSelectedCapture] = useState<Capture | null>(null)
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Sélectionner une capture depuis l'historique
+  const handleSelectCapture = (capture: Capture) => {
+    setSelectedCapture(capture)
+  }
+
+  // Retour à la vue de capture
+  const handleBackToCapture = () => {
+    setSelectedCapture(null)
+  }
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -30,14 +46,30 @@ export function PhiVisionPage() {
       const base64 = event.target?.result as string
       setManualImage(base64)
     }
+    reader.onerror = () => {
+      console.error('Erreur lors de la lecture du fichier')
+    }
     reader.readAsDataURL(file)
-  }
+  }, [setManualImage])
 
-  const handleCopy = () => {
-    if (result?.text) {
-      navigator.clipboard.writeText(result.text)
+  const handleCopy = (text?: string | null) => {
+    const textToCopy = text || result?.text || selectedCapture?.rawText
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const handleSaveTitle = async () => {
+    if (!editingId) return
+    try {
+      await CaptureService.updateNotes(editingId, editTitle)
+      await loadHistory()
+      setEditingId(null)
+      setEditTitle('')
+    } catch (err) {
+      console.error('Failed to update title:', err)
     }
   }
 
@@ -58,8 +90,148 @@ export function PhiVisionPage() {
           </p>
         </div>
 
+        {/* Bouton Nouvelle capture - visible après analyse */}
+        <AnimatePresence>
+          {(result || selectedCapture) && !isProcessing && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-4"
+            >
+              <button
+                onClick={() => {
+                  if (selectedCapture) {
+                    handleBackToCapture()
+                  }
+                  clearCapture()
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-axora-500 hover:bg-axora-600 text-white font-medium transition-all shadow-lg shadow-axora-500/25"
+              >
+                <Scan className="w-4 h-4" />
+                Nouvelle capture
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Content */}
-        <div className="flex-1 flex flex-col gap-6">
+        <div className="flex-1 flex flex-col gap-6 overflow-auto">
+          {/* Vue d'une capture archivée */}
+          {selectedCapture ? (
+            <>
+              {/* Image de la capture archivée */}
+              <div className="flex-1 glass rounded-2xl p-6 flex flex-col">
+                <div className="flex-1 rounded-xl bg-black/30 overflow-hidden flex items-center justify-center min-h-[300px]">
+                  {selectedCapture.imageUrl ? (
+                    <img
+                      src={selectedCapture.imageUrl}
+                      alt="Capture archivée"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-white/40">
+                      <Image className="w-12 h-12" />
+                      <p>Image non disponible</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
+                  <button
+                    onClick={handleBackToCapture}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Retour
+                  </button>
+
+                  <button
+                    onClick={() => handleCopy(selectedCapture.rawText)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white/60 hover:text-white rounded-lg hover:bg-white/5 transition-all"
+                  >
+                    {copied ? (
+                      <Check className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                    {copied ? 'Copié' : 'Copier le texte'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Données de la capture archivée */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass rounded-2xl p-6"
+              >
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-white flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-indigo-400" />
+                      {selectedCapture.notes || 'Capture du ' + selectedCapture.createdAt.toLocaleDateString('fr-FR')}
+                    </h3>
+                    <span className="text-xs text-white/40">
+                      {selectedCapture.createdAt.toLocaleString('fr-FR')}
+                    </span>
+                  </div>
+
+                  {/* Type badge */}
+                  {selectedCapture.enrichment?.documentType && selectedCapture.enrichment.documentType !== 'unknown' && (
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 capitalize">
+                        {String(selectedCapture.enrichment.documentType)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Texte extrait */}
+                  {selectedCapture.rawText && (
+                    <div>
+                      <h4 className="text-sm font-medium text-white/60 mb-2">Texte extrait</h4>
+                      <div className="bg-surface-100 rounded-xl p-4 text-sm text-white/90 whitespace-pre-wrap max-h-48 overflow-auto">
+                        {selectedCapture.rawText}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Médicaments détectés */}
+                  {selectedCapture.entities && selectedCapture.entities.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-white/60 mb-2 flex items-center gap-1.5">
+                        <Pill className="w-4 h-4" />
+                        Médicaments détectés
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedCapture.entities.map((entity, i) => (
+                          <span
+                            key={i}
+                            className="px-3 py-1.5 rounded-lg text-sm bg-emerald-500/20 text-emerald-300"
+                          >
+                            {String(entity.name || '')}
+                            {entity.dosage ? ` - ${String(entity.dosage)}` : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Résumé */}
+                  {selectedCapture.enrichment?.summary && (
+                    <div>
+                      <h4 className="text-sm font-medium text-white/60 mb-2">Résumé</h4>
+                      <p className="text-sm text-white/80">{String(selectedCapture.enrichment.summary)}</p>
+                    </div>
+                  )}
+
+                </div>
+              </motion.div>
+            </>
+          ) : (
+            <>
           {/* Image preview / Capture zone */}
           <div className="flex-1 glass rounded-2xl p-6 flex flex-col">
             {capturedImage ? (
@@ -194,7 +366,7 @@ export function PhiVisionPage() {
                       Résultat de l'analyse
                     </h3>
                     <button
-                      onClick={handleCopy}
+                      onClick={() => handleCopy()}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white/60 hover:text-white rounded-lg hover:bg-white/5 transition-all"
                     >
                       {copied ? (
@@ -254,6 +426,8 @@ export function PhiVisionPage() {
               )}
             </motion.div>
           )}
+          </>
+          )}
         </div>
       </div>
 
@@ -273,11 +447,16 @@ export function PhiVisionPage() {
             </p>
           ) : (
             history.map((item) => (
-              <button
+              <div
                 key={item.id}
-                className="w-full p-3 rounded-xl text-left hover:bg-white/5 transition-colors"
+                onClick={() => handleSelectCapture(item)}
+                className={cn(
+                  'group relative p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer',
+                  selectedCapture?.id === item.id && 'bg-white/10'
+                )}
               >
                 <div className="flex items-center gap-3">
+                  {/* Thumbnail */}
                   <div className="w-10 h-10 rounded-lg bg-white/10 overflow-hidden flex-shrink-0">
                     {item.imageUrl ? (
                       <img
@@ -291,9 +470,11 @@ export function PhiVisionPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">
-                      {item.rawText?.slice(0, 30) || 'Document'}
+                      {item.notes || item.rawText?.slice(0, 25) || 'Sans titre'}
                     </p>
                     <p className="text-xs text-white/40">
                       {item.createdAt.toLocaleTimeString('fr-FR', {
@@ -302,12 +483,112 @@ export function PhiVisionPage() {
                       })}
                     </p>
                   </div>
+
+                  {/* Actions (visibles au hover) */}
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleFavorite(item.id, !item.isFavorite)
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                      title="Favori"
+                    >
+                      <Star
+                        className={cn(
+                          'w-3.5 h-3.5',
+                          item.isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-white/40'
+                        )}
+                      />
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setEditingId(item.id)
+                        setEditTitle(item.notes || '')
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                      title="Renommer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (confirm('Supprimer cette capture ?')) {
+                          deleteCapture(item.id)
+                        }
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-              </button>
+              </div>
             ))
           )}
         </div>
       </div>
+
+      {/* Modal de renommage */}
+      <AnimatePresence>
+        {editingId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => setEditingId(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-surface-100 rounded-2xl p-6 w-80 border border-white/10"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">Renommer</h3>
+                <button
+                  onClick={() => setEditingId(null)}
+                  className="p-1 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveTitle()}
+                className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-axora-500 focus:outline-none transition-colors"
+                placeholder="Titre de la capture"
+                autoFocus
+              />
+
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={() => setEditingId(null)}
+                  className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleSaveTitle}
+                  className="px-4 py-2 text-sm bg-axora-500 hover:bg-axora-600 text-white rounded-xl transition-colors"
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

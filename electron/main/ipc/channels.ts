@@ -16,6 +16,8 @@ export const IPC_CHANNELS = {
     CAPTURE: 'phivision:capture',
     ANALYZE: 'phivision:analyze',
     RESULT: 'phivision:result',
+    ANALYSIS_RESULT: 'phivision:analysis-result',
+    GET_PENDING: 'phivision:get-pending',
     CLOSE: 'phivision:close',
     STATUS: 'phivision:status',
   },
@@ -46,6 +48,23 @@ export const IPC_CHANNELS = {
     GET: 'storage:get',
     SET: 'storage:set',
     DELETE: 'storage:delete',
+  },
+
+  // Local Conversations Storage
+  LOCAL_CONVERSATIONS: {
+    GET_ALL: 'local-conversations:get-all',
+    GET_BY_ID: 'local-conversations:get-by-id',
+    CREATE: 'local-conversations:create',
+    UPDATE_TITLE: 'local-conversations:update-title',
+    DELETE: 'local-conversations:delete',
+    ARCHIVE: 'local-conversations:archive',
+    TOGGLE_PIN: 'local-conversations:toggle-pin',
+    ADD_MESSAGE: 'local-conversations:add-message',
+  },
+
+  // PPP (Plan Personnalisé de Prévention)
+  PPP: {
+    PRINT: 'ppp:print',
   },
 
   // Inter-window

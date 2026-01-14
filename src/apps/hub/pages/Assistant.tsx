@@ -2,9 +2,11 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Plus, Settings, User, Bot, Loader2, ChevronDown, X, AlertCircle, Trash2 } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
-import { Message, AIProvider, AIConfig, Conversation } from '@features/assistant/types'
+import { Message, AIProvider, AIConfig, Conversation, StorageType } from '@features/assistant/types'
 import { sendMessage, getAvailableProviders, getProviderModels } from '@features/assistant/services/AIService'
-import { ConversationService } from '@features/assistant/services/ConversationService'
+import { getConversationService, UnifiedConversationService } from '@features/assistant/services/ConversationServiceFactory'
+import { NewConversationModal } from '@features/assistant/components/NewConversationModal'
+import { StorageBadge } from '@features/assistant/components/StorageBadge'
 
 const PROVIDER_LABELS: Record<AIProvider, string> = {
   mistral: 'Mistral AI',
@@ -21,6 +23,7 @@ export function Assistant() {
   const [showProviderMenu, setShowProviderMenu] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showNewConversationModal, setShowNewConversationModal] = useState(false)
 
   // AI Config
   const availableProviders = getAvailableProviders()
@@ -34,11 +37,11 @@ export function Assistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  // Load conversations from Supabase on mount
+  // Load conversations from both local and cloud storage on mount
   useEffect(() => {
     async function loadConversations() {
       try {
-        const data = await ConversationService.getAll()
+        const data = await UnifiedConversationService.getAllFromBothStorages()
         setConversations(data)
       } catch (err) {
         console.error('Failed to load conversations:', err)
@@ -71,23 +74,29 @@ export function Assistant() {
     setSelectedModel(models[0])
   }, [selectedProvider])
 
-  const handleNewConversation = async () => {
+  const handleNewConversation = () => {
+    setShowNewConversationModal(true)
+  }
+
+  const handleCreateConversation = async (storageType: StorageType) => {
     try {
       setError(null)
-      const newConversation = await ConversationService.create(selectedProvider, selectedModel)
+      const service = getConversationService(storageType)
+      const newConversation = await service.create(selectedProvider, selectedModel)
       setConversations((prev) => [newConversation, ...prev])
       setCurrentConversation(newConversation)
     } catch (err) {
       console.error('Failed to create conversation:', err)
-      setError('Impossible de créer la conversation')
+      setError('Impossible de creer la conversation')
     }
   }
 
   const handleSelectConversation = async (conv: Conversation) => {
     try {
       setError(null)
-      // Load full conversation with messages from Supabase
-      const fullConversation = await ConversationService.getById(conv.id)
+      // Load full conversation with messages using the appropriate service
+      const service = getConversationService(conv.storageType)
+      const fullConversation = await service.getById(conv.id)
       if (fullConversation) {
         setCurrentConversation(fullConversation)
         // Update in list
@@ -104,7 +113,12 @@ export function Assistant() {
   const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
-      await ConversationService.delete(id)
+      // Find the conversation to get its storage type
+      const conv = conversations.find((c) => c.id === id)
+      if (conv) {
+        const service = getConversationService(conv.storageType)
+        await service.delete(id)
+      }
       setConversations((prev) => prev.filter((c) => c.id !== id))
       if (currentConversation?.id === id) {
         setCurrentConversation(null)
@@ -126,10 +140,11 @@ export function Assistant() {
     )
   }, [])
 
-  const updateConversationTitle = useCallback(async (conversationId: string, firstMessage: string) => {
+  const updateConversationTitle = useCallback(async (conversationId: string, firstMessage: string, storageType: StorageType) => {
     const title = firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : '')
     try {
-      await ConversationService.updateTitle(conversationId, title)
+      const service = getConversationService(storageType)
+      await service.updateTitle(conversationId, title)
       setConversations((prev) =>
         prev.map((conv) =>
           conv.id === conversationId ? { ...conv, title } : conv
@@ -152,9 +167,12 @@ export function Assistant() {
     setStreamingContent('')
     setError(null)
 
+    // Get the appropriate service based on storage type
+    const service = getConversationService(currentConversation.storageType)
+
     try {
-      // Add user message to Supabase
-      const userMessage = await ConversationService.addMessage(
+      // Add user message using the appropriate service
+      const userMessage = await service.addMessage(
         currentConversation.id,
         'user',
         userContent,
@@ -167,7 +185,7 @@ export function Assistant() {
 
       // Update title if first message
       if (currentConversation.messages.length === 0) {
-        await updateConversationTitle(currentConversation.id, userContent)
+        await updateConversationTitle(currentConversation.id, userContent, currentConversation.storageType)
       }
 
       const config: AIConfig = {
@@ -188,8 +206,8 @@ export function Assistant() {
         },
         onComplete: async (fullResponse) => {
           try {
-            // Add assistant message to Supabase
-            const assistantMessage = await ConversationService.addMessage(
+            // Add assistant message using the appropriate service
+            const assistantMessage = await service.addMessage(
               currentConversation.id,
               'assistant',
               fullResponse,
@@ -241,20 +259,26 @@ export function Assistant() {
             </p>
           ) : (
             conversations.map((conv) => (
-              <button
+              <div
                 key={conv.id}
                 onClick={() => handleSelectConversation(conv)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && handleSelectConversation(conv)}
                 className={cn(
-                  'w-full p-3 rounded-xl text-left transition-colors group',
+                  'w-full p-3 rounded-xl text-left transition-colors group cursor-pointer',
                   'hover:bg-white/5',
                   currentConversation?.id === conv.id && 'bg-white/10'
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
-                      {conv.title}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white truncate flex-1">
+                        {conv.title}
+                      </p>
+                      <StorageBadge storageType={conv.storageType} />
+                    </div>
                     <p className="text-xs text-white/40 mt-1">
                       {conv.createdAt.toLocaleDateString('fr-FR')} - {PROVIDER_LABELS[conv.provider]}
                     </p>
@@ -266,7 +290,7 @@ export function Assistant() {
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              </button>
+              </div>
             ))
           )}
         </div>
@@ -458,6 +482,15 @@ export function Assistant() {
           </div>
         )}
       </div>
+
+      {/* New Conversation Modal */}
+      <NewConversationModal
+        isOpen={showNewConversationModal}
+        onClose={() => setShowNewConversationModal(false)}
+        onConfirm={handleCreateConversation}
+        selectedProvider={selectedProvider}
+        selectedModel={selectedModel}
+      />
     </div>
   )
 }

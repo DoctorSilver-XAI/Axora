@@ -1,5 +1,7 @@
 export type AIProvider = 'mistral' | 'openai' | 'local'
 
+export type StorageType = 'local' | 'cloud'
+
 export interface Message {
   id: string
   role: 'user' | 'assistant' | 'system'
@@ -15,6 +17,7 @@ export interface Conversation {
   createdAt: Date
   updatedAt: Date
   provider: AIProvider
+  storageType: StorageType
 }
 
 export interface AIConfig {

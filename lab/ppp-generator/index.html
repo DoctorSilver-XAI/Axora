@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Bilan Prévention - Plan Personnalisé de Prévention</title>
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/prompt.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/print.css" media="print">
+</head>
+
+<body>
+    <div class="page">
+        <header class="page-header">
+            <!-- Top Row: Logo and Title -->
+            <div class="header-top-row">
+                <div class="pharmacy-branding">
+                    <img src="assets/logo-app.png" alt="Logo" class="pharmacy-logo" />
+                    <div class="pharmacy-name" contenteditable="true">Grande Pharmacie de Tassigny</div>
+                </div>
+                <div class="header-right">
+                    <div class="title-group">
+                        <div class="report-title">Mon Bilan Prévention</div>
+                        <div class="age">45-50 ans</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Row: Horizontal Info (Patient, Pharmacist, Date) -->
+            <div class="header-info-row">
+                <div class="info-item">
+                    <span class="label">Patient :</span>
+                    <span class="id-value" id="patientName" contenteditable="true" aria-label="Nom"
+                        data-placeholder="Nom et prénom"></span>
+                </div>
+
+                <div class="info-item">
+                    <span class="label">Pharmacien :</span>
+                    <!-- Select for screen editing -->
+                    <select id="pharmacien" class="screen-only">
+                        <option value="" selected disabled>Sélectionner...</option>
+                        <option>Clara El Rawadi</option>
+                        <option>Emma Cohen</option>
+                        <option>François Claron</option>
+                        <option>Gauthier Humbert</option>
+                        <option>Marjorie Lahaie</option>
+                        <option>Pierre Gil</option>
+                    </select>
+                    <!-- Span for print/preview -->
+                    <span class="id-value" id="pharmacienPrint" aria-label="Pharmacien"></span>
+                </div>
+
+                <div class="info-item">
+                    <span class="label">Date :</span>
+                    <span class="id-value" id="pppDate" contenteditable="true"
+                        data-placeholder="jj/mm/aaaa">08/12/2025</span>
+                </div>
+            </div>
+
+            <!-- Controls (Screen Only) -->
+            <div class="header-controls screen-only">
+                <div class="age-select">
+                    <label for="ageRange">Tranche d'âge :</label>
+                    <select id="ageRange">
+                        <option value="18-25">18-25 ans</option>
+                        <option value="45-50" selected>45-50 ans</option>
+                        <option value="60-65">60-65 ans</option>
+                        <option value="70-75">70-75 ans</option>
+                    </select>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn fill" id="fillExample">📄 Remplir l'exemple</button>
+                    <button class="btn" id="clearExample">🧹 Effacer</button>
+                    <button class="btn" id="previewBtn">👁️ Aperçu</button>
+                    <button class="btn ghost" id="printButton" type="button">🖨️ Imprimer le PPP</button>
+                </div>
+            </div>
+        </header>
+
+        <button class="btn fill close-preview-btn" id="closePreviewBtn" hidden>Fermer l'aperçu</button>
+
+        <section class="input-toggle screen-only">
+            <button class="btn ghost" id="toggleInputSection" aria-expanded="false" aria-controls="inputSection">
+                🤖 Ouvrir l'assistant PhiGenix 6.0
+            </button>
+        </section>
+
+        <section class="input-section screen-only" id="inputSection" hidden>
+            <div class="upload-wrapper">
+                <input type="file" id="imageInput" accept="image/*" class="visually-hidden">
+                <label class="upload-zone" id="uploadZone" for="imageInput" role="button" tabindex="0"
+                    aria-label="Ajouter une capture du dossier pharmaceutique">
+                    <p><span aria-hidden="true">📷</span> Cliquez ou glissez la capture du dossier pharmaceutique</p>
+                    <img id="imagePreview" hidden alt="Aperçu de la capture">
+                </label>
+            </div>
+            <div class="notes-zone">
+                <label for="notesTextarea">Notes de l'entretien :</label>
+                <textarea id="notesTextarea" rows="4"
+                    placeholder="Décrivez le déroulé du bilan : sujets abordés, conseils donnés, produits vendus..."></textarea>
+            </div>
+            <button class="btn ghost" id="preloadVK" type="button">Préremplir avec un exemple</button>
+            <button class="btn ghost" id="promptToggle" type="button">⚙️ Paramètres IA (prompt)</button>
+            <div class="prompt-panel screen-only" id="promptPanel" hidden>
+                <h3>Configuration</h3>
+                <div class="settings-group">
+                    <label for="apiKeyInput">Clé API nécessaire pour connecter l'IA générative de PhiGenix 6.0 :</label>
+                    <input type="password" id="apiKeyInput" placeholder="sk-..." class="full-width-input" />
+                </div>
+                <h3>Consignes IA (Prompt)</h3>
+                <textarea id="promptTextarea"></textarea>
+                <div class="prompt-actions">
+                    <button class="btn fill" id="promptSave" type="button">Enregistrer</button>
+                    <button class="btn" id="promptReset" type="button">Réinitialiser</button>
+                    <button class="btn ghost" id="promptClose" type="button">Fermer</button>
+                </div>
+                <small>Ce prompt est utilisé pour la génération du PPP. Sauvegarde locale (n'affecte pas le fichier
+                    source).</small>
+            </div>
+            <button class="btn fill" id="generateBtn">✍️ Finaliser le PPP</button>
+            <div id="loadingIndicator" class="loading" hidden>
+                <div class="spinner">
+                    <div class="dot dot1"></div>
+                    <div class="dot dot2"></div>
+                    <div class="dot dot3"></div>
+                </div>
+                <div class="loading-text">Génération en cours...</div>
+                <div class="loading-progress">
+                    <div class="loading-progress-fill" id="loadingProgressFill"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="hero">
+            <h1>Plan Personnalisé de Prévention</h1>
+            <p>Rédaction partagée (par la personne et le professionnel de santé), à l'issue de l'intervention brève.</p>
+        </section>
+
+        <section class="grid">
+            <div class="column">
+                <div class="col-title" data-ico="★">Mes priorités en santé<sup>1</sup></div>
+                <ul class="lines">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                </ul>
+            </div>
+            <div class="column">
+                <div class="col-title" data-ico="⚠">Freins rencontrés</div>
+                <ul class="lines">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                </ul>
+            </div>
+            <div class="column">
+                <div class="col-title" data-ico="✓">Conseils, modalités pratiques<sup>2</sup></div>
+                <ul class="lines">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                </ul>
+            </div>
+            <div class="column">
+                <div class="col-title" data-ico="➜">Ressources et intervenants</div>
+                <ul class="lines">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="follow-up">
+            <div class="follow-title">Modalités de suivi</div>
+            <div class="follow-line"></div>
+            <div class="follow-line"></div>
+        </section>
+
+        <div class="separator"></div>
+
+        <p class="motivation">
+            Changer d'habitude n'est pas facile. Échanger avec une ou plusieurs personnes de confiance sur vos objectifs
+            est un facteur de succès important pour maintenir votre motivation.
+        </p>
+
+        <div class="checkbox-row">
+            <label for="opposeMedecin" class="checkbox-label">
+                <input type="checkbox" id="opposeMedecin" class="checkbox-input">
+                <span class="checkbox" aria-hidden="true"></span>
+                <span>Je m'oppose à ce que ce document soit communiqué à mon médecin traitant.</span>
+            </label>
+        </div>
+
+        <div class="footer-grid">
+            <section class="legal-mentions">
+                <div class="legal-title">Mentions informatives</div>
+                <ul>
+                    <li>Document à disposition du patient à l'issue du bilan de prévention, élaboré consciencieusement
+                        avec
+                        un professionnel de santé.</li>
+                    <li>Données issues du dossier pharmaceutique et de l'entretien ; à conserver à l'officine dans le
+                        dossier patient.</li>
+                    <li>Document pouvant être partagé avec le médecin traitant uniquement après accord du patient (cf.
+                        case
+                        d'opposition).</li>
+                </ul>
+            </section>
+
+            <div class="footer-notes">
+                <div class="item"><span class="n">1</span>Les priorités du PPP sont définies avec l'appui du
+                    professionnel de santé. Elles doivent être réalistes et en nombre limité.</div>
+                <div class="item"><span class="n">2</span>Exemples d'actions précises : appeler un numéro de ligne
+                    d'écoute, expliquer ce qu'est une Consultation Jeunes Consommateurs et comment s'y rendre...</div>
+            </div>
+
+            <div class="signature-block">
+                <div class="sig-label">Cachet de l'officine et Signature du professionnel de santé</div>
+                <div class="sig-area"></div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="brand-note">© PhiGenix 6.0 — décembre 2025</div>
+        </footer>
+    </div>
+    <script type="module" src="js/main.js"></script>
+</body>
+
+</html>

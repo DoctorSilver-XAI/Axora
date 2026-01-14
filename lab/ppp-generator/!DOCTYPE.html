@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Bilan Prévention - Plan Personnalisé de Prévention</title>
+    <style>
+        :root {
+            --blue: #1f2f75;
+            --blue-strong: #0f2a73;
+            --orange: #f28c63;
+            --dotted: #7c7c83;
+            --bg: #f6f8fc;
+            --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.07);
+            --border-soft: rgba(0, 0, 0, 0.06);
+        }
+
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: #2f2f30;
+            font-family: "Montserrat", "Segoe UI", "Open Sans", Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: clamp(10px, 1.6vw, 22px);
+            transition: background 180ms ease;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 100%;
+            background: #fff;
+            padding: clamp(18px, 2vw, 26px) clamp(24px, 3vw, 42px) clamp(18px, 2vw, 24px);
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: clamp(720px, 94vh, 980px);
+            background-image: radial-gradient(circle at 12% 20%, rgba(31, 47, 117, 0.06) 0, transparent 18%), radial-gradient(circle at 88% 10%, rgba(242, 140, 99, 0.08) 0, transparent 20%);
+            transition: box-shadow 180ms ease, background 180ms ease;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .age-select {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .age-select label {
+            font-size: 12px;
+            color: #33384d;
+            font-weight: 700;
+            letter-spacing: -0.1px;
+        }
+
+        .age-select select {
+            padding: 8px 12px;
+            border: 1.5px solid var(--orange);
+            border-radius: 18px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--blue-strong);
+            background: #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+            outline: none;
+            cursor: pointer;
+            min-width: 140px;
+            transition: border-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: 1.5px solid var(--blue-strong);
+            background: #fff;
+            color: var(--blue-strong);
+            font-weight: 700;
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+            transition: all 0.15s ease;
+        }
+
+        .btn.fill {
+            background: var(--orange);
+            color: #fff;
+            border-color: var(--orange);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn:focus-visible,
+        .age-select select:focus-visible,
+        .pharmacist-line select:focus-visible {
+            outline: 2px solid var(--blue);
+            outline-offset: 2px;
+        }
+
+        .pharmacy-block {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            color: var(--blue-strong);
+            max-width: 360px;
+        }
+
+        .pharmacy-name {
+            font-size: clamp(18px, 2.4vw, 24px);
+            font-weight: 800;
+            letter-spacing: -0.2px;
+            line-height: 1.1;
+        }
+
+        .pharmacist-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #2d334f;
+            letter-spacing: -0.1px;
+        }
+
+        .pharmacist-line label {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .pharmacist-line select {
+            flex: 1 1 auto;
+            min-width: 180px;
+            border: 1.2px solid var(--blue-strong);
+            border-radius: 14px;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--blue-strong);
+            background: #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+            outline: none;
+        }
+
+        .title-block {
+            text-align: right;
+        }
+
+        .dot-row {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+            margin-bottom: 6px;
+            padding-right: 4px;
+            flex-wrap: wrap;
+        }
+
+        .dot-row span {
+            width: 9px;
+            height: 9px;
+            background: var(--orange);
+            border-radius: 50%;
+            display: inline-block;
+            opacity: 0.9;
+        }
+
+        .report-title {
+            font-size: clamp(22px, 3vw, 28px);
+            font-weight: 800;
+            color: var(--blue);
+            letter-spacing: -0.3px;
+            margin-bottom: 4px;
+        }
+
+        .report-title .accent {
+            color: var(--blue-strong);
+        }
+
+        .age {
+            font-size: clamp(16px, 2vw, 18px);
+            font-weight: 800;
+            color: var(--orange);
+        }
+
+        .hero {
+            text-align: center;
+            margin: 10px 0 14px;
+        }
+
+        .hero h1 {
+            font-size: clamp(18px, 2.6vw, 24px);
+            color: var(--blue);
+            font-weight: 800;
+            letter-spacing: -0.15px;
+            margin-bottom: 8px;
+        }
+
+        .hero p {
+            font-size: 12px;
+            color: #33384d;
+            line-height: 1.45;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            column-gap: clamp(8px, 1.6vw, 14px);
+            row-gap: 16px;
+            margin-bottom: 22px;
+            align-items: flex-start;
+        }
+
+        .column {
+            padding: 0 clamp(12px, 1.8vw, 22px);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .column + .column::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 72px;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(#f6b69b, #f28c63);
+            opacity: 0.9;
+        }
+
+        .col-title {
+            background: linear-gradient(135deg, rgba(242, 140, 99, 0.92), rgba(242, 140, 99, 0.82));
+            color: #fff;
+            font-weight: 800;
+            font-size: 13px;
+            padding: 10px 12px;
+            min-height: 52px;
+            border-radius: 40px;
+            text-align: center;
+            letter-spacing: -0.1px;
+            box-shadow: 0 6px 14px rgba(242, 140, 99, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            gap: 8px;
+        }
+
+        .col-title::before {
+            content: attr(data-ico);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .lines {
+            list-style: none;
+            margin-top: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(14px, 1.8vw, 20px);
+            min-height: 380px;
+            flex: 1 1 auto;
+        }
+
+        .lines li {
+            border-bottom: 1.25px dashed var(--dotted);
+            min-height: 20px;
+            padding-bottom: 4px;
+            transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+        }
+
+        .lines li:focus-visible,
+        .follow-line:focus-visible {
+            outline: none;
+            border-color: var(--orange);
+            box-shadow: 0 2px 0 rgba(242, 140, 99, 0.35);
+            background: rgba(242, 140, 99, 0.06);
+        }
+
+        .follow-up {
+            margin-bottom: 16px;
+        }
+
+        .follow-title {
+            display: inline-block;
+            background: var(--orange);
+            color: #fff;
+            font-weight: 800;
+            font-size: 13px;
+            padding: 10px 20px;
+            border-radius: 40px;
+            box-shadow: 0 4px 10px rgba(242, 140, 99, 0.35);
+            margin-bottom: 12px;
+        }
+
+        .follow-line {
+            border-bottom: 1.5px dotted var(--dotted);
+            margin: 10px 0;
+            min-height: 18px;
+            padding-bottom: 6px;
+            display: flex;
+            align-items: flex-end;
+            font-size: 12px;
+            color: #2d334f;
+            transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+        }
+
+        .separator {
+            border-bottom: 1px dotted #c5c5c5;
+            margin: 8px 0 14px;
+        }
+
+        .motivation {
+            font-size: 12px;
+            color: #2d334f;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #111;
+            margin-bottom: 18px;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            border: 3px solid var(--orange);
+            border-radius: 50%;
+            box-shadow: inset 0 0 0 1px #fff;
+        }
+
+        footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: flex-end;
+            gap: 16px;
+            flex: 1 1 320px;
+            flex-wrap: wrap;
+        }
+
+        .logo-stamp {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--blue-strong);
+            font-weight: 800;
+            font-size: 11px;
+            line-height: 1.15;
+            letter-spacing: -0.1px;
+        }
+
+        .logo-stamp .icon {
+            width: 74px;
+            height: 46px;
+            border: 2px solid var(--blue-strong);
+            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(31, 47, 117, 0.16), rgba(31, 47, 117, 0.04));
+            display: grid;
+            place-items: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--blue-strong);
+            text-transform: uppercase;
+        }
+
+        .footer-notes {
+            flex: 1 1 280px;
+            font-size: 11px;
+            color: #424242;
+            line-height: 1.45;
+            max-width: 320px;
+        }
+
+        .footer-notes .item {
+            margin-bottom: 6px;
+        }
+
+        .footer-notes .n {
+            font-weight: 800;
+            color: var(--orange);
+            margin-right: 4px;
+        }
+
+        .qr {
+            text-align: right;
+            color: var(--orange);
+            font-weight: 800;
+            font-size: 12px;
+            flex: 0 0 auto;
+        }
+
+        .qr .code {
+            width: 88px;
+            height: 88px;
+            margin-top: 8px;
+            border: 2px solid var(--orange);
+            border-radius: 4px;
+            background:
+                linear-gradient(90deg, rgba(242, 140, 99, 0.35) 25%, transparent 25%, transparent 50%, rgba(242, 140, 99, 0.35) 50%, rgba(242, 140, 99, 0.35) 75%, transparent 75%, transparent),
+                linear-gradient(rgba(242, 140, 99, 0.35) 25%, transparent 25%, transparent 50%, rgba(242, 140, 99, 0.35) 50%, rgba(242, 140, 99, 0.35) 75%, transparent 75%, transparent);
+            background-size: 12px 12px;
+        }
+
+        @media (max-width: 1250px) {
+            .page {
+                padding: 18px 24px;
+            }
+            .grid {
+                grid-template-columns: repeat(3, minmax(220px, 1fr));
+                column-gap: 12px;
+            }
+            .column + .column::before {
+                top: 68px;
+            }
+            .lines {
+                min-height: 320px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .pharmacy-block {
+                width: 100%;
+            }
+            .title-block {
+                text-align: left;
+                width: 100%;
+            }
+            .dot-row {
+                justify-content: flex-start;
+            }
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+                column-gap: 10px;
+                row-gap: 20px;
+            }
+            .column {
+                padding: 0 12px;
+            }
+            .column + .column::before {
+                top: 0;
+                height: auto;
+            }
+            .lines {
+                min-height: auto;
+                gap: 16px;
+            }
+            footer {
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 10px;
+            }
+            .page {
+                border-radius: 0;
+                width: 100%;
+                box-shadow: none;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .column {
+                padding: 0;
+            }
+            .column + .column::before {
+                display: none;
+            }
+            .col-title {
+                width: 100%;
+            }
+            .lines {
+                gap: 14px;
+            }
+            .follow-title {
+                width: 100%;
+                text-align: center;
+            }
+            .checkbox-row {
+                align-items: flex-start;
+                gap: 8px;
+            }
+            footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .qr {
+                text-align: left;
+            }
+        }
+
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+            }
+
+            .page {
+                box-shadow: none;
+                border-radius: 0;
+                margin: 0;
+                width: 297mm;
+                height: 210mm;
+                padding: 14mm 18mm 12mm 18mm;
+                background: #fff;
+                background-image: none;
+            }
+
+            .grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            footer {
+                flex-wrap: nowrap;
+                align-items: flex-end;
+            }
+
+            .qr .code {
+                background-size: 6px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header>
+            <div class="pharmacy-block">
+                <div class="pharmacy-name">Grande Pharmacie de Tassigny</div>
+                <div class="pharmacist-line">
+                    <label for="pharmacien">Pharmacien référent :</label>
+                    <select id="pharmacien">
+                        <option>Cékiki</option>
+                        <option>Clara</option>
+                        <option>Ema</option>
+                        <option>François</option>
+                        <option>Gauthier</option>
+                        <option>Marjorie</option>
+                        <option>Pierre</option>
+                    </select>
+                </div>
+            </div>
+            <div class="title-block">
+                <div class="dot-row">
+                    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <div class="age-select">
+                    <label for="ageRange">Tranche d'âge :</label>
+                    <select id="ageRange">
+                        <option value="18-25">18-25 ans</option>
+                        <option value="45-50">45-50 ans</option>
+                        <option value="60-65">60-65 ans</option>
+                        <option value="70-75" selected>70-75 ans</option>
+                    </select>
+                </div>
+                <div class="action-row">
+                    <button class="btn fill" id="fillExample">Remplir l'exemple</button>
+                    <button class="btn" id="clearExample">Effacer</button>
+                </div>
+                <div class="report-title">Mon Bilan <span class="accent">Prévention</span></div>
+                <div class="age">70-75 ans</div>
+            </div>
+        </header>
+
+        <section class="hero">
+            <h1>Plan Personnalisé de Prévention</h1>
+            <p>Rédaction partagée (par la personne et le professionnel de santé), à l'issue de l'intervention brève.</p>
+        </section>
+
+        <section class="grid">
+            <div class="column">
+                <div class="col-title" data-ico="★">Mes priorités en santé<sup>1</sup></div>
+                <ul class="lines">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                </ul>
+            </div>
+            <div class="column">
+                <div class="col-title" data-ico="⚠">Freins rencontrés</div>
+                <ul class="lines">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                </ul>
+            </div>
+            <div class="column">
+                <div class="col-title" data-ico="✓">Conseils, modalités pratiques<sup>2</sup></div>
+                <ul class="lines">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                </ul>
+            </div>
+            <div class="column">
+                <div class="col-title" data-ico="➜">Ressources et intervenants</div>
+                <ul class="lines">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="follow-up">
+            <div class="follow-title">Modalités de suivi</div>
+            <div class="follow-line"></div>
+            <div class="follow-line"></div>
+        </section>
+
+        <div class="separator"></div>
+
+        <p class="motivation">
+            Changer d'habitude n'est pas facile. Échanger avec une ou plusieurs personnes de confiance sur vos objectifs est un facteur de succès important pour maintenir votre motivation.
+        </p>
+
+        <div class="checkbox-row">
+            <div class="checkbox"></div>
+            <div>Je m'oppose à ce que ce document soit communiqué à mon médecin traitant.</div>
+        </div>
+
+        <footer>
+            <div class="footer-left">
+                <div class="logo-stamp">
+                    <div class="icon">Logo</div>
+                    l'Assurance<br>Maladie
+                </div>
+                <div class="logo-stamp">
+                    <div class="icon">Logo</div>
+                    msa<br>santé famille<br>retraite services
+                </div>
+                <div class="logo-stamp">
+                    <div class="icon">Logo</div>
+                    Santé<br>publique<br>France
+                </div>
+            </div>
+
+            <div class="footer-notes">
+                <div class="item"><span class="n">1</span>Les priorités du PPP sont définies avec l'appui du professionnel de santé. Elles doivent être réalistes et en nombre limité.</div>
+                <div class="item"><span class="n">2</span>Exemples d'actions précises : appeler un numéro de ligne d'écoute, expliquer ce qu'est une Consultation Jeunes Consommateurs et comment s'y rendre...</div>
+            </div>
+
+            <div class="qr">
+                &rarr; Plus de ressources sur
+                <div class="code"></div>
+            </div>
+        </footer>
+    </div>
+    <script>
+        (function () {
+            const themes = {
+                "18-25": { blue: "#1b1b1b", blueStrong: "#1b1b1b", orange: "#f5c042", bg: "#fff7d9" }, // jaune
+                "45-50": { blue: "#1f7a50", blueStrong: "#0f5a38", orange: "#23a06b", bg: "#e9f7ef" }, // vert
+                "60-65": { blue: "#4f3d84", blueStrong: "#3b296c", orange: "#8a6bd1", bg: "#f4efff" }, // violet
+                "70-75": { blue: "#1f2f75", blueStrong: "#0f2a73", orange: "#f28c63", bg: "#f6f8fc" }
+            };
+
+            const examples = {
+                "18-25": {
+                    priorities: [
+                        "Sommeil réparateur (7-8 h, horaires réguliers, hygiène numérique)",
+                        "Usage alcool festif et binge drinking : réduction structurée",
+                        "Activité physique cardio + renforcement (VO2 et posture)",
+                        "Couverture vaccinale complète (HPV, Covid, grippe)",
+                        "Nutrition PNNS : fibres, index glycémique, ultra-transformés à réduire",
+                        "Prévention psycho / stress examens : routines de récupération",
+                        "Poids/IMC : repérage précoce surpoids, variabilité pondérale",
+                        "Accès soins : médecin traitant référent, suivi prévention"
+                    ],
+                    freins: [
+                        "Horaires décalés (cours/travail de nuit), dette de sommeil",
+                        "Pression sociale sur alcool/expérimentations (cannabis, etc.)",
+                        "Budget restreint pour alimentation qualitative",
+                        "Sedentarité (écrans >6 h/j), peu d’activité structurée",
+                        "Méconnaissance portions/protéines/fibres",
+                        "Usage tardif d’écrans perturbant la mélatonine",
+                        "Accès limité à un médecin référent",
+                        "Motivation fluctuante, objectifs flous"
+                    ],
+                    conseils: [
+                        "3 séances cardio 25-30 min + 2 renfo/sem (RPE 6-7/10)",
+                        "Batch cooking économique : légumineuses + céréales complètes + légumes surgelés",
+                        "Couvre-feu écrans 60 min avant sommeil, chambre sans notifications",
+                        "Alcool : eau entre verres, 2 verres max/soirée, jours sans",
+                        "Prendre rdv vaccin HPV + rappels Covid/grippe (pharmacie/centre)",
+                        "Respiration cohérence cardiaque 5 min x2/j en période d’examens",
+                        "Structurer 3 repas, collation protéinée si sport",
+                        "Déclarer un médecin traitant, programmer un bilan prévention"
+                    ],
+                    ressources: [
+                        "Pass sport/structures locales, applis cardio/renfo gratuites",
+                        "CSAPA ou ligne écoute alcool/tabac pour stratégies de réduction",
+                        "RDV vaccination via sante.fr/doctolib",
+                        "Maison des ados / CMP si anxiété ou usage à risque",
+                        "Guides PNNS étudiants : portions, menus type, IG bas",
+                        "Tabac info service / appli alcool : suivi conso",
+                        "Pharmacie : hygiène du sommeil, sevrage tabac, vaccination",
+                        "Médecin traitant : repérage précoce troubles métaboliques"
+                    ],
+                    suivi: [
+                        "Point pharmacie/MT dans 1 mois : conso alcool, sommeil, programme sport",
+                        "Revue vaccination et poids/IMC dans 3 mois"
+                    ]
+                },
+                "45-50": {
+                    priorities: [
+                        "Risque cardio global : PA, LDL-c, IMC, tour de taille",
+                        "Tabac/alcool : stratégie de sevrage ou réduction cadrée",
+                        "Dépistage cancer colorectal (test immunologique)",
+                        "Activité physique 150-180 min/sem + renforcement 2x",
+                        "Sommeil/stress professionnel : hygiène et récupération",
+                        "Nutrition cardioprotectrice : réduction sucres rapides/AGS",
+                        "Vaccins : grippe, rappel Covid si indiqué",
+                        "Dépistage glycémie si ATCD familiaux"
+                    ],
+                    freins: [
+                        "Temps contraint (travail/famille), repas pris à l’extérieur",
+                        "Tabagisme ancien, crainte de prise de poids au sevrage",
+                        "Stress/sommeil écourté, chroniquement fragmenté",
+                        "Faible régularité sportive, douleurs initiales",
+                        "Appréhension dépistage colorectal",
+                        "Habitudes salées/sucrées ancrées",
+                        "Motivation variable, objectifs non mesurés",
+                        "Alcool social fréquent"
+                    ],
+                    conseils: [
+                        "Mesure TA, bilan lipidique, poids/TT tous les 3-6 mois",
+                        "Marche rapide 30 min/j + renfo 2x/sem (gainage, charges légères)",
+                        "Plan d’arrêt tabac : substituts dosés, patch + forme orale, date cible",
+                        "Alcool : 10 verres/semaine max, 2 jours off, stratégie d’anticipation",
+                        "Test immunologique colorectal à retirer/réaliser (50-74 ans)",
+                        "Petit-déj protéiné/fibre, limiter pain blanc/sucres rapides",
+                        "Coucher régulier, coupure écrans 60 min, relaxation 5-10 min",
+                        "Programmer vaccination grippe/Covid en officine"
+                    ],
+                    ressources: [
+                        "Tabac info service / CSAPA pour accompagnement sevrage",
+                        "Programmes marche/renfo locaux, appli podomètre",
+                        "Médecin traitant : ordonnance test colorectal, bilans bio",
+                        "Pharmacie : éducation nutrition, sommeil, substituts nicotiniques",
+                        "Ateliers stress/sommeil (mutuelle, entreprise, mairie)",
+                        "Infirmier : suivi PA/poids si utile",
+                        "Coach en ligne renforcement doux postural",
+                        "Applis nutrition (lecture étiquettes, AGS/sel/sucres)"
+                    ],
+                    suivi: [
+                        "Point officine dans 1 mois : tabac/PA, tolérance substituts",
+                        "Revue dépistage colorectal et bilans lipides/glycémie sous 3 mois"
+                    ]
+                },
+                "60-65": {
+                    priorities: [
+                        "Equilibre cardio-metabolique (PA, LDL-c, HbA1c si risque)",
+                        "Vaccination grippe/Covid/pneumocoque",
+                        "Activité physique endurance + équilibre + renforcement doux",
+                        "Poids/stéatose : modèle méditerranéen, apport protéique adapté",
+                        "Sommeil et douleurs articulaires (arthrose, tendinopathies)",
+                        "Dépistage colorectal (si non réalisé)",
+                        "Tabac/alcool : poursuite réduction/sevrage",
+                        "Prévention chutes : vision, chaussures, appuis"
+                    ],
+                    freins: [
+                        "Douleurs articulaires limitant charge ou impact",
+                        "Oublis vaccins/rappels, hésitation pneumocoque",
+                        "Habitudes salées/sucrées, portions généreuses",
+                        "Sommeil fragmenté, lever nocturne",
+                        "Manque de lieu couvert pour activité",
+                        "Polymédication : interactions, observance variable",
+                        "Vision/audition non à jour",
+                        "Fatigue et découragement si progrès lents"
+                    ],
+                    conseils: [
+                        "Marche rapide 30 min/j + exercice équilibre 10 min/j + renfo léger",
+                        "Régime méditerranéen : légumes, huile d’olive, poissons gras 2x/sem",
+                        "Hydratation 1.5 L/j, sel <5 g/j, limiter sucres simples",
+                        "Plan vaccins : grippe, Covid, pneumocoque (selon schéma)",
+                        "Etirements quotidiens, renfo excentrique si tendons douloureux",
+                        "Test colorectal si non fait, fenêtre 50-74 ans",
+                        "Auto-contrôle TA/glycémie si ATCD, carnet de suivi",
+                        "Pharmacie : revue ordonnances, interactions, prise correcte"
+                    ],
+                    ressources: [
+                        "Maison sport-santé / marche nordique / APA locale",
+                        "Pharmacie : bilan médicamenteux, rappel vaccins",
+                        "Médecin traitant : ordonnances dépistage/bilans",
+                        "Mutuelle/mairie : ateliers équilibre, prévention chutes",
+                        "Opticien/audioprothésiste : mise à jour si >1 an",
+                        "CSAPA : soutien alcool/tabac si besoin",
+                        "Applis podomètre/respiration, carnet TA",
+                        "Educateur APA : programme individualisé si douleurs"
+                    ],
+                    suivi: [
+                        "Revue traitements/vaccins en officine dans 1 mois",
+                        "Contrôle TA/glycémie/lipides + dépistage colorectal sous 3 mois"
+                    ]
+                },
+                "70-75": {
+                    priorities: [
+                        "Prévention chutes : équilibre, vision, chaussures stables, environnement",
+                        "Revue traitements (polymédication, iatrogénie), observance",
+                        "Vaccins grippe/Covid/pneumocoque/zona",
+                        "Activité physique quotidienne douce + renforcement bas du corps",
+                        "Dépistage colorectal si non réalisé avant 74 ans",
+                        "Sommeil et douleur chronique (arthrose, neuropathies)",
+                        "Nutrition : protéines 1-1.2 g/kg/j, hydratation suffisante",
+                        "Lien social, prévention isolement"
+                    ],
+                    freins: [
+                        "Arthrose/douleurs limitant marche, peur de chuter",
+                        "Oublis de prises médicamenteuses, organisation complexe",
+                        "Appétit réduit, hydratation insuffisante",
+                        "Isolement social, moral fluctuant",
+                        "Vision/audition diminuées, appareillages à réviser",
+                        "Crainte effets secondaires vaccins",
+                        "Fatigue chronique",
+                        "Habitudes domestiques à risque (tapis, éclairage)"
+                    ],
+                    conseils: [
+                        "Marche 20-30 min/j + exercices équilibre/proprioception quotidiens",
+                        "Sécuriser domicile : tapis retirés, barres d’appui, éclairage nuit",
+                        "Plan vaccinal complet : grippe, Covid, pneumocoque, zona",
+                        "Apport protéique fractionné (3 repas + collation protéique), hydratation 1-1.5 L",
+                        "Contrôle traitements : posologies, doublons, interactions (revue officinale)",
+                        "Bilan vision/audition annuel, adapter lunettes/appareils",
+                        "Programme kiné/APA pour renforcement bas du corps",
+                        "Stimuler lien social (associations, famille, ateliers mémoire)"
+                    ],
+                    ressources: [
+                        "Pharmacie : bilan partagé de médication, rappel vaccins",
+                        "Médecin traitant : ordonnances vaccins, suivi douleurs/sommeil",
+                        "Kiné/APA : équilibre, renforcement, prévention chutes",
+                        "Opticien/audioprothésiste : réévaluation",
+                        "CCAS/associations : visites, ateliers cognitifs",
+                        "Nutritionniste si perte de poids/sarcopénie",
+                        "CSAPA/alcool si besoin",
+                        "Aidants/famille : aide à l’organisation des prises"
+                    ],
+                    suivi: [
+                        "Revue médication + vaccins en officine sous 1 mois",
+                        "Point équilibre/chutes et douleur avec médecin/kine sous 2-3 mois"
+                    ]
+                }
+            };
+
+            const select = document.getElementById("ageRange");
+            const ageEl = document.querySelector(".age");
+            const fillBtn = document.getElementById("fillExample");
+            const clearBtn = document.getElementById("clearExample");
+
+            function makeEditable() {
+                document.querySelectorAll(".grid .column .lines li, .follow-line").forEach(el => {
+                    el.setAttribute("contenteditable", "true");
+                    el.setAttribute("aria-label", "Zone de saisie");
+                });
+            }
+
+            function applyTheme(key) {
+                const t = themes[key];
+                if (!t) return;
+                const root = document.documentElement;
+                root.style.setProperty("--blue", t.blue);
+                root.style.setProperty("--blue-strong", t.blueStrong);
+                root.style.setProperty("--orange", t.orange);
+                root.style.setProperty("--bg", t.bg);
+                ageEl.textContent = `${key} ans`;
+            }
+
+            function fillColumn(colIndex, items) {
+                const col = document.querySelectorAll(".grid .column")[colIndex];
+                if (!col) return;
+                const lines = col.querySelectorAll(".lines li");
+                lines.forEach((li, idx) => {
+                    li.textContent = items[idx] || "";
+                });
+            }
+
+            function fillFollow(items) {
+                const lines = document.querySelectorAll(".follow-line");
+                lines.forEach((line, idx) => {
+                    line.textContent = items[idx] || "";
+                });
+            }
+
+            function clearAll() {
+                document.querySelectorAll(".grid .column .lines li").forEach(li => li.textContent = "");
+                document.querySelectorAll(".follow-line").forEach(l => l.textContent = "");
+            }
+
+            function applyExample(key) {
+                const data = examples[key];
+                if (!data) return;
+                fillColumn(0, data.priorities);
+                fillColumn(1, data.freins);
+                fillColumn(2, data.conseils);
+                fillColumn(3, data.ressources);
+                fillFollow(data.suivi || []);
+            }
+
+            select.addEventListener("change", (e) => {
+                applyTheme(e.target.value);
+            });
+
+            fillBtn.addEventListener("click", () => {
+                applyExample(select.value);
+            });
+
+            clearBtn.addEventListener("click", () => {
+                clearAll();
+            });
+
+            // init
+            makeEditable();
+            applyTheme(select.value);
+        })();
+    </script>
+</body>
+</html>

@@ -13,9 +13,12 @@ export interface AxoraAPI {
     trigger: () => Promise<{ success: boolean }>
     capture: () => Promise<{ success: boolean; imageData: string | null }>
     analyze: (imageData: string) => Promise<{ success: boolean; result: unknown }>
+    getPending: () => Promise<{ image: string } | null>
     close: () => void
+    onTrigger: (callback: () => void) => () => void
     onResult: (callback: (result: unknown) => void) => () => void
     onStatusChange: (callback: (status: string) => void) => () => void
+    onAnalysisResult: (callback: (result: unknown) => void) => () => void
   }
 
   ai: {
@@ -35,7 +38,53 @@ export interface AxoraAPI {
     onSessionChange: (callback: (session: unknown) => void) => () => void
   }
 
+  localConversations: {
+    getAll: () => Promise<LocalConversation[]>
+    getById: (id: string) => Promise<LocalConversationWithMessages | null>
+    create: (provider: string, model?: string) => Promise<LocalConversation>
+    updateTitle: (id: string, title: string) => Promise<void>
+    delete: (id: string) => Promise<void>
+    archive: (id: string) => Promise<void>
+    togglePin: (id: string, isPinned: boolean) => Promise<void>
+    addMessage: (
+      conversationId: string,
+      role: 'user' | 'assistant' | 'system',
+      content: string,
+      provider?: string,
+      model?: string
+    ) => Promise<LocalMessage>
+  }
+
+  ppp: {
+    print: () => void
+  }
+
   platform: NodeJS.Platform
+}
+
+export interface LocalConversation {
+  id: string
+  title: string
+  provider: string
+  model: string | null
+  created_at: string
+  updated_at: string
+  is_archived: number
+  is_pinned: number
+}
+
+export interface LocalMessage {
+  id: string
+  conversation_id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  provider: string | null
+  model: string | null
+  created_at: string
+}
+
+export interface LocalConversationWithMessages extends LocalConversation {
+  messages: LocalMessage[]
 }
 
 export interface IslandAPI {
@@ -48,6 +97,9 @@ export interface IslandAPI {
   phivision: {
     trigger: () => Promise<{ success: boolean }>
     close: () => void
+    setStatus: (status: string) => void
+    broadcastAnalysisResult: (result: unknown) => void
+    onTrigger: (callback: () => void) => () => void
     onStatusChange: (callback: (status: string) => void) => () => void
     onResult: (callback: (result: unknown) => void) => () => void
   }

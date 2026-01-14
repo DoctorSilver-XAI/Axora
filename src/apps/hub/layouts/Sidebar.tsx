@@ -4,51 +4,51 @@ import {
   LayoutDashboard,
   Grid3X3,
   Scan,
+  Microscope,
   MessageSquare,
   Mail,
-  Settings,
 } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
 import { AxoraLogo } from '@apps/island/components/AxoraLogo'
+import { UserMenu } from './UserMenu'
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/nexus', icon: Grid3X3, label: 'Nexus' },
   { path: '/phivision', icon: Scan, label: 'PhiVision' },
+  { path: '/phivision-lab', icon: Microscope, label: 'PhiVision Lab' },
   { path: '/assistant', icon: MessageSquare, label: 'Assistant' },
   { path: '/messaging', icon: Mail, label: 'Messagerie' },
-  { path: '/settings', icon: Settings, label: 'Paramètres' },
 ]
 
 export function Sidebar() {
   return (
-    <aside className="w-64 bg-surface-50 border-r border-white/5 flex flex-col">
+    <aside className="w-72 bg-surface-50/80 backdrop-blur-xl border-r border-white/5 flex flex-col relative z-50 shadow-2xl">
       {/* Logo section - accounts for traffic lights on macOS */}
-      <div className="h-14 flex items-center px-4 drag-region">
-        <div className="flex items-center gap-3 no-drag pl-16">
-          <AxoraLogo size={32} />
-          <span className="text-lg font-semibold text-gradient">Axora</span>
+      <div className="h-24 flex items-center px-6 drag-region">
+        <div className="flex items-center gap-4 no-drag pl-12 group cursor-pointer">
+          <div className="relative">
+            <AxoraLogo size={38} />
+            <div className="absolute inset-0 bg-axora-500/20 blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xl font-bold tracking-wide text-white group-hover:text-axora-300 transition-colors">Axora</span>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-medium ml-0.5">PhiGenix</span>
+          </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-4 py-2 space-y-2 overflow-y-auto custom-scrollbar">
+        <div className="text-[10px] uppercase tracking-wider text-white/30 font-semibold px-4 mb-2 mt-4">Menu Principal</div>
         {navItems.map((item) => (
           <NavItem key={item.path} {...item} />
         ))}
       </nav>
 
       {/* User section */}
-      <div className="p-4 border-t border-white/5">
-        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5">
-          <div className="w-8 h-8 rounded-full bg-axora-500 flex items-center justify-center">
-            <span className="text-sm font-medium text-white">P</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">Pharmacien</p>
-            <p className="text-xs text-white/50 truncate">Non connecté</p>
-          </div>
-        </div>
+      <div className="p-4 mx-4 mb-6 mt-2 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-md shadow-lg hover:bg-white/10 transition-colors cursor-pointer group">
+        <UserMenu />
       </div>
     </aside>
   )
@@ -66,23 +66,33 @@ function NavItem({ path, icon: Icon, label }: NavItemProps) {
       to={path}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200',
+          'relative flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 group overflow-hidden',
           'text-sm font-medium',
           isActive
-            ? 'bg-axora-500/20 text-axora-400'
-            : 'text-white/60 hover:text-white hover:bg-white/5'
+            ? 'text-white shadow-lg shadow-axora-500/10'
+            : 'text-white/50 hover:text-white hover:bg-white/5'
         )
       }
     >
       {({ isActive }) => (
         <>
-          <Icon className="w-5 h-5" />
-          <span>{label}</span>
           {isActive && (
             <motion.div
-              layoutId="nav-indicator"
-              className="absolute left-0 w-1 h-6 bg-axora-500 rounded-r-full"
-              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              layoutId="nav-bg"
+              className="absolute inset-0 bg-gradient-to-r from-axora-600/20 to-transparent border-l-2 border-axora-500"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+          )}
+
+          <Icon className={cn("relative z-10 w-5 h-5 transition-transform duration-300 group-hover:scale-110", isActive ? "text-axora-400" : "text-current")} />
+          <span className="relative z-10 tracking-wide">{label}</span>
+
+          {isActive && (
+            <motion.div
+              layoutId="nav-glow"
+              className="absolute right-3 w-1.5 h-1.5 rounded-full bg-axora-400 shadow-[0_0_10px_rgba(99,102,241,0.8)]"
             />
           )}
         </>

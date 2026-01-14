@@ -22,7 +22,13 @@ const axoraAPI = {
     capture: () => ipcRenderer.invoke(IPC_CHANNELS.PHIVISION.CAPTURE),
     analyze: (imageData: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.PHIVISION.ANALYZE, imageData),
+    getPending: () => ipcRenderer.invoke(IPC_CHANNELS.PHIVISION.GET_PENDING),
     close: () => ipcRenderer.send(IPC_CHANNELS.PHIVISION.CLOSE),
+    onTrigger: (callback: () => void) => {
+      const handler = () => callback()
+      ipcRenderer.on(IPC_CHANNELS.PHIVISION.TRIGGER, handler)
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.PHIVISION.TRIGGER, handler)
+    },
     onResult: (callback: (result: unknown) => void) => {
       const handler = (_: Electron.IpcRendererEvent, result: unknown) => callback(result)
       ipcRenderer.on(IPC_CHANNELS.PHIVISION.RESULT, handler)
@@ -32,6 +38,11 @@ const axoraAPI = {
       const handler = (_: Electron.IpcRendererEvent, status: string) => callback(status)
       ipcRenderer.on(IPC_CHANNELS.PHIVISION.STATUS, handler)
       return () => ipcRenderer.removeListener(IPC_CHANNELS.PHIVISION.STATUS, handler)
+    },
+    onAnalysisResult: (callback: (result: unknown) => void) => {
+      const handler = (_: Electron.IpcRendererEvent, result: unknown) => callback(result)
+      ipcRenderer.on(IPC_CHANNELS.PHIVISION.ANALYSIS_RESULT, handler)
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.PHIVISION.ANALYSIS_RESULT, handler)
     },
   },
 
@@ -68,6 +79,43 @@ const axoraAPI = {
       ipcRenderer.on(IPC_CHANNELS.AUTH.SESSION_CHANGED, handler)
       return () => ipcRenderer.removeListener(IPC_CHANNELS.AUTH.SESSION_CHANGED, handler)
     },
+  },
+
+  // Local Conversations (SQLite)
+  localConversations: {
+    getAll: () => ipcRenderer.invoke(IPC_CHANNELS.LOCAL_CONVERSATIONS.GET_ALL),
+    getById: (id: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.LOCAL_CONVERSATIONS.GET_BY_ID, id),
+    create: (provider: string, model?: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.LOCAL_CONVERSATIONS.CREATE, provider, model),
+    updateTitle: (id: string, title: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.LOCAL_CONVERSATIONS.UPDATE_TITLE, id, title),
+    delete: (id: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.LOCAL_CONVERSATIONS.DELETE, id),
+    archive: (id: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.LOCAL_CONVERSATIONS.ARCHIVE, id),
+    togglePin: (id: string, isPinned: boolean) =>
+      ipcRenderer.invoke(IPC_CHANNELS.LOCAL_CONVERSATIONS.TOGGLE_PIN, id, isPinned),
+    addMessage: (
+      conversationId: string,
+      role: 'user' | 'assistant' | 'system',
+      content: string,
+      provider?: string,
+      model?: string
+    ) =>
+      ipcRenderer.invoke(
+        IPC_CHANNELS.LOCAL_CONVERSATIONS.ADD_MESSAGE,
+        conversationId,
+        role,
+        content,
+        provider,
+        model
+      ),
+  },
+
+  // PPP (Plan Personnalisé de Prévention)
+  ppp: {
+    print: () => ipcRenderer.send(IPC_CHANNELS.PPP.PRINT),
   },
 
   // Platform info

@@ -3,6 +3,7 @@ import { MainLayout } from './layouts/MainLayout'
 import { Dashboard } from './pages/Dashboard'
 import { Nexus } from './pages/Nexus'
 import { PhiVisionPage } from './pages/PhiVision'
+import { PhiVisionLabPage } from './pages/PhiVisionLab'
 import { Assistant } from './pages/Assistant'
 import { Messaging } from './pages/Messaging'
 import { Settings } from './pages/Settings'
@@ -31,6 +32,7 @@ export function Hub() {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/nexus" element={<Nexus />} />
                   <Route path="/phivision" element={<PhiVisionPage />} />
+                  <Route path="/phivision-lab" element={<PhiVisionLabPage />} />
                   <Route path="/assistant" element={<Assistant />} />
                   <Route path="/messaging" element={<Messaging />} />
                   <Route path="/settings" element={<Settings />} />

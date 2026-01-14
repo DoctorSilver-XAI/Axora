@@ -1,0 +1,24 @@
+:root {
+    --bg-color: #f8f9fa;
+    --primary-color: #527494;
+    --secondary-color: #6c757d;
+    --accent-color: #48828E;
+    --text-color: #343a40;
+    --light-gray: #e9ecef;
+    --white: #ffffff;
+    --danger: #dc3545;
+    --success: #28a745;
+
+    --blue: var(--primary-color);
+    --blue-strong: #1D244F;
+    --orange: var(--accent-color);
+    --accent-1: var(--accent-color);
+    --accent-2: #3A7C8A;
+    --accent-shadow: rgba(72, 130, 142, 0.2);
+    --bg-glow-1: transparent;
+    --bg-glow-2: transparent;
+    --dotted: rgba(72, 130, 142, 0.55);
+    --bg: var(--bg-color);
+    --card-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+    --border-soft: rgba(0, 0, 0, 0.08);
+}

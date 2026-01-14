@@ -37,6 +37,7 @@ function toAppConversation(dbConv: DBConversation, messages: DBMessage[] = []): 
     messages: messages.map(toAppMessage),
     createdAt: new Date(dbConv.created_at),
     updatedAt: new Date(dbConv.updated_at),
+    storageType: 'cloud',
   }
 }
 

@@ -40,24 +40,187 @@ export function PhiVisionProvider({ children }: { children: ReactNode }) {
     loadHistory()
   }, [])
 
-  // Écouter les événements IPC
+  // Au montage, verifier s'il y a un pending result de l'Island
+  useEffect(() => {
+    const checkPendingResult = async () => {
+      if (!window.axora?.phivision?.getPending) return
+
+      console.log('[PhiVisionContext] Checking for pending result...')
+      try {
+        const pending = await window.axora.phivision.getPending()
+        if (pending?.image) {
+          console.log('[PhiVisionContext] Found pending result! Starting analysis...')
+
+          // Stocker l'image et passer en mode analyse
+          setState((prev) => ({
+            ...prev,
+            capturedImage: pending.image,
+            status: 'analyzing',
+            error: null,
+          }))
+
+          // Lancer l'analyse
+          const ocrResult = await analyzeImage(pending.image)
+          console.log('[PhiVisionContext] Analysis complete:', ocrResult.analysis?.type)
+
+          setState((prev) => ({ ...prev, status: 'saving' }))
+
+          // Sauvegarder dans Supabase avec le résultat PhiBRAIN complet
+          const entities: Array<Record<string, unknown>> = []
+          if (ocrResult.analysis?.medications) {
+            ocrResult.analysis.medications.forEach((med, index) => {
+              entities.push({
+                type: 'medication',
+                name: med,
+                dosage: ocrResult.analysis?.dosages?.[index] || null,
+                instruction: ocrResult.analysis?.instructions?.[index] || null,
+              })
+            })
+          }
+
+          const enrichment: Record<string, unknown> = {
+            documentType: ocrResult.analysis?.type || 'unknown',
+            summary: ocrResult.analysis?.summary || null,
+            confidence: ocrResult.confidence,
+          }
+
+          // Stocker le JSON PhiBRAIN complet dans raw_text pour PhiVisionLab
+          const rawTextForStorage = ocrResult.phiBrain
+            ? JSON.stringify(ocrResult.phiBrain)
+            : ocrResult.text
+
+          const capture = await CaptureService.create(
+            pending.image,
+            rawTextForStorage,
+            entities,
+            enrichment
+          )
+
+          setState((prev) => ({
+            ...prev,
+            status: 'complete',
+            result: ocrResult,
+            history: [capture, ...prev.history],
+          }))
+
+          console.log('[PhiVisionContext] Capture saved to Supabase!')
+
+          // Naviguer vers PhiVision
+          if (!window.location.hash.includes('/phivision')) {
+            window.location.hash = '#/phivision'
+          }
+        } else {
+          console.log('[PhiVisionContext] No pending result found')
+        }
+      } catch (err) {
+        console.error('[PhiVisionContext] Error processing pending result:', err)
+        setState((prev) => ({
+          ...prev,
+          status: 'error',
+          error: err instanceof Error ? err.message : 'Erreur lors du traitement',
+        }))
+      }
+    }
+
+    // Petit delai pour s'assurer que le composant est bien monte
+    const timer = setTimeout(checkPendingResult, 100)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Ecouter les evenements IPC
   useEffect(() => {
     if (!window.axora) return
+
+    // Ecouter le message TRIGGER du raccourci clavier global
+    const unsubscribeTrigger = window.axora.phivision.onTrigger(() => {
+      // Declencher la capture via l'API
+      window.axora.phivision.trigger()
+    })
 
     const unsubscribeStatus = window.axora.phivision.onStatusChange((status) => {
       setState((prev) => ({ ...prev, status: status as PhiVisionStatus }))
     })
 
-    const unsubscribeResult = window.axora.phivision.onResult((result: unknown) => {
+    // Ecouter le resultat de capture (image brute) et lancer l'analyse automatiquement
+    const unsubscribeResult = window.axora.phivision.onResult(async (result: unknown) => {
       const data = result as { image?: string; error?: string }
       if (data.image) {
-        setState((prev) => ({ ...prev, capturedImage: data.image ?? null }))
+        console.log('[PhiVisionContext] Image received, starting automatic analysis...')
+
+        // Stocker l'image et passer en mode analyse
+        setState((prev) => ({
+          ...prev,
+          capturedImage: data.image ?? null,
+          status: 'analyzing',
+          error: null,
+        }))
+
+        // Lancer l'analyse automatiquement (comme le bouton du Hub)
+        try {
+          const ocrResult = await analyzeImage(data.image)
+          console.log('[PhiVisionContext] Analysis complete:', ocrResult.analysis?.type)
+
+          setState((prev) => ({ ...prev, status: 'saving' }))
+
+          // Sauvegarder dans Supabase avec le résultat PhiBRAIN complet
+          const entities: Array<Record<string, unknown>> = []
+          if (ocrResult.analysis?.medications) {
+            ocrResult.analysis.medications.forEach((med, index) => {
+              entities.push({
+                type: 'medication',
+                name: med,
+                dosage: ocrResult.analysis?.dosages?.[index] || null,
+                instruction: ocrResult.analysis?.instructions?.[index] || null,
+              })
+            })
+          }
+
+          const enrichment: Record<string, unknown> = {
+            documentType: ocrResult.analysis?.type || 'unknown',
+            summary: ocrResult.analysis?.summary || null,
+            confidence: ocrResult.confidence,
+          }
+
+          // Stocker le JSON PhiBRAIN complet dans raw_text pour PhiVisionLab
+          const rawTextForStorage = ocrResult.phiBrain
+            ? JSON.stringify(ocrResult.phiBrain)
+            : ocrResult.text
+
+          const capture = await CaptureService.create(
+            data.image,
+            rawTextForStorage,
+            entities,
+            enrichment
+          )
+
+          setState((prev) => ({
+            ...prev,
+            status: 'complete',
+            result: ocrResult,
+            history: [capture, ...prev.history],
+          }))
+
+          console.log('[PhiVisionContext] Capture saved to Supabase')
+
+          // Naviguer vers PhiVision si pas deja la
+          if (!window.location.hash.includes('/phivision')) {
+            window.location.hash = '#/phivision'
+          }
+        } catch (err) {
+          console.error('[PhiVisionContext] Analysis or save failed:', err)
+          setState((prev) => ({
+            ...prev,
+            status: 'error',
+            error: err instanceof Error ? err.message : 'Analyse echouee',
+          }))
+        }
       } else if (data.error) {
         setState((prev) => ({ ...prev, error: data.error ?? null, status: 'error' }))
       }
     })
 
     return () => {
+      unsubscribeTrigger()
       unsubscribeStatus()
       unsubscribeResult()
     }
@@ -103,13 +266,39 @@ export function PhiVisionProvider({ children }: { children: ReactNode }) {
 
       setState((prev) => ({ ...prev, status: 'saving' }))
 
-      // Save to Supabase
+      // Save to Supabase avec le résultat PhiBRAIN complet
       try {
+        // Transform analysis into entities and enrichment for Supabase
+        const entities: Array<Record<string, unknown>> = []
+
+        // Add medications as entities
+        if (result.analysis?.medications) {
+          result.analysis.medications.forEach((med, index) => {
+            entities.push({
+              type: 'medication',
+              name: med,
+              dosage: result.analysis?.dosages?.[index] || null,
+              instruction: result.analysis?.instructions?.[index] || null,
+            })
+          })
+        }
+
+        const enrichment: Record<string, unknown> = {
+          documentType: result.analysis?.type || 'unknown',
+          summary: result.analysis?.summary || null,
+          confidence: result.confidence,
+        }
+
+        // Stocker le JSON PhiBRAIN complet dans raw_text pour PhiVisionLab
+        const rawTextForStorage = result.phiBrain
+          ? JSON.stringify(result.phiBrain)
+          : result.text
+
         const capture = await CaptureService.create(
           state.capturedImage,
-          result.text,
-          result.entities as Array<Record<string, unknown>>,
-          result.enrichment as Record<string, unknown>
+          rawTextForStorage,
+          entities,
+          enrichment
         )
 
         setState((prev) => ({

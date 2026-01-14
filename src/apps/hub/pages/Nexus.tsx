@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Sparkles } from 'lucide-react'
+import { Search, Sparkles, Command } from 'lucide-react'
 import {
   ModuleRegistry,
   useModuleLoader,
@@ -55,59 +55,81 @@ export function Nexus() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 p-4">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Nexus</h1>
-          <p className="text-white/60 mt-1">
-            Modules et outils pour votre pratique quotidienne
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+            Nexus
+          </h1>
+          <p className="text-white/60 mt-2 text-lg">
+            Hub central de vos outils pharmaceutiques
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-axora-500/20 text-axora-400 text-sm">
-          <Sparkles className="w-4 h-4" />
-          {allModules.length} modules
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-100 border border-white/5 backdrop-blur-md shadow-lg">
+          <Sparkles className="w-4 h-4 text-axora-400" />
+          <span className="text-sm font-medium text-white/80">{allModules.length} modules disponibles</span>
         </div>
       </div>
 
-      {/* Search bar */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Rechercher un module..."
-          className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-axora-500/50 focus:outline-none transition-colors"
-        />
+      {/* Search & Filter Bar */}
+      <div className="bg-surface-50/50 p-2 rounded-2xl border border-white/5 backdrop-blur-xl flex flex-col md:flex-row gap-4 shadow-2xl">
+        {/* Search */}
+        <div className="relative flex-1 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-axora-400 transition-colors" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Rechercher un module (ex: Posologie, Interactions...)"
+            className="w-full pl-12 pr-12 py-3.5 rounded-xl bg-surface-100/50 border border-white/5 text-white placeholder-white/40 focus:bg-surface-100 focus:border-axora-500/50 focus:outline-none transition-all duration-300"
+          />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded bg-white/5 border border-white/10">
+            <Command className="w-3 h-3 text-white/40" />
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 px-2 items-center scrollbar-hide">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={cn(
+                'px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-300 relative overflow-hidden',
+                selectedCategory === category.id
+                  ? 'text-white shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              )}
+            >
+              {selectedCategory === category.id && (
+                <motion.div
+                  layoutId="category-bg"
+                  className="absolute inset-0 bg-axora-600 rounded-xl"
+                />
+              )}
+              <span className="relative z-10">{category.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Category filters */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {categories.map((category) => (
-          <button
-            key={category.id}
-            onClick={() => setSelectedCategory(category.id)}
-            className={cn(
-              'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap',
-              'transition-all duration-200',
-              selectedCategory === category.id
-                ? 'bg-axora-500 text-white'
-                : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-            )}
-          >
-            {category.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Modules grid */}
+      {/* Modules Grid */}
       {filteredModules.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-white/40">Aucun module trouvé</p>
+        <div className="flex flex-col items-center justify-center py-20 rounded-3xl bg-surface-50/30 border border-white/5 border-dashed">
+          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+            <Search className="w-8 h-8 text-white/20" />
+          </div>
+          <p className="text-white/60 text-lg">Aucun module ne correspond à votre recherche</p>
+          <button
+            onClick={() => { setSearchQuery(''); setSelectedCategory('all') }}
+            className="mt-4 px-4 py-2 text-sm text-axora-400 hover:text-axora-300 transition-colors"
+          >
+            Réinitialiser les filtres
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredModules.map((module, index) => (
             <ModuleCard
               key={module.id}
@@ -137,46 +159,48 @@ function ModuleCard({ module, index, onOpen }: ModuleCardProps) {
     <motion.button
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      transition={{ delay: index * 0.05, duration: 0.4 }}
       onClick={onOpen}
       className={cn(
-        'relative p-5 rounded-2xl text-left transition-all duration-300',
-        'glass hover:border-axora-500/30',
-        'hover:scale-[1.02] active:scale-[0.98]',
-        isComingSoon && 'opacity-60 cursor-not-allowed'
+        'group relative p-6 rounded-3xl text-left transition-all duration-300 bg-surface-100/40 backdrop-blur-xl border border-white/5',
+        'hover:shadow-neon hover:border-axora-500/30 overflow-hidden',
+        isComingSoon && 'opacity-60 cursor-not-allowed grayscale'
       )}
       disabled={isComingSoon}
     >
+      <div className="absolute inset-0 bg-gradient-to-br from-axora-500/0 to-cyan-500/0 group-hover:from-axora-500/10 group-hover:to-cyan-500/5 transition-colors duration-500" />
+
       {/* Icon */}
       <div className={cn(
-        'w-12 h-12 rounded-xl flex items-center justify-center mb-4',
-        'bg-gradient-to-br from-axora-500/20 to-axora-600/10'
+        'w-14 h-14 rounded-2xl flex items-center justify-center mb-5 relative z-10',
+        'bg-surface-200/50 border border-white/10 group-hover:scale-110 transition-transform duration-300 shadow-lg'
       )}>
-        <Icon className="w-6 h-6 text-axora-400" />
+        <Icon className="w-7 h-7 text-white/80 group-hover:text-axora-300 transition-colors" />
       </div>
 
       {/* Content */}
-      <h3 className="font-semibold text-white">{module.name}</h3>
-      <p className="text-sm text-white/50 mt-1 line-clamp-2">
-        {module.description}
-      </p>
+      <div className="relative z-10">
+        <h3 className="text-lg font-bold text-white group-hover:text-axora-200 transition-colors">{module.name}</h3>
+        <p className="text-sm text-white/50 mt-2 line-clamp-2 leading-relaxed group-hover:text-white/70 transition-colors">
+          {module.description}
+        </p>
+      </div>
 
-      {/* Category badge */}
-      <span className="inline-block mt-3 px-2 py-0.5 rounded text-[10px] font-medium bg-white/5 text-white/40">
-        {CATEGORY_LABELS[module.category]}
-      </span>
+      {/* Footer Info */}
+      <div className="relative z-10 flex items-center justify-between mt-6 pt-4 border-t border-white/5">
+        <span className="text-[10px] uppercase tracking-wider font-semibold text-white/30 bg-white/5 px-2 py-1 rounded-lg">
+          {CATEGORY_LABELS[module.category]}
+        </span>
 
-      {/* Status badge */}
-      {isComingSoon && (
-        <span className="absolute top-4 right-4 px-2 py-1 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-400">
-          Bientôt
-        </span>
-      )}
-      {isBeta && (
-        <span className="absolute top-4 right-4 px-2 py-1 rounded-full text-[10px] font-medium bg-cyan-500/20 text-cyan-400">
-          Beta
-        </span>
-      )}
+        {(isBeta || isComingSoon) && (
+          <span className={cn(
+            "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide",
+            isBeta ? "bg-cyan-500/20 text-cyan-300" : "bg-amber-500/20 text-amber-300"
+          )}>
+            {isBeta ? 'Beta' : 'Bientôt'}
+          </span>
+        )}
+      </div>
     </motion.button>
   )
 }

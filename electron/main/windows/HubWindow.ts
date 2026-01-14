@@ -42,8 +42,8 @@ export class HubWindow {
 
     if (isDev && process.env['ELECTRON_RENDERER_URL']) {
       await window.loadURL(process.env['ELECTRON_RENDERER_URL'])
-      // Ouvrir DevTools en dev pour débugger
-      window.webContents.openDevTools({ mode: 'detach' })
+      // Ouvrir DevTools en dev pour débugger (désactivé par défaut)
+      // window.webContents.openDevTools({ mode: 'detach' })
     } else {
       await window.loadFile(join(__dirname, '../renderer/index.html'))
     }

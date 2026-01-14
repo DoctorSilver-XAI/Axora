@@ -1,0 +1,54 @@
+@page {
+    size: A4 landscape;
+    margin: 0;
+    /* Let body padding handle it */
+}
+
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Force preview mode to fit print page perfectly */
+    body.preview-mode {
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: white !important;
+    }
+
+    body.preview-mode .page {
+        width: 100% !important;
+        max-width: none !important;
+        height: 100% !important;
+        /* Force full height usage */
+        margin: 0 !important;
+        padding: 8mm 10mm !important;
+        /* Increased safety margins */
+        box-shadow: none !important;
+        border: none !important;
+        aspect-ratio: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* Hide the close button in print */
+    body.preview-mode .close-preview-btn {
+        display: none !important;
+    }
+
+    /* Ensure background graphics are printed if needed, though usually white is fine */
+
+    /* Hide elements that might not be caught by preview-mode if it wasn't active (safety net) */
+    .screen-only,
+    .input-toggle,
+    .input-section,
+    .action-row,
+    .age-select,
+    .close-preview-btn {
+        display: none !important;
+    }
+}
