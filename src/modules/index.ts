@@ -3,6 +3,7 @@ import './posology'
 import './notes'
 import './ppp'
 import './rag-studio'
+import './cash-register'
 
 // Re-export core utilities
 export { ModuleRegistry, registerModule } from './core/ModuleRegistry'

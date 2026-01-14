@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Plus, Settings, User, Bot, Loader2, ChevronDown, X, AlertCircle, Trash2, PanelLeft } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
 import { Message, AIProvider, AIConfig, Conversation, StorageType } from '@features/assistant/types'
-import { sendMessage, getAvailableProviders, getProviderModels } from '@features/assistant/services/AIService'
+import { sendMessage } from '@features/assistant/services/AIService'
+import { useAIPreference } from '@features/assistant/hooks/useAIPreference'
 import { getConversationService, UnifiedConversationService } from '@features/assistant/services/ConversationServiceFactory'
 import { NewConversationModal } from '@features/assistant/components/NewConversationModal'
 import { StorageBadge } from '@features/assistant/components/StorageBadge'
 
-const PROVIDER_LABELS: Record<AIProvider, string> = {
+export const PROVIDER_LABELS: Record<AIProvider, string> = {
   mistral: 'Mistral AI',
   openai: 'OpenAI',
   local: 'Local (Ollama)',
@@ -20,19 +21,15 @@ export function Assistant() {
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
-  const [showProviderMenu, setShowProviderMenu] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showNewConversationModal, setShowNewConversationModal] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   // AI Config
-  const availableProviders = getAvailableProviders()
-  const [selectedProvider, setSelectedProvider] = useState<AIProvider>(availableProviders[0] || 'mistral')
-  const [selectedModel, setSelectedModel] = useState(getProviderModels(selectedProvider)[0])
+  const { provider: selectedProvider, model: selectedModel } = useAIPreference()
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const providerMenuRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -75,22 +72,7 @@ export function Assistant() {
     scrollToBottom()
   }, [currentConversation?.messages, streamingContent])
 
-  // Close provider menu on click outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (providerMenuRef.current && !providerMenuRef.current.contains(event.target as Node)) {
-        setShowProviderMenu(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
-  // Update model when provider changes
-  useEffect(() => {
-    const models = getProviderModels(selectedProvider)
-    setSelectedModel(models[0])
-  }, [selectedProvider])
 
   const handleNewConversation = () => {
     setShowNewConversationModal(true)
@@ -352,71 +334,15 @@ export function Assistant() {
               )}
             </div>
 
-            {/* Provider selector */}
-            <div className="p-4 border-t border-white/5 relative" ref={providerMenuRef}>
-              <button
-                onClick={() => setShowProviderMenu(!showProviderMenu)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white/5 text-sm text-white/80 hover:bg-white/10 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Settings className="w-4 h-4 text-white/60" />
-                  <div className="text-left">
-                    <p className="font-medium">{PROVIDER_LABELS[selectedProvider]}</p>
-                    <p className="text-xs text-white/50">{selectedModel}</p>
-                  </div>
+            {/* Provider info (read-only) */}
+            <div className="p-4 border-t border-white/5">
+              <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 text-sm text-white/80">
+                <Settings className="w-4 h-4 text-white/60" />
+                <div className="text-left">
+                  <p className="font-medium">{PROVIDER_LABELS[selectedProvider]}</p>
+                  <p className="text-xs text-white/50">{selectedModel}</p>
                 </div>
-                <ChevronDown className={cn('w-4 h-4 transition-transform', showProviderMenu && 'rotate-180')} />
-              </button>
-
-              {/* Provider dropdown */}
-              <AnimatePresence>
-                {showProviderMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute bottom-full left-4 right-4 mb-2 p-2 rounded-xl bg-surface-100 border border-white/10 shadow-xl"
-                  >
-                    <p className="text-xs text-white/40 px-2 py-1 mb-1">Provider</p>
-                    {availableProviders.map((provider) => (
-                      <button
-                        key={provider}
-                        onClick={() => setSelectedProvider(provider)}
-                        className={cn(
-                          'w-full px-3 py-2 rounded-lg text-left text-sm transition-colors',
-                          selectedProvider === provider
-                            ? 'bg-axora-500/20 text-axora-400'
-                            : 'text-white/80 hover:bg-white/5'
-                        )}
-                      >
-                        {PROVIDER_LABELS[provider]}
-                      </button>
-                    ))}
-
-                    <div className="border-t border-white/5 mt-2 pt-2">
-                      <p className="text-xs text-white/40 px-2 py-1 mb-1">Modèle</p>
-                      {getProviderModels(selectedProvider).map((model) => (
-                        <button
-                          key={model}
-                          onClick={() => {
-                            setSelectedModel(model)
-                            setShowProviderMenu(false)
-                          }}
-                          className={cn(
-                            'w-full px-3 py-2 rounded-lg text-left text-sm transition-colors',
-                            selectedModel === model
-                              ? 'bg-axora-500/20 text-axora-400'
-                              : 'text-white/80 hover:bg-white/5'
-                          )}
-                        >
-                          {model}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              </div>
             </div>
           </motion.div>
         )}

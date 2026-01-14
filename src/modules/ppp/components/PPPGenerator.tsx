@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FileText, Loader2, Printer, Eye, EyeOff, Eraser, FileCheck, Monitor, Upload, Image as ImageIcon, X, Trash2, Check } from 'lucide-react'
+import { FileText, Loader2, Printer, Eye, EyeOff, Eraser, FileCheck, Monitor, Upload, Image as ImageIcon, X, Trash2, Check, Mic } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@shared/utils/cn'
 import { PPPData, AgeRange, PPPGenerationRequest } from '../types'
@@ -10,6 +10,7 @@ import { getTemplate } from '../utils/templates'
 import { detectAgeBucket, AGE_RANGES } from '../utils/age'
 import { PPPDocumentV2 } from './PPPDocumentV2'
 import { ThematiquesSuggestions } from './ThematiquesSuggestions'
+import { AudioTranscriptionModal } from './AudioTranscriptionModal'
 
 const PHARMACISTS = [
   'Clara El Rawadi',
@@ -39,6 +40,7 @@ export function PPPGenerator() {
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
+  const [showAudioModal, setShowAudioModal] = useState(false)
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -231,6 +233,17 @@ export function PPPGenerator() {
     setProgress(0)
     setError(null)
   }
+
+  // Handler pour recevoir la synthèse audio
+  const handleAudioTranscription = useCallback((synthesis: string) => {
+    setNotes(prev => {
+      if (prev.trim()) {
+        return `${prev}\n\n--- Synthèse de l'entretien audio ---\n${synthesis}`
+      }
+      return synthesis
+    })
+    setShowAudioModal(false)
+  }, [])
 
   const handleToggleThematique = useCallback((label: string) => {
     setInsertedTags(prev => {
@@ -469,9 +482,18 @@ export function PPPGenerator() {
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-white/80 mb-2">
-              Notes de l'entretien
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-white/80">
+                Notes de l'entretien
+              </label>
+              <button
+                onClick={() => setShowAudioModal(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 transition-all text-sm font-medium"
+              >
+                <Mic className="w-4 h-4" />
+                Importer un enregistrement
+              </button>
+            </div>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -602,6 +624,13 @@ export function PPPGenerator() {
           )}
         </div>
       </div>
+
+      {/* Modal de transcription audio */}
+      <AudioTranscriptionModal
+        isOpen={showAudioModal}
+        onClose={() => setShowAudioModal(false)}
+        onTranscriptionComplete={handleAudioTranscription}
+      />
     </div>
   )
 }

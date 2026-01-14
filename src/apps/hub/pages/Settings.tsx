@@ -8,14 +8,18 @@ import {
   Database,
   Bell,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Bot
 } from 'lucide-react'
+import { useAIPreference } from '@features/assistant/hooks/useAIPreference'
+import { PROVIDER_LABELS } from './Assistant'
 import { cn } from '@shared/utils/cn'
 
-type SettingsSection = 'account' | 'api' | 'appearance' | 'shortcuts' | 'data' | 'notifications'
+type SettingsSection = 'account' | 'api' | 'ai' | 'appearance' | 'shortcuts' | 'data' | 'notifications'
 
 const sections = [
   { id: 'account' as const, label: 'Compte', icon: User },
+  { id: 'ai' as const, label: 'Assistant IA', icon: Bot },
   { id: 'api' as const, label: 'Clés API', icon: Key },
   { id: 'appearance' as const, label: 'Apparence', icon: Palette },
   { id: 'shortcuts' as const, label: 'Raccourcis', icon: Keyboard },
@@ -68,6 +72,7 @@ export function Settings() {
       {/* Content */}
       <div className="flex-1 p-6 overflow-auto">
         {activeSection === 'account' && <AccountSettings />}
+        {activeSection === 'ai' && <AISettings />}
         {activeSection === 'api' && <APISettings />}
         {activeSection === 'appearance' && <AppearanceSettings />}
         {activeSection === 'shortcuts' && <ShortcutsSettings />}
@@ -298,6 +303,69 @@ function SettingsRow({ label, description, action }: { label: string; descriptio
         <p className="text-xs text-white/50 mt-0.5">{description}</p>
       </div>
       {action}
+    </div>
+  )
+}
+
+function AISettings() {
+  const { provider, model, setProvider, setModel, availableProviders, getModelsForProvider } = useAIPreference()
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <SectionHeader
+        title="Assistant IA"
+        description="Configurez le comportement de votre assistant"
+      />
+
+      <div className="glass rounded-2xl p-6 space-y-6">
+        <div>
+          <h4 className="text-sm font-medium text-white mb-4">Fournisseur d'IA</h4>
+          <div className="grid grid-cols-2 gap-3">
+            {availableProviders.map((p) => (
+              <button
+                key={p}
+                onClick={() => setProvider(p)}
+                className={cn(
+                  'px-4 py-3 rounded-xl text-sm font-medium transition-all border text-left',
+                  provider === p
+                    ? 'bg-axora-500/20 text-axora-400 border-axora-500/50'
+                    : 'bg-white/5 text-white/60 border-transparent hover:bg-white/10 hover:text-white'
+                )}
+              >
+                <div className="font-semibold">{PROVIDER_LABELS[p]}</div>
+                <div className="text-xs opacity-70 mt-1 font-normal">
+                  {p === 'mistral' && 'Recommandé pour Axora'}
+                  {p === 'openai' && 'Performance maximale'}
+                  {p === 'local' && 'Confidentialité totale'}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="pt-6 border-t border-white/5">
+          <h4 className="text-sm font-medium text-white mb-4">Modèle</h4>
+          <div className="grid grid-cols-1 gap-2">
+            {getModelsForProvider(provider).map((m) => (
+              <button
+                key={m}
+                onClick={() => setModel(m)}
+                className={cn(
+                  'px-4 py-2.5 rounded-lg text-sm text-left transition-colors flex items-center justify-between',
+                  model === m
+                    ? 'bg-axora-500/20 text-axora-400'
+                    : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                )}
+              >
+                <span>{m}</span>
+                {model === m && (
+                  <div className="w-2 h-2 rounded-full bg-axora-400" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
