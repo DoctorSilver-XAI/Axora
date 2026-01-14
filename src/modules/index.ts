@@ -2,6 +2,7 @@
 import './posology'
 import './notes'
 import './ppp'
+import './rag-studio'
 
 // Re-export core utilities
 export { ModuleRegistry, registerModule } from './core/ModuleRegistry'

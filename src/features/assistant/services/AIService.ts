@@ -1,4 +1,5 @@
 import { AIProvider, Message, AIConfig, DEFAULT_SYSTEM_PROMPT } from '../types'
+import { RAGService } from '@shared/services/rag'
 
 const MISTRAL_API_KEY = import.meta.env.VITE_MISTRAL_API_KEY
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY
@@ -10,15 +11,52 @@ interface StreamCallbacks {
   onError: (error: Error) => void
 }
 
+interface SendMessageOptions {
+  /** Activer/désactiver le RAG (défaut: true) */
+  useRAG?: boolean
+  /** Callback quand le contexte RAG est utilisé */
+  onRAGContext?: (productsCount: number) => void
+}
+
 export async function sendMessage(
   messages: Message[],
   config: AIConfig,
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
+  options: SendMessageOptions = {}
 ): Promise<void> {
   const { provider, model, temperature = 0.7, maxTokens = 2048, systemPrompt = DEFAULT_SYSTEM_PROMPT } = config
+  const { useRAG = true, onRAGContext } = options
+
+  let enhancedSystemPrompt = systemPrompt
+
+  // === INJECTION RAG ===
+  // Si RAG activé, enrichir le system prompt avec le contexte pharmaceutique
+  if (useRAG) {
+    const lastUserMessage = messages.filter((m) => m.role === 'user').pop()
+
+    if (lastUserMessage) {
+      try {
+        const ragContext = await RAGService.getContextForAssistant(lastUserMessage.content)
+
+        if (ragContext && ragContext.products.length > 0) {
+          enhancedSystemPrompt = RAGService.buildEnhancedSystemPrompt(systemPrompt, ragContext)
+
+          // Notifier le nombre de produits trouvés
+          if (onRAGContext) {
+            onRAGContext(ragContext.products.length)
+          }
+
+          console.log(`[RAG] Contexte enrichi avec ${ragContext.products.length} produit(s)`)
+        }
+      } catch (err) {
+        // En cas d'erreur RAG, continuer sans contexte
+        console.warn('[RAG] Erreur, fallback sans contexte:', err)
+      }
+    }
+  }
 
   const formattedMessages = [
-    { role: 'system' as const, content: systemPrompt },
+    { role: 'system' as const, content: enhancedSystemPrompt },
     ...messages.map((m) => ({ role: m.role, content: m.content })),
   ]
 

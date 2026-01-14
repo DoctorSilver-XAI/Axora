@@ -1,0 +1,557 @@
+/* ============================================================================
+   PPP DOCUMENT STYLES - Format A4 Paysage (297mm × 210mm)
+   Optimisé pour tenir sur 1 page imprimée
+   ============================================================================ */
+
+.ppp-document-container {
+  width: 100%;
+  background: #525659;
+  padding: 40px;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.ppp-document {
+  width: 297mm;
+  height: 210mm;
+  background: white;
+  padding: 12mm 15mm;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  aspect-ratio: 297/210;
+  position: relative;
+}
+
+/* ============================================================================
+   HEADER - Compact 3-line header
+   ============================================================================ */
+
+.ppp-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--ppp-accent);
+  padding-bottom: 8px;
+}
+
+.ppp-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ppp-pharmacy-branding {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ppp-pharmacy-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--ppp-primary), var(--ppp-accent));
+  flex-shrink: 0;
+}
+
+.ppp-pharmacy-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ppp-primary);
+  outline: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.ppp-pharmacy-name:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.ppp-header-right {
+  text-align: right;
+}
+
+.ppp-report-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ppp-primary);
+  margin: 0;
+  line-height: 1.1;
+}
+
+.ppp-age-badge {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ppp-accent);
+  margin-top: 2px;
+}
+
+.ppp-header-info {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  font-size: 11px;
+  color: #333;
+  padding-left: 2px;
+}
+
+.ppp-info-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ppp-info-label {
+  font-weight: 700;
+  color: var(--ppp-primary);
+  font-size: 11px;
+}
+
+.ppp-info-value {
+  font-weight: 600;
+  color: #000;
+  outline: none;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border-bottom: 1px dashed var(--ppp-dotted);
+  min-width: 60px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.ppp-info-value:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.ppp-info-value:focus {
+  border-color: var(--ppp-accent);
+  background: rgba(23, 162, 184, 0.05);
+}
+
+.ppp-info-value:empty::after {
+  content: attr(data-placeholder);
+  color: #9aa1b5;
+  font-weight: 500;
+}
+
+/* ============================================================================
+   HERO SECTION - Title and subtitle
+   ============================================================================ */
+
+.ppp-hero {
+  text-align: center;
+  margin: 2px 0 6px;
+}
+
+.ppp-hero h1 {
+  font-size: 16px;
+  color: var(--ppp-primary);
+  font-weight: 800;
+  margin-bottom: 2px;
+  line-height: 1.1;
+}
+
+.ppp-hero p {
+  font-size: 12px;
+  color: #33384d;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* ============================================================================
+   GRID - 4 columns with exact proportions
+   ============================================================================ */
+
+.ppp-grid {
+  display: grid;
+  grid-template-columns: 1fr 0.85fr 1.3fr 0.85fr;
+  /* Priorités | Freins | Conseils (WIDE) | Ressources */
+  column-gap: 12px;
+  row-gap: 6px;
+  flex: 1;
+  align-items: stretch;
+  margin-bottom: 8px;
+}
+
+.ppp-column {
+  padding: 0 clamp(12px, 1.8vw, 22px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Vertical separator between columns */
+.ppp-column+.ppp-column::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 40px;
+  bottom: 0;
+  width: 1px;
+  background: var(--ppp-accent);
+  opacity: 0.5;
+}
+
+.ppp-col-title {
+  background: var(--ppp-accent);
+  color: white;
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 5px 8px;
+  min-height: 30px;
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--ppp-accent);
+  margin-bottom: 8px;
+}
+
+.ppp-col-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.24);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.ppp-col-title sup {
+  font-size: 0.65em;
+  position: relative;
+  top: -5px;
+  margin-left: 2px;
+  opacity: 0.9;
+  line-height: 0;
+}
+
+.ppp-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ppp-line {
+  border-bottom: 1.25px dashed var(--ppp-dotted);
+  min-height: 13.5px;
+  padding-bottom: 3px;
+  font-size: 11px;
+  line-height: 1.35;
+  white-space: pre-line;
+  word-break: break-word;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  color: #2d334f;
+}
+
+.ppp-line:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.ppp-line:focus {
+  border-color: var(--ppp-accent);
+  box-shadow: 0 1px 0 rgba(23, 162, 184, 0.2);
+  background: rgba(23, 162, 184, 0.05);
+}
+
+.ppp-line:empty::after {
+  content: "";
+  display: inline-block;
+  width: 100%;
+}
+
+/* ============================================================================
+   FOLLOW-UP SECTION
+   ============================================================================ */
+
+.ppp-follow-up {
+  margin: 4px 0 2px;
+}
+
+.ppp-follow-title {
+  display: inline-block;
+  background: var(--ppp-accent);
+  color: white;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 2px;
+  border: 1px solid var(--ppp-accent);
+}
+
+.ppp-follow-line {
+  border-bottom: 1px dashed var(--ppp-dotted);
+  min-height: 16px;
+  padding-bottom: 3px;
+  font-size: 11px;
+  margin-bottom: 3px;
+  outline: none;
+  white-space: pre-line;
+  word-break: break-word;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  color: #2d334f;
+}
+
+.ppp-follow-line:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.ppp-follow-line:focus {
+  border-color: var(--ppp-accent);
+  box-shadow: 0 1px 0 rgba(23, 162, 184, 0.2);
+  background: rgba(23, 162, 184, 0.05);
+}
+
+/* ============================================================================
+   SEPARATOR & MOTIVATION
+   ============================================================================ */
+
+.ppp-separator {
+  border-bottom: 1px dotted #c5c5c5;
+  margin: 6px 0 10px;
+}
+
+.ppp-motivation {
+  font-size: 9px;
+  color: #2d334f;
+  margin: 4px 0;
+  font-style: italic;
+  opacity: 0.8;
+  line-height: 1.3;
+}
+
+/* ============================================================================
+   CHECKBOX - Opposition médecin
+   ============================================================================ */
+
+.ppp-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 4px;
+}
+
+.ppp-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 8px;
+  color: #111;
+  opacity: 0.85;
+}
+
+.ppp-checkbox {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--ppp-accent);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.ppp-checkbox-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ppp-checkbox::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ppp-accent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.ppp-checkbox-input:checked+.ppp-checkbox::after {
+  opacity: 1;
+}
+
+/* ============================================================================
+   FOOTER - 3 columns grid
+   ============================================================================ */
+
+.ppp-footer {
+  display: grid;
+  grid-template-columns: 1fr 0.8fr 1fr;
+  gap: 12px;
+  margin-top: auto;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 4px;
+  align-items: start;
+}
+
+.ppp-legal-mentions {
+  background: rgba(15, 42, 115, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.ppp-legal-title {
+  font-weight: 700;
+  font-size: 8px;
+  margin-bottom: 2px;
+  color: var(--ppp-primary);
+}
+
+.ppp-legal-mentions ul {
+  list-style: disc;
+  padding-left: 14px;
+  margin: 0;
+  color: #555;
+  font-size: 7.5px;
+  line-height: 1.25;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ppp-footer-notes {
+  font-size: 7.5px;
+  line-height: 1.25;
+  color: #555;
+}
+
+.ppp-footer-notes .item {
+  margin-bottom: 4px;
+}
+
+.ppp-footer-notes .n {
+  font-weight: 700;
+  margin-right: 3px;
+  color: var(--ppp-accent);
+}
+
+.ppp-signature-block {
+  margin: 0;
+  padding: 0;
+}
+
+.ppp-sig-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--ppp-primary);
+  margin-bottom: 4px;
+}
+
+.ppp-sig-area {
+  height: 50px;
+  border: 1px dashed rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+
+
+/* ============================================================================
+   PRINT STYLES
+   ============================================================================ */
+
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+
+@media print {
+
+  /* Hide everything in the body by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Reset body metrics */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  /* Make the PPP container visible and takeover the page */
+  .ppp-document-container,
+  .ppp-document-container * {
+    visibility: visible;
+  }
+
+  .ppp-document-container {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    background: white;
+    z-index: 99999;
+    /* Ensure it's on top of everything */
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .ppp-document {
+    width: 297mm !important;
+    height: 210mm !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 8mm 10mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    page-break-after: avoid;
+    page-break-inside: avoid;
+    transform: scale(1) !important;
+    /* Ensure no scaling artifacts */
+  }
+
+  .ppp-info-value,
+  .ppp-pharmacy-name,
+  .ppp-line,
+  .ppp-follow-line {
+    border-bottom-style: solid;
+    /* Assure impression des bordures */
+    border-color: rgba(0, 0, 0, 0.2) !important;
+    /* Force darker lines for print */
+  }
+
+  /* Hide advice banner if it was inside the printable area (it's actually outside, so covered by body * hidden, but just in case) */
+}
+
+/* ============================================================================
+   RESPONSIVE (for editing mode, not print)
+   ============================================================================ */
+
+@media (max-width: 1400px) {
+  .ppp-document-container {
+    padding: 20px;
+  }
+
+  .ppp-document {
+    width: 100%;
+    height: auto;
+    max-width: 1200px;
+    aspect-ratio: 297/210;
+  }
+}

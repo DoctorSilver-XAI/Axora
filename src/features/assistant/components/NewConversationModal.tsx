@@ -47,14 +47,14 @@ export function NewConversationModal({
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-4 z-50 flex items-center justify-center pointer-events-none"
           >
-            <div className="bg-surface-100 rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+            <div className="bg-surface-100 rounded-2xl border border-white/10 shadow-2xl overflow-hidden w-full max-w-md max-h-full flex flex-col pointer-events-auto">
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0">
                 <h2 className="text-lg font-semibold text-white">Nouvelle conversation</h2>
                 <button
                   onClick={onClose}
@@ -65,7 +65,7 @@ export function NewConversationModal({
               </div>
 
               {/* Content */}
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-4 overflow-y-auto flex-1">
                 <p className="text-sm text-white/60">
                   Choisissez ou stocker cette conversation :
                 </p>
@@ -154,7 +154,7 @@ export function NewConversationModal({
               </div>
 
               {/* Footer */}
-              <div className="flex justify-end gap-3 px-6 py-4 border-t border-white/5 bg-white/[0.02]">
+              <div className="flex justify-end gap-3 px-6 py-4 border-t border-white/5 bg-white/[0.02] flex-shrink-0">
                 <button
                   onClick={onClose}
                   className="px-4 py-2 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-colors"

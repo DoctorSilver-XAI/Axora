@@ -27,6 +27,40 @@ class AxoraApp {
 
     registerIpcHandlers(this.windowManager)
 
+    // Handle permission requests for screen capture
+    app.whenReady().then(() => {
+      const { session } = require('electron')
+      session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+        const allowedPermissions = ['media', 'display-capture', 'mediaKeySystem']
+        if (allowedPermissions.includes(permission)) {
+          callback(true) // Approve permission request
+        } else {
+          console.warn(`[Main] Denied permission request: ${permission}`)
+          callback(false)
+        }
+      })
+
+      // Specifically handle display media requests (screen sharing picker)
+      session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
+        const { desktopCapturer } = require('electron')
+
+        desktopCapturer.getSources({ types: ['screen'] })
+          .then((sources) => {
+            // Grant access to the first screen found (Primary Display)
+            if (sources.length > 0) {
+              callback({ video: sources[0] })
+            } else {
+              // No screen found
+              callback(null)
+            }
+          })
+          .catch((err) => {
+            console.error('[Main] Error getting sources:', err)
+            callback(null)
+          })
+      })
+    })
+
     await this.windowManager.initialize()
 
     this.shortcuts.register()

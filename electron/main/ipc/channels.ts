@@ -65,6 +65,7 @@ export const IPC_CHANNELS = {
   // PPP (Plan Personnalisé de Prévention)
   PPP: {
     PRINT: 'ppp:print',
+    CAPTURE_SCREEN: 'ppp:capture-screen',
   },
 
   // Inter-window

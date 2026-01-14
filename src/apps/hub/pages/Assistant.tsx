@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Plus, Settings, User, Bot, Loader2, ChevronDown, X, AlertCircle, Trash2 } from 'lucide-react'
+import { Send, Plus, Settings, User, Bot, Loader2, ChevronDown, X, AlertCircle, Trash2, PanelLeft } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
 import { Message, AIProvider, AIConfig, Conversation, StorageType } from '@features/assistant/types'
 import { sendMessage, getAvailableProviders, getProviderModels } from '@features/assistant/services/AIService'
@@ -24,6 +24,7 @@ export function Assistant() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showNewConversationModal, setShowNewConversationModal] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   // AI Config
   const availableProviders = getAvailableProviders()
@@ -36,6 +37,23 @@ export function Assistant() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  // Handle window resize for responsive sidebar
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) { // Collapse on tablet/mobile
+        setIsSidebarOpen(false)
+      } else {
+        setIsSidebarOpen(true)
+      }
+    }
+
+    // Initial check
+    handleResize()
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Load conversations from both local and cloud storage on mount
   useEffect(() => {
@@ -235,133 +253,174 @@ export function Assistant() {
   }
 
   return (
-    <div className="flex gap-6 h-full -m-6">
+    <div className="flex gap-6 h-full -m-6 relative overflow-hidden">
+      {/* Sidebar Toggle Button (Floating when closed) */}
+      <AnimatePresence>
+        {!isSidebarOpen && (
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            onClick={() => setIsSidebarOpen(true)}
+            className="absolute top-4 left-4 z-50 p-2 rounded-lg bg-surface-100 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors shadow-lg"
+          >
+            <PanelLeft className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* Conversations sidebar */}
-      <div className="w-72 bg-surface-50 border-r border-white/5 flex flex-col">
-        <div className="p-4 border-b border-white/5">
-          <button
-            onClick={handleNewConversation}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-axora-500 text-white font-medium hover:bg-axora-600 transition-colors"
+      <AnimatePresence mode="wait">
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 288, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="bg-surface-50 border-r border-white/5 flex flex-col flex-shrink-0 relative"
           >
-            <Plus className="w-4 h-4" />
-            Nouvelle conversation
-          </button>
-        </div>
+            {/* Collapse Button */}
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="absolute top-1/2 -right-3 w-6 h-12 bg-surface-50 border border-white/5 border-l-0 rounded-r-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-colors z-50 translate-y-[-50%] opacity-0 hover:opacity-100 group-hover:opacity-100"
+              style={{ opacity: 0 }} // Hidden by default, cleaner
+            >
+              <ChevronDown className="w-4 h-4 rotate-90" />
+            </button>
 
-        <div className="flex-1 overflow-auto p-2 space-y-1">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 text-white/40 animate-spin" />
-            </div>
-          ) : conversations.length === 0 ? (
-            <p className="text-sm text-white/40 text-center py-8 px-4">
-              Aucune conversation. Cliquez sur "Nouvelle conversation" pour commencer.
-            </p>
-          ) : (
-            conversations.map((conv) => (
-              <div
-                key={conv.id}
-                onClick={() => handleSelectConversation(conv)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && handleSelectConversation(conv)}
-                className={cn(
-                  'w-full p-3 rounded-xl text-left transition-colors group cursor-pointer',
-                  'hover:bg-white/5',
-                  currentConversation?.id === conv.id && 'bg-white/10'
-                )}
+            <div className="p-4 border-b border-white/5 flex items-center gap-2">
+              <button
+                onClick={handleNewConversation}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-axora-500 text-white font-medium hover:bg-axora-600 transition-colors"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-white truncate flex-1">
-                        {conv.title}
-                      </p>
-                      <StorageBadge storageType={conv.storageType} />
-                    </div>
-                    <p className="text-xs text-white/40 mt-1">
-                      {conv.createdAt.toLocaleDateString('fr-FR')} - {PROVIDER_LABELS[conv.provider]}
-                    </p>
-                  </div>
-                  <button
-                    onClick={(e) => handleDeleteConversation(conv.id, e)}
-                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400 text-white/40 transition-all"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                <Plus className="w-4 h-4" />
+                Nouvelle conversation
+              </button>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-2.5 rounded-xl bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+                title="Masquer la barre latérale"
+              >
+                <PanelLeft className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-2 space-y-1">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-5 h-5 text-white/40 animate-spin" />
                 </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Provider selector */}
-        <div className="p-4 border-t border-white/5 relative" ref={providerMenuRef}>
-          <button
-            onClick={() => setShowProviderMenu(!showProviderMenu)}
-            className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white/5 text-sm text-white/80 hover:bg-white/10 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Settings className="w-4 h-4 text-white/60" />
-              <div className="text-left">
-                <p className="font-medium">{PROVIDER_LABELS[selectedProvider]}</p>
-                <p className="text-xs text-white/50">{selectedModel}</p>
-              </div>
-            </div>
-            <ChevronDown className={cn('w-4 h-4 transition-transform', showProviderMenu && 'rotate-180')} />
-          </button>
-
-          {/* Provider dropdown */}
-          <AnimatePresence>
-            {showProviderMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                className="absolute bottom-full left-4 right-4 mb-2 p-2 rounded-xl bg-surface-100 border border-white/10 shadow-xl"
-              >
-                <p className="text-xs text-white/40 px-2 py-1 mb-1">Provider</p>
-                {availableProviders.map((provider) => (
-                  <button
-                    key={provider}
-                    onClick={() => setSelectedProvider(provider)}
+              ) : conversations.length === 0 ? (
+                <p className="text-sm text-white/40 text-center py-8 px-4">
+                  Aucune conversation. Cliquez sur "Nouvelle conversation" pour commencer.
+                </p>
+              ) : (
+                conversations.map((conv) => (
+                  <div
+                    key={conv.id}
+                    onClick={() => handleSelectConversation(conv)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSelectConversation(conv)}
                     className={cn(
-                      'w-full px-3 py-2 rounded-lg text-left text-sm transition-colors',
-                      selectedProvider === provider
-                        ? 'bg-axora-500/20 text-axora-400'
-                        : 'text-white/80 hover:bg-white/5'
+                      'w-full p-3 rounded-xl text-left transition-colors group cursor-pointer',
+                      'hover:bg-white/5',
+                      currentConversation?.id === conv.id && 'bg-white/10'
                     )}
                   >
-                    {PROVIDER_LABELS[provider]}
-                  </button>
-                ))}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-white truncate flex-1">
+                            {conv.title}
+                          </p>
+                          <StorageBadge storageType={conv.storageType} />
+                        </div>
+                        <p className="text-xs text-white/40 mt-1">
+                          {conv.createdAt.toLocaleDateString('fr-FR')} - {PROVIDER_LABELS[conv.provider]}
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => handleDeleteConversation(conv.id, e)}
+                        className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400 text-white/40 transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
 
-                <div className="border-t border-white/5 mt-2 pt-2">
-                  <p className="text-xs text-white/40 px-2 py-1 mb-1">Modèle</p>
-                  {getProviderModels(selectedProvider).map((model) => (
-                    <button
-                      key={model}
-                      onClick={() => {
-                        setSelectedModel(model)
-                        setShowProviderMenu(false)
-                      }}
-                      className={cn(
-                        'w-full px-3 py-2 rounded-lg text-left text-sm transition-colors',
-                        selectedModel === model
-                          ? 'bg-axora-500/20 text-axora-400'
-                          : 'text-white/80 hover:bg-white/5'
-                      )}
-                    >
-                      {model}
-                    </button>
-                  ))}
+            {/* Provider selector */}
+            <div className="p-4 border-t border-white/5 relative" ref={providerMenuRef}>
+              <button
+                onClick={() => setShowProviderMenu(!showProviderMenu)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white/5 text-sm text-white/80 hover:bg-white/10 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Settings className="w-4 h-4 text-white/60" />
+                  <div className="text-left">
+                    <p className="font-medium">{PROVIDER_LABELS[selectedProvider]}</p>
+                    <p className="text-xs text-white/50">{selectedModel}</p>
+                  </div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
+                <ChevronDown className={cn('w-4 h-4 transition-transform', showProviderMenu && 'rotate-180')} />
+              </button>
+
+              {/* Provider dropdown */}
+              <AnimatePresence>
+                {showProviderMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute bottom-full left-4 right-4 mb-2 p-2 rounded-xl bg-surface-100 border border-white/10 shadow-xl"
+                  >
+                    <p className="text-xs text-white/40 px-2 py-1 mb-1">Provider</p>
+                    {availableProviders.map((provider) => (
+                      <button
+                        key={provider}
+                        onClick={() => setSelectedProvider(provider)}
+                        className={cn(
+                          'w-full px-3 py-2 rounded-lg text-left text-sm transition-colors',
+                          selectedProvider === provider
+                            ? 'bg-axora-500/20 text-axora-400'
+                            : 'text-white/80 hover:bg-white/5'
+                        )}
+                      >
+                        {PROVIDER_LABELS[provider]}
+                      </button>
+                    ))}
+
+                    <div className="border-t border-white/5 mt-2 pt-2">
+                      <p className="text-xs text-white/40 px-2 py-1 mb-1">Modèle</p>
+                      {getProviderModels(selectedProvider).map((model) => (
+                        <button
+                          key={model}
+                          onClick={() => {
+                            setSelectedModel(model)
+                            setShowProviderMenu(false)
+                          }}
+                          className={cn(
+                            'w-full px-3 py-2 rounded-lg text-left text-sm transition-colors',
+                            selectedModel === model
+                              ? 'bg-axora-500/20 text-axora-400'
+                              : 'text-white/80 hover:bg-white/5'
+                          )}
+                        >
+                          {model}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Chat area */}
       <div className="flex-1 flex flex-col">

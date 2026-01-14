@@ -11,9 +11,9 @@ export class DynamicIslandWindow {
     console.log('[DynamicIslandWindow] __dirname:', __dirname)
 
     const window = new BrowserWindow({
-      width: 300,
+      width: 400, // Increased to fit the wider 340px completion state
       height: 150,
-      x: Math.round(screenWidth / 2 - 150),
+      x: Math.round(screenWidth / 2 - 200), // Updated to center 400px width
       y: 8,
 
       frame: false,

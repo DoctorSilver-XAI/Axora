@@ -57,6 +57,7 @@ export interface AxoraAPI {
 
   ppp: {
     print: () => void
+    captureScreen: () => Promise<string>
   }
 
   platform: NodeJS.Platform
@@ -113,4 +114,4 @@ declare global {
   }
 }
 
-export {}
+export { }

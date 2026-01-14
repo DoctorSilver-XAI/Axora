@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { FileText, Camera, Loader2, Printer, Eye, EyeOff, Eraser, FileCheck } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { FileText, Loader2, Printer, Eye, EyeOff, Eraser, FileCheck, Monitor, Upload, Image as ImageIcon, X, Trash2, Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@shared/utils/cn'
 import { PPPData, AgeRange, PPPGenerationRequest } from '../types'
@@ -7,15 +7,9 @@ import { PPPService } from '../services/PPPService'
 import { PPPStorageService } from '../services/PPPStorageService'
 import { getTheme } from '../utils/themes'
 import { getTemplate } from '../utils/templates'
-import { usePhiVision } from '@shared/contexts/PhiVisionContext'
-import { PPPDocument } from './PPPDocument'
-
-const AGE_RANGES: Array<{ value: AgeRange; label: string }> = [
-  { value: '18-25', label: '18-25 ans' },
-  { value: '45-50', label: '45-50 ans' },
-  { value: '60-65', label: '60-65 ans' },
-  { value: '70-75', label: '70-75 ans' },
-]
+import { detectAgeBucket, AGE_RANGES } from '../utils/age'
+import { PPPDocumentV2 } from './PPPDocumentV2'
+import { ThematiquesSuggestions } from './ThematiquesSuggestions'
 
 const PHARMACISTS = [
   'Clara El Rawadi',
@@ -27,8 +21,6 @@ const PHARMACISTS = [
 ]
 
 export function PPPGenerator() {
-  const { capturedImage, triggerCapture, status: phiVisionStatus } = usePhiVision()
-
   // Form state
   const [patientName, setPatientName] = useState('')
   const [pharmacistName, setPharmacistName] = useState('')
@@ -36,21 +28,31 @@ export function PPPGenerator() {
   const [ageRange, setAgeRange] = useState<AgeRange>('45-50')
   const [notes, setNotes] = useState('')
   const [imageBase64, setImageBase64] = useState<string>('')
+  const [isImageValidated, setIsImageValidated] = useState(false)
+  const [insertedTags, setInsertedTags] = useState<Set<string>>(new Set())
 
   // Generated PPP data
   const [pppData, setPppData] = useState<PPPData | null>(null)
 
   // UI state
   const [isGenerating, setIsGenerating] = useState(false)
+  const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
 
-  // Sync PhiVision captured image
+  // File input ref
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Timer ref for progress simulation
+  const progressTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Smart feature: Detect age from notes
   useEffect(() => {
-    if (capturedImage && !imageBase64) {
-      setImageBase64(capturedImage)
+    const detected = detectAgeBucket(notes)
+    if (detected && detected !== ageRange) {
+      setAgeRange(detected)
     }
-  }, [capturedImage, imageBase64])
+  }, [notes])
 
   // Apply theme based on age range
   useEffect(() => {
@@ -60,14 +62,93 @@ export function PPPGenerator() {
     root.style.setProperty('--ppp-accent', theme.accentColor)
   }, [ageRange])
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) {
+        clearTimeout(progressTimerRef.current)
+      }
+    }
+  }, [])
+
+  const simulateProgress = () => {
+    setProgress(5)
+
+    // Simulation logic matching lab/ppp-generator/js/main.js
+    const phases = [
+      { target: 35, min: 2, max: 10, delayMin: 250, delayMax: 600 },
+      { target: 65, min: 1, max: 5, delayMin: 350, delayMax: 750 },
+      { target: 92, min: 0.5, max: 4, delayMin: 300, delayMax: 650 }
+    ]
+
+    const step = () => {
+      setProgress(current => {
+        if (current >= 92) return current
+
+        const phase = phases.find((p) => current < p.target) || phases[phases.length - 1]
+        const increment = phase.min + Math.random() * (phase.max - phase.min)
+        const nextProgress = Math.min(current + increment, phase.target)
+
+        const delay = phase.delayMin + Math.random() * (phase.delayMax - phase.delayMin)
+        progressTimerRef.current = setTimeout(step, delay)
+
+        return nextProgress
+      })
+    }
+
+    progressTimerRef.current = setTimeout(step, 250)
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Basic validation
+      if (!file.type.startsWith('image/')) {
+        setError('Veuillez sélectionner une image (JPG, PNG).')
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        setImageBase64(ev.target?.result as string)
+        setIsImageValidated(false)
+        setError(null)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleScreenCapture = async () => {
+    try {
+      if (window.axora?.ppp?.captureScreen) {
+        // Use Electron Main process capture (auto-hides window)
+        const base64 = await window.axora.ppp.captureScreen()
+        setImageBase64(base64)
+        setIsImageValidated(false)
+        setError(null)
+      } else {
+        // Fallback for browser dev mode (not fully supported)
+        console.warn('Screen capture requires Electron environment')
+        setError('Fonctionnalité disponible uniquement dans l\'application de bureau')
+      }
+    } catch (err) {
+      console.log('Screen capture cancelled or failed', err)
+      // Don't show error if user cancelled or it's just a permissions denial that was handled
+    }
+  }
+
   const handleGenerate = async () => {
     // Validation
     if (!patientName.trim()) {
       setError('Veuillez renseigner le nom du patient')
+      const el = document.getElementById('input-patientName')
+      el?.focus()
       return
     }
     if (!pharmacistName.trim()) {
       setError('Veuillez sélectionner un pharmacien')
+      const el = document.getElementById('select-pharmacist')
+      el?.focus()
       return
     }
     if (!imageBase64 && !notes.trim()) {
@@ -77,6 +158,7 @@ export function PPPGenerator() {
 
     setError(null)
     setIsGenerating(true)
+    simulateProgress()
 
     try {
       const request: PPPGenerationRequest = {
@@ -86,6 +168,10 @@ export function PPPGenerator() {
       }
 
       const generated = await PPPService.generatePPP(request)
+
+      // Complete progress
+      if (progressTimerRef.current) clearTimeout(progressTimerRef.current)
+      setProgress(100)
 
       // Construct full PPP data
       const fullPPP: PPPData = {
@@ -105,6 +191,9 @@ export function PPPGenerator() {
         opposeMedecin: false,
       }
 
+      // Small delay to show 100%
+      await new Promise(resolve => setTimeout(resolve, 500))
+
       setPppData(fullPPP)
       setShowPreview(true)
 
@@ -113,10 +202,12 @@ export function PPPGenerator() {
         await PPPStorageService.create(fullPPP)
       } catch (saveError) {
         console.warn('Failed to save PPP to cloud:', saveError)
-        // Continue anyway, user can still print
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la génération du PPP')
+      // Reset progress
+      if (progressTimerRef.current) clearTimeout(progressTimerRef.current)
+      setProgress(0)
     } finally {
       setIsGenerating(false)
     }
@@ -134,8 +225,42 @@ export function PPPGenerator() {
     setPppData(null)
     setShowPreview(false)
     setNotes('')
+    setInsertedTags(new Set())
     setImageBase64('')
+    setIsImageValidated(false)
+    setProgress(0)
+    setError(null)
   }
+
+  const handleToggleThematique = useCallback((label: string) => {
+    setInsertedTags(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(label)) {
+        // Retirer des notes
+        setNotes(current => {
+          // Supprime "• Label" ou "\n• Label"
+          const patterns = [
+            new RegExp(`\\n• ${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'),
+            new RegExp(`^• ${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n?`, 'g'),
+          ]
+          let result = current
+          for (const pattern of patterns) {
+            result = result.replace(pattern, '')
+          }
+          return result.trim()
+        })
+        newSet.delete(label)
+      } else {
+        // Ajouter aux notes
+        setNotes(current => {
+          const prefix = current.trim() ? '\n• ' : '• '
+          return current + prefix + label
+        })
+        newSet.add(label)
+      }
+      return newSet
+    })
+  }, [])
 
   const handleLoadExample = () => {
     const template = getTemplate(ageRange)
@@ -186,6 +311,7 @@ export function PPPGenerator() {
                 Nom du patient *
               </label>
               <input
+                id="input-patientName"
                 type="text"
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
@@ -199,6 +325,7 @@ export function PPPGenerator() {
                 Pharmacien *
               </label>
               <select
+                id="select-pharmacist"
                 value={pharmacistName}
                 onChange={(e) => setPharmacistName(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white focus:border-axora-500/50 focus:outline-none"
@@ -236,41 +363,109 @@ export function PPPGenerator() {
             </div>
           </div>
 
-          {/* PhiVision Capture */}
+          {/* Image Source Selection (Screen Capture or File Upload) */}
           <div>
             <label className="block text-sm font-medium text-white/80 mb-2">
-              Dossier pharmaceutique
+              Dossier pharmaceutique / Contexte médical
             </label>
-            <button
-              onClick={triggerCapture}
-              disabled={phiVisionStatus === 'capturing'}
-              className={cn(
-                'w-full p-4 rounded-lg border-2 border-dashed transition-all',
-                imageBase64
-                  ? 'border-axora-500/50 bg-axora-500/10'
-                  : 'border-white/10 bg-white/5 hover:border-white/20'
-              )}
-            >
-              <div className="flex items-center justify-center gap-3">
-                {phiVisionStatus === 'capturing' ? (
-                  <>
-                    <Loader2 className="w-5 h-5 text-axora-400 animate-spin" />
-                    <span className="text-sm text-white/60">Capture en cours...</span>
-                  </>
-                ) : imageBase64 ? (
-                  <>
-                    <Camera className="w-5 h-5 text-axora-400" />
-                    <span className="text-sm text-white">Image capturée • Cliquez pour recapturer</span>
-                  </>
+
+            {imageBase64 ? (
+              <div className="relative rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col items-center">
+                <img
+                  src={imageBase64}
+                  alt="Capture"
+                  className="h-48 object-contain rounded-lg border border-white/10 mb-4"
+                />
+
+                {isImageValidated ? (
+                  <div className="flex flex-col items-center gap-3 w-full">
+                    <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium">
+                      <FileCheck className="w-5 h-5" />
+                      Document prêt pour l'analyse
+                    </div>
+                    <button
+                      onClick={() => {
+                        setImageBase64('')
+                        setIsImageValidated(false)
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all text-xs font-medium"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Supprimer l'image
+                    </button>
+                  </div>
                 ) : (
-                  <>
-                    <Camera className="w-5 h-5 text-white/40" />
-                    <span className="text-sm text-white/60">Cliquez pour capturer le dossier pharmaceutique</span>
-                  </>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        setImageBase64('')
+                        setIsImageValidated(false)
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all text-sm font-medium"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Recommencer
+                    </button>
+
+                    <button
+                      onClick={() => setIsImageValidated(true)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all text-sm font-medium shadow-lg shadow-emerald-500/20"
+                    >
+                      <Check className="w-4 h-4" />
+                      Valider l'image
+                    </button>
+                  </div>
                 )}
               </div>
-            </button>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {/* Option 1: Screen Capture */}
+                <button
+                  onClick={handleScreenCapture}
+                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-dashed border-white/10 bg-white/5 hover:border-axora-500/50 hover:bg-axora-500/5 transition-all group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-surface-200/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Monitor className="w-6 h-6 text-axora-400" />
+                  </div>
+                  <div className="text-center">
+                    <span className="block font-medium text-white mb-1">Capturer l'écran</span>
+                    <span className="text-xs text-white/50">Via votre LGO ou une autre fenêtre</span>
+                  </div>
+                </button>
+
+                {/* Option 2: File Upload */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-dashed border-white/10 bg-white/5 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-surface-200/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Upload className="w-6 h-6 text-cyan-400" />
+                  </div>
+                  <div className="text-center">
+                    <span className="block font-medium text-white mb-1">Importer un fichier</span>
+                    <span className="text-xs text-white/50">Images (JPEG, PNG)</span>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </button>
+              </div>
+            )}
+            <p className="mt-2 text-xs text-white/40">
+              💡 Astuce : Capturez l'historique médicamenteux de votre logiciel (LGO) pour permettre à l'IA d'analyser le dossier complet.
+            </p>
           </div>
+
+          {/* Thématiques suggérées */}
+          <ThematiquesSuggestions
+            ageRange={ageRange}
+            onInsert={handleToggleThematique}
+            insertedTags={insertedTags}
+          />
 
           {/* Notes */}
           <div>
@@ -300,34 +495,62 @@ export function PPPGenerator() {
             )}
           </AnimatePresence>
 
+          {/* Progress Bar when Generating */}
+          <AnimatePresence>
+            {isGenerating && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-2"
+              >
+                <div className="flex justify-between text-xs text-white/60 font-medium">
+                  <span>Analyse en cours avec l'IA...</span>
+                  <span>{Math.round(progress)}%</span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-axora-600 to-axora-400"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ ease: "linear", duration: 0.2 }}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Actions */}
           <div className="flex items-center gap-3">
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
               className={cn(
-                'flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all',
+                'flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all relative overflow-hidden',
                 isGenerating
                   ? 'bg-axora-500/50 text-white/50 cursor-not-allowed'
                   : 'bg-axora-500 text-white hover:bg-axora-600'
               )}
             >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Génération en cours...
-                </>
-              ) : (
-                <>
-                  <FileText className="w-5 h-5" />
-                  Générer le PPP
-                </>
-              )}
+              <div className="relative z-10 flex items-center gap-2">
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Génération en cours...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-5 h-5" />
+                    Générer le PPP
+                  </>
+                )}
+              </div>
             </button>
 
             <button
               onClick={handleLoadExample}
-              className="px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all flex items-center gap-2"
+              disabled={isGenerating}
+              className="px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all flex items-center gap-2 disabled:opacity-50"
             >
               <FileCheck className="w-5 h-5" />
               Remplir l'exemple
@@ -362,23 +585,19 @@ export function PPPGenerator() {
             )}
           </div>
 
-          {/* PPP Document (Editable) */}
+          {/* PPP Document (Editable) - Format A4 Paysage */}
           {showPreview && pppData && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="mt-8"
+              className="mt-8 -mx-6 text-black bg-white"
             >
-              <div className="mb-4 p-4 bg-axora-500/10 border border-axora-500/20 rounded-lg text-sm text-white">
-                <strong>💡 Conseil :</strong> Cliquez sur n'importe quelle ligne pour modifier le contenu avant impression.
-                Les modifications sont automatiquement sauvegardées.
+              <div className="mb-4 mx-6 p-4 bg-axora-500/10 border border-axora-500/20 rounded-lg text-sm text-axora-700">
+                <strong>💡 Conseil :</strong> Document optimisé pour impression A4 paysage (297mm × 210mm). Cliquez
+                sur les lignes pour éditer avant impression.
               </div>
-              <PPPDocument
-                data={pppData}
-                onChange={(updated) => setPppData(updated)}
-                isPreview={false}
-              />
+              <PPPDocumentV2 data={pppData} onChange={(updated) => setPppData(updated)} readOnly={false} />
             </motion.div>
           )}
         </div>

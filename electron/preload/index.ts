@@ -116,6 +116,7 @@ const axoraAPI = {
   // PPP (Plan Personnalisé de Prévention)
   ppp: {
     print: () => ipcRenderer.send(IPC_CHANNELS.PPP.PRINT),
+    captureScreen: () => ipcRenderer.invoke(IPC_CHANNELS.PPP.CAPTURE_SCREEN),
   },
 
   // Platform info

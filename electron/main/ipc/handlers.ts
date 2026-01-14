@@ -250,4 +250,49 @@ export function registerIpcHandlers(windowManager: WindowManager): void {
       },
     })
   })
+
+  // Nouveau handler pour la capture décalée (Hide -> Capture -> Show)
+  ipcMain.handle(IPC_CHANNELS.PPP.CAPTURE_SCREEN, async () => {
+    // 1. Masquer les fenêtres
+    const hubWindow = windowManager.getHub()
+    const islandWindow = windowManager.getIsland()
+    const hubWasVisible = hubWindow?.isVisible() ?? false
+    const islandWasVisible = islandWindow?.isVisible() ?? false
+
+    if (hubWindow && !hubWindow.isDestroyed()) hubWindow.hide()
+    if (islandWindow && !islandWindow.isDestroyed()) islandWindow.hide()
+
+    try {
+      // 2. Attendre que l'animation de masquage soit finie (300ms)
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      // 3. Capturer l'écran principal
+      const primaryDisplay = screen.getPrimaryDisplay()
+      const { width, height } = primaryDisplay.size
+
+      const sources = await desktopCapturer.getSources({
+        types: ['screen'],
+        thumbnailSize: { width, height },
+      })
+
+      const primarySource = sources[0]
+      if (!primarySource) {
+        throw new Error('No screen source found')
+      }
+
+      const base64Image = primarySource.thumbnail.toDataURL()
+
+      // 4. Réafficher les fenêtres AVANT de renvoyer le résultat (pour UX fluide)
+      if (hubWasVisible && hubWindow && !hubWindow.isDestroyed()) hubWindow.show()
+      if (islandWasVisible && islandWindow && !islandWindow.isDestroyed()) islandWindow.show()
+
+      return base64Image
+    } catch (e) {
+      console.error('PPP Capture error:', e)
+      // En cas d'erreur, on réaffiche quand même
+      if (hubWasVisible && hubWindow && !hubWindow.isDestroyed()) hubWindow.show()
+      if (islandWasVisible && islandWindow && !islandWindow.isDestroyed()) islandWindow.show()
+      throw e
+    }
+  })
 }

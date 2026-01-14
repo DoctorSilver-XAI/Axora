@@ -1,11 +1,10 @@
 import { PPPGenerationRequest, PPPGenerationResponse } from '../types'
 import { PPP_SYSTEM_PROMPT } from '../utils/prompts'
 
-const MISTRAL_API_KEY = import.meta.env.VITE_MISTRAL_API_KEY
-const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions'
-
-// Mistral Vision model for analyzing pharmaceutical documents
-const MISTRAL_MODEL = 'pixtral-12b-2409'
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions'
+const OPENAI_MODEL = 'gpt-4o'
+const MAX_TOKENS = 2000
 
 function sanitizeJson(text: string): string | null {
   // Handle cases where the model returns code fences or trailing text.
@@ -19,13 +18,30 @@ function sanitizeJson(text: string): string | null {
   return null
 }
 
+function buildImageDataUrl(imageBase64: string): string | null {
+  const raw = typeof imageBase64 === "string" ? imageBase64.trim() : "";
+  if (!raw) return null;
+  return raw.startsWith("data:")
+    ? raw
+    : `data:image/png;base64,${raw}`;
+}
+
 export const PPPService = {
   /**
-   * Génère un Plan Personnalisé de Prévention via l'API Mistral
+   * Génère un Plan Personnalisé de Prévention via l'API OpenAI (GPT-4o)
    */
   async generatePPP(request: PPPGenerationRequest): Promise<PPPGenerationResponse> {
-    if (!MISTRAL_API_KEY) {
-      throw new Error('Clé API Mistral non configurée. Vérifiez vos variables d\'environnement.')
+    let apiKey = OPENAI_API_KEY
+
+    // Fallback to localStorage if available (legacy support)
+    if (!apiKey) {
+      try {
+        apiKey = localStorage.getItem("openaiApiKey") || ""
+      } catch (e) { /* ignore */ }
+    }
+
+    if (!apiKey) {
+      throw new Error("Clé API OpenAI manquante. Veuillez configurer VITE_OPENAI_API_KEY ou 'openaiApiKey' dans localStorage.")
     }
 
     const { imageBase64, notes, ageRange } = request
@@ -35,80 +51,64 @@ export const PPPService = {
       throw new Error('Vous devez fournir soit une capture du dossier pharmaceutique, soit des notes d\'entretien.')
     }
 
-    // Construction du message utilisateur
-    const userText = `Tranche d'âge: ${ageRange}\nNotes d'entretien: ${notes || 'Aucune note fournie.'}`
+    const systemPrompt = PPP_SYSTEM_PROMPT
+    const hasImageInput = typeof imageBase64 === "string" && imageBase64.trim() !== "";
+    const imageUrl = hasImageInput ? buildImageDataUrl(imageBase64) : null;
+    const userText = `Tranche d'âge: ${ageRange || "non précisée"}\nNotes d'entretien: ${notes || "Aucune note fournie."}`;
+    const hasImage = Boolean(imageUrl);
 
-    // Préparer les messages selon le type d'entrée
-    const messages: Array<{
-      role: string
-      content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>
-    }> = [
-      {
-        role: 'system',
-        content: PPP_SYSTEM_PROMPT,
-      },
-    ]
-
-    // Si on a une image, on utilise le format vision
-    if (imageBase64) {
-      const imageUrl = imageBase64.startsWith('data:')
-        ? imageBase64
-        : `data:image/png;base64,${imageBase64}`
-
+    const messages: any[] = [{ role: "system", content: systemPrompt }];
+    if (hasImage && imageUrl) {
       messages.push({
-        role: 'user',
+        role: "user",
         content: [
-          { type: 'text', text: userText },
-          { type: 'image_url', image_url: { url: imageUrl } },
-        ],
-      })
+          { type: "text", text: userText },
+          { type: "image_url", image_url: { url: imageUrl } }
+        ]
+      });
     } else {
-      // Sinon, juste le texte
-      messages.push({
-        role: 'user',
-        content: userText,
-      })
+      messages.push({ role: "user", content: userText });
     }
 
-    // Appel à l'API Mistral
-    const response = await fetch(MISTRAL_API_URL, {
+    const body = {
+      model: OPENAI_MODEL,
+      max_tokens: MAX_TOKENS,
+      response_format: { type: "json_object" },
+      messages
+    };
+
+    // Appel à l'API OpenAI
+    const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${MISTRAL_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: MISTRAL_MODEL,
-        messages,
-        max_tokens: 4096,
-        temperature: 0.1, // Température basse pour plus de cohérence médicale
-        response_format: { type: 'json_object' }, // Force JSON output
-      }),
+      body: JSON.stringify(body),
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Erreur API Mistral (${response.status}): ${errorText}`)
+      const errorText = await response.text();
+      throw new Error(`Appel OpenAI échoué (${response.status}): ${errorText}`);
     }
 
     const data = await response.json()
     const content = data.choices?.[0]?.message?.content
 
     if (!content) {
-      throw new Error('Réponse vide de l\'API Mistral')
+      throw new Error("Réponse OpenAI vide ou inattendue.");
     }
 
     // Parser le JSON
     const cleaned = sanitizeJson(content)
     if (!cleaned) {
-      console.error('Réponse Mistral non-JSON:', content.slice(0, 300))
-      throw new Error('Format de réponse invalide de l\'API Mistral')
+      throw new Error(`Impossible de parser le JSON retourné par OpenAI: contenu non JSON (${content?.slice?.(0, 160) || "vide"})`);
     }
 
     try {
       const parsed = JSON.parse(cleaned) as PPPGenerationResponse
 
-      // Validation de la structure
+      // Validation de la structure (basic check)
       if (!parsed.priorities || !Array.isArray(parsed.priorities)) {
         throw new Error('Structure de réponse invalide: manque le champ "priorities"')
       }

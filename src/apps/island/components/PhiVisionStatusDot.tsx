@@ -132,7 +132,6 @@ export function PhiVisionStatusDot({
               : { duration: 0.3 }
         }
         initial={false}
-        layoutId="phivision-status-dot"
       />
 
       {/* Glow effect with smooth transition */}
@@ -142,10 +141,10 @@ export function PhiVisionStatusDot({
           boxShadow:
             isComplete && showRipple
               ? [
-                  `0 0 8px ${color.glow}`,
-                  `0 0 24px ${color.glow}`,
-                  `0 0 12px ${color.glow}`,
-                ]
+                `0 0 8px ${color.glow}`,
+                `0 0 24px ${color.glow}`,
+                `0 0 12px ${color.glow}`,
+              ]
               : `0 0 8px ${color.glow}`,
         }}
         transition={

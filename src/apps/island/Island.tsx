@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutGrid, Scan, Sparkles, Camera, AlertCircle } from 'lucide-react'
+import { LayoutGrid, Scan, Sparkles, Camera, AlertCircle, ArrowRight } from 'lucide-react'
 import { AxoraLogo } from './components/AxoraLogo'
 import {
   PhiVisionStatusDot,
@@ -23,7 +23,6 @@ export function Island() {
     capturedImage: null,
     error: null,
   })
-  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
   const [showCaptureEffect, setShowCaptureEffect] = useState(false)
 
   useEffect(() => {
@@ -58,18 +57,23 @@ export function Island() {
       if (data.image) {
         console.log('[Island] Image captured! Showing success badge (analysis will be done by Hub)')
 
-        // Stocker l'image et passer en mode complete
-        // L'analyse se fera dans le Hub quand l'utilisateur cliquera sur le badge
-        setPhiVisionState((prev) => ({
-          ...prev,
-          capturedImage: data.image ?? null,
-          status: 'complete',
-          error: null,
-        }))
+        console.log('[Island] Image captured! Starting artificial processing delay')
 
-        // Declencher l'animation de succes
-        setShowSuccessAnimation(true)
-        setTimeout(() => setShowSuccessAnimation(false), 1500)
+        // Stocker l'image et passer en mode analyzing pour l'animation
+        // Le vrai résultat est déjà là, mais on simule le calcul
+        setPhiVisionState((prev) => ({ ...prev, status: 'analyzing' }))
+
+        // Simuler un "temps de process complex" (3 à 5 secondes)
+        const delay = Math.random() * 2000 + 3000
+
+        setTimeout(() => {
+          setPhiVisionState((prev) => ({
+            ...prev,
+            capturedImage: data.image ?? null,
+            status: 'complete',
+            error: null,
+          }))
+        }, delay)
       } else if (data.error) {
         setPhiVisionState((prev) => ({
           ...prev,
@@ -139,9 +143,23 @@ export function Island() {
   const statusLabels: Record<PhiVisionStatus, string> = {
     idle: 'Pret',
     capturing: 'Capture...',
-    analyzing: 'Analyse...',
+    analyzing: '', // Empty for animation
     complete: 'Termine',
     error: 'Erreur',
+  }
+
+  // Animation values based on state
+  const getWidth = () => {
+    if (status === 'complete') return 340
+    if (status === 'analyzing') return 200 // Custom width for processing animation
+    if (isHovered) return 280
+    return 120
+  }
+
+  const getHeight = () => {
+    if (status === 'complete') return 36
+    if (isHovered) return hasResult ? 150 : 130
+    return 36
   }
 
   return (
@@ -165,49 +183,162 @@ export function Island() {
           background: 'rgba(5, 5, 8, 0.85)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: status === 'analyzing' ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
           overflow: 'hidden',
           cursor: 'default',
+          position: 'relative', // Ensure we can position absolute children
         }}
         initial={false}
         animate={{
-          width: isHovered ? 280 : 120,
-          height: isHovered ? (hasResult ? 150 : 130) : 36,
-          borderRadius: isHovered ? 28 : 18,
+          width: getWidth(),
+          height: getHeight(),
+          borderRadius: isHovered ? 28 : (status === 'complete' ? 18 : 18),
         }}
       >
+        {/* Snake Border Animation for Analyzing State */}
+        <AnimatePresence>
+          {status === 'analyzing' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                pointerEvents: 'none',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: -20, // Make it larger to ensure rotation covers corners
+                  background: 'conic-gradient(from 0deg, transparent 80%, #6366f1 100%)', // Indigo tail
+                  animation: 'spin 2s linear infinite',
+                }}
+              />
+              {/* Inner mask to create the border effect */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 1.5, // Thickness of the border
+                  background: 'rgba(5, 5, 8, 0.95)', // Match island bg
+                  borderRadius: 'inherit',
+                }}
+              />
+              <style>{`
+                @keyframes spin {
+                  from { transform: rotate(0deg); }
+                  to { transform: rotate(360deg); }
+                }
+              `}</style>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence mode="wait">
-          {/* COMPACT STATE */}
-          {!isHovered && (
+          {/* COMPACT STATE (IDLE / PROCESSING) */}
+          {!isHovered && status !== 'complete' && (
             <motion.div
               key="compact"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex items-center justify-between px-3 h-full w-full"
+              className="flex items-center justify-between px-3 h-full w-full relative z-10"
             >
-              {/* Left: Mini Logo */}
-              <div className="flex items-center gap-2">
-                <AxoraLogo size={20} />
-              </div>
+              {/* STATUS ANALYZING: Custom Animation (No text/logo, just pure process) */}
+              {status === 'analyzing' ? (
+                <div className="flex-1 flex items-center justify-center gap-3 w-full h-full">
+                  {/* Abstract "Processing" Bars */}
+                  <div className="flex items-center gap-1 h-3">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="w-1 bg-indigo-400 rounded-full"
+                        initial={{ height: 4, opacity: 0.3 }}
+                        animate={{
+                          height: [4, 16, 4],
+                          opacity: [0.3, 1, 0.3],
+                          backgroundColor: ['#818cf8', '#a5b4fc', '#818cf8']
+                        }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: i * 0.1
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                /* Standard Compact View */
+                <>
+                  {/* Left: Mini Logo */}
+                  <div className="flex items-center gap-2">
+                    <AxoraLogo size={20} />
+                  </div>
 
-              {/* Right: PhiVision Status Dot */}
-              <div className="flex items-center gap-2">
-                <PhiVisionStatusDot status={status} showRipple={showSuccessAnimation} />
-              </div>
+                  {/* Right: PhiVision Status Dot */}
+                  <div className="flex items-center gap-2">
+                    <PhiVisionStatusDot status={status} showRipple={false} />
+                  </div>
+                </>
+              )}
             </motion.div>
           )}
 
+          {/* COMPACT COMPLETED STATE (NEW) */}
+          {status === 'complete' && (
+            <motion.button
+              key="compact-complete"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleResultBadgeClick} // Redirect on click
+              className="flex items-center gap-3 px-3 h-full w-full relative z-10 cursor-pointer hover:bg-white/5 transition-colors"
+            >
+              {/* Left: Standard Logo */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <AxoraLogo size={20} />
+              </div>
+
+              {/* Divider */}
+              <div className="h-3 w-[1px] bg-white/10" />
+
+              {/* Content: Result Text */}
+              <div className="flex-1 flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Sparkles size={12} className="text-white/60 flex-shrink-0" />
+                  <span className="text-xs font-medium text-white/90 tracking-wide whitespace-nowrap overflow-hidden text-ellipsis">
+                    Analyse terminée
+                  </span>
+                </div>
+
+                {/* Action Hint */}
+                <motion.div
+                  className="flex-shrink-0 ml-2"
+                  initial={{ opacity: 0, x: 5 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <div className="p-1 rounded-full bg-white/10">
+                    <ArrowRight size={10} className="text-white/60" />
+                  </div>
+                </motion.div>
+              </div>
+            </motion.button>
+          )}
+
           {/* EXPANDED STATE */}
-          {isHovered && (
+          {isHovered && status !== 'complete' && (
             <motion.div
               key="expanded"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ delay: 0.05 }}
-              className="flex flex-col p-4 w-full h-full"
+              className="flex flex-col p-4 w-full h-full relative z-10"
             >
               {/* Header: Title + Status */}
               <div className="flex items-center justify-between text-white/40 text-[10px] uppercase font-bold tracking-wider mb-4">
@@ -217,7 +348,7 @@ export function Island() {
                 <div className="flex items-center gap-1.5">
                   <PhiVisionStatusDot
                     status={status}
-                    showRipple={showSuccessAnimation}
+                    showRipple={false}
                     size="md"
                   />
                   <span
@@ -262,15 +393,14 @@ export function Island() {
                     whileTap={{ scale: isProcessing ? 1 : 0.98 }}
                     onClick={handlePhiVision}
                     disabled={isProcessing}
-                    className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border transition-colors p-2 ${
-                      status === 'analyzing'
-                        ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300'
-                        : status === 'capturing'
-                          ? 'bg-amber-500/20 border-amber-500/30 text-amber-300'
-                          : status === 'error'
-                            ? 'bg-red-500/20 border-red-500/30 text-red-300 cursor-pointer'
-                            : 'bg-white/5 border-white/5 text-white/80 hover:text-white'
-                    }`}
+                    className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border transition-colors p-2 ${status === 'analyzing'
+                      ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300'
+                      : status === 'capturing'
+                        ? 'bg-amber-500/20 border-amber-500/30 text-amber-300'
+                        : status === 'error'
+                          ? 'bg-red-500/20 border-red-500/30 text-red-300 cursor-pointer'
+                          : 'bg-white/5 border-white/5 text-white/80 hover:text-white'
+                      }`}
                   >
                     {status === 'analyzing' ? (
                       <motion.div
@@ -451,41 +581,7 @@ export function Island() {
       </AnimatePresence>
 
       {/* Animation de succes (ripple global) */}
-      <AnimatePresence>
-        {showSuccessAnimation && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              pointerEvents: 'none',
-              zIndex: 9998,
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'center',
-              paddingTop: '8px',
-            }}
-          >
-            {/* Ripple emanant de l'Island */}
-            <motion.div
-              style={{
-                width: 120,
-                height: 36,
-                borderRadius: 18,
-                border: `2px solid ${PHIVISION_COLORS.complete.bg}`,
-              }}
-              initial={{ scale: 1, opacity: 0.8 }}
-              animate={{ scale: 8, opacity: 0 }}
-              transition={{ duration: 1, ease: 'easeOut' }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Animation de succes (ripple global) - SUPPRIMÉ */}
     </div>
   )
 }
