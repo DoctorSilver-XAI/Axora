@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- CSP adaptée pour le mode web (moins restrictive pour le dev) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://localhost:* https://localhost:*; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' http://localhost:* https://*.supabase.co wss://*.supabase.co https://api.mistral.ai https://api.openai.com" />
+    <title>Axora Web - Hub</title>
+    <link rel="icon" type="image/svg+xml" href="/src/assets/favicon.svg" />
+    <style>
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #0a0a0f;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        overflow: hidden;
+      }
+
+      /* Badge mode web */
+      .web-mode-badge {
+        position: fixed;
+        bottom: 12px;
+        right: 12px;
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        z-index: 9999;
+        opacity: 0.8;
+        pointer-events: none;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #18181b;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #3f3f46;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #52525b;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div class="web-mode-badge">🌐 Mode Web</div>
+    <script type="module" src="/src/apps/hub/main.web.tsx"></script>
+  </body>
+</html>
