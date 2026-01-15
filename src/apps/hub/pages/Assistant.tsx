@@ -1,18 +1,38 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Plus, Settings, User, Bot, Loader2, ChevronDown, X, AlertCircle, Trash2, PanelLeft } from 'lucide-react'
+import { Send, Plus, Settings, User, Bot, Loader2, X, AlertCircle, Trash2, PanelLeft, MessageSquare, Sparkles } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
-import { Message, AIProvider, AIConfig, Conversation, StorageType } from '@features/assistant/types'
+import { Message, AIConfig, Conversation, StorageType } from '@features/assistant/types'
 import { sendMessage } from '@features/assistant/services/AIService'
 import { useAIPreference } from '@features/assistant/hooks/useAIPreference'
 import { getConversationService, UnifiedConversationService } from '@features/assistant/services/ConversationServiceFactory'
 import { NewConversationModal } from '@features/assistant/components/NewConversationModal'
 import { StorageBadge } from '@features/assistant/components/StorageBadge'
+import { PROVIDER_LABELS, getModelDisplayName } from '@features/assistant/constants/providers'
 
-export const PROVIDER_LABELS: Record<AIProvider, string> = {
-  mistral: 'Mistral AI',
-  openai: 'OpenAI',
-  local: 'Local (Ollama)',
+// Animation variants pour effet premium
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.1,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 400,
+      damping: 30,
+    },
+  },
 }
 
 export function Assistant() {
@@ -256,91 +276,126 @@ export function Assistant() {
         {isSidebarOpen && (
           <motion.div
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 288, opacity: 1 }}
+            animate={{ width: 320, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="bg-surface-50 border-r border-white/5 flex flex-col flex-shrink-0 relative"
+            className="bg-surface-50/80 backdrop-blur-xl border-r border-white/5 flex flex-col flex-shrink-0 relative"
           >
-            {/* Collapse Button */}
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="absolute top-1/2 -right-3 w-6 h-12 bg-surface-50 border border-white/5 border-l-0 rounded-r-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-colors z-50 translate-y-[-50%] opacity-0 hover:opacity-100 group-hover:opacity-100"
-              style={{ opacity: 0 }} // Hidden by default, cleaner
-            >
-              <ChevronDown className="w-4 h-4 rotate-90" />
-            </button>
-
-            <div className="p-4 border-b border-white/5 flex items-center gap-2">
-              <button
-                onClick={handleNewConversation}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-axora-500 text-white font-medium hover:bg-axora-600 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Nouvelle conversation
-              </button>
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-2.5 rounded-xl bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-colors"
-                title="Masquer la barre latérale"
-              >
-                <PanelLeft className="w-4 h-4" />
-              </button>
+            {/* Header avec nouveau bouton */}
+            <div className="p-4 border-b border-white/5">
+              <div className="flex items-center gap-2">
+                <motion.button
+                  onClick={handleNewConversation}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-axora-500 to-violet-500 text-white font-medium hover:from-axora-600 hover:to-violet-600 transition-all shadow-lg shadow-axora-500/20"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  <Plus className="w-4 h-4" />
+                  Nouvelle conversation
+                </motion.button>
+                <motion.button
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="p-3 rounded-xl bg-surface-100/50 border border-white/5 text-white/40 hover:bg-surface-100/70 hover:text-white transition-all"
+                  title="Masquer la barre latérale"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <PanelLeft className="w-4 h-4" />
+                </motion.button>
+              </div>
             </div>
 
-            <div className="flex-1 overflow-auto p-2 space-y-1">
+            {/* Liste des conversations */}
+            <div className="flex-1 overflow-auto p-3 scrollbar-thin">
               {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-5 h-5 text-white/40 animate-spin" />
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <Loader2 className="w-6 h-6 text-axora-400 animate-spin" />
+                  <span className="text-sm text-white/40">Chargement...</span>
                 </div>
               ) : conversations.length === 0 ? (
-                <p className="text-sm text-white/40 text-center py-8 px-4">
-                  Aucune conversation. Cliquez sur "Nouvelle conversation" pour commencer.
-                </p>
-              ) : (
-                conversations.map((conv) => (
-                  <div
-                    key={conv.id}
-                    onClick={() => handleSelectConversation(conv)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSelectConversation(conv)}
-                    className={cn(
-                      'w-full p-3 rounded-xl text-left transition-colors group cursor-pointer',
-                      'hover:bg-white/5',
-                      currentConversation?.id === conv.id && 'bg-white/10'
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-white truncate flex-1">
-                            {conv.title}
-                          </p>
-                          <StorageBadge storageType={conv.storageType} />
-                        </div>
-                        <p className="text-xs text-white/40 mt-1">
-                          {conv.createdAt.toLocaleDateString('fr-FR')} - {PROVIDER_LABELS[conv.provider]}
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => handleDeleteConversation(conv.id, e)}
-                        className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-400 text-white/40 transition-all"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                <div className="flex flex-col items-center justify-center py-12 px-4">
+                  <div className="w-12 h-12 rounded-xl bg-surface-100/50 border border-white/5 flex items-center justify-center mb-4">
+                    <MessageSquare className="w-5 h-5 text-white/30" />
                   </div>
-                ))
+                  <p className="text-sm text-white/40 text-center">
+                    Aucune conversation
+                  </p>
+                  <p className="text-xs text-white/30 text-center mt-1">
+                    Cliquez sur le bouton ci-dessus pour commencer
+                  </p>
+                </div>
+              ) : (
+                <motion.div
+                  className="space-y-2"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {conversations.map((conv) => (
+                    <motion.div
+                      key={conv.id}
+                      variants={itemVariants}
+                      onClick={() => handleSelectConversation(conv)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSelectConversation(conv)}
+                      className={cn(
+                        'w-full p-3.5 rounded-xl text-left transition-all duration-200 group cursor-pointer relative overflow-hidden',
+                        currentConversation?.id === conv.id
+                          ? 'bg-axora-500/10 border border-axora-500/20'
+                          : 'bg-surface-100/30 border border-white/5 hover:bg-surface-100/50 hover:border-white/10'
+                      )}
+                    >
+                      {/* Indicateur actif */}
+                      {currentConversation?.id === conv.id && (
+                        <motion.div
+                          layoutId="conversation-indicator"
+                          className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-axora-400"
+                          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                        />
+                      )}
+
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0 pl-2">
+                          <div className="flex items-center gap-2">
+                            <p className={cn(
+                              "text-sm font-medium truncate flex-1 transition-colors",
+                              currentConversation?.id === conv.id ? "text-white" : "text-white/80"
+                            )}>
+                              {conv.title}
+                            </p>
+                            <StorageBadge storageType={conv.storageType} />
+                          </div>
+                          <p className="text-[11px] text-white/40 mt-1.5 flex items-center gap-1.5">
+                            <span>{conv.createdAt.toLocaleDateString('fr-FR')}</span>
+                            <span className="text-white/20">•</span>
+                            <span>{PROVIDER_LABELS[conv.provider]}</span>
+                          </p>
+                        </div>
+                        <motion.button
+                          onClick={(e) => handleDeleteConversation(conv.id, e)}
+                          className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
               )}
             </div>
 
-            {/* Provider info (read-only) */}
+            {/* Provider info (premium style) */}
             <div className="p-4 border-t border-white/5">
-              <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/5 text-sm text-white/80">
-                <Settings className="w-4 h-4 text-white/60" />
-                <div className="text-left">
-                  <p className="font-medium">{PROVIDER_LABELS[selectedProvider]}</p>
-                  <p className="text-xs text-white/50">{selectedModel}</p>
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-100/30 border border-white/5">
+                <div className="w-8 h-8 rounded-lg bg-axora-500/10 flex items-center justify-center">
+                  <Settings className="w-4 h-4 text-axora-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white/90">{PROVIDER_LABELS[selectedProvider]}</p>
+                  <p className="text-[11px] text-white/40 truncate">{selectedModel}</p>
                 </div>
               </div>
             </div>
@@ -349,7 +404,7 @@ export function Assistant() {
       </AnimatePresence>
 
       {/* Chat area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {currentConversation ? (
           <>
             {/* Error banner */}
@@ -359,26 +414,28 @@ export function Assistant() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="bg-red-500/10 border-b border-red-500/20"
+                  className="bg-red-500/10 border-b border-red-500/20 backdrop-blur-xl"
                 >
                   <div className="px-6 py-3 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2 text-red-400">
                       <AlertCircle className="w-4 h-4" />
-                      <span className="text-sm">{error}</span>
+                      <span className="text-sm font-medium">{error}</span>
                     </div>
-                    <button
+                    <motion.button
                       onClick={() => setError(null)}
-                      className="p-1 rounded hover:bg-white/5 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                     >
                       <X className="w-4 h-4 text-white/60" />
-                    </button>
+                    </motion.button>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
             {/* Messages */}
-            <div className="flex-1 overflow-auto p-6 space-y-4">
+            <div className="flex-1 overflow-auto p-6 space-y-4 scrollbar-thin">
               <AnimatePresence mode="popLayout">
                 {currentConversation.messages.map((message) => (
                   <MessageBubble key={message.id} message={message} />
@@ -390,21 +447,21 @@ export function Assistant() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-start gap-3"
+                  className="flex items-start gap-4"
                 >
-                  <div className="w-8 h-8 rounded-full bg-axora-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-axora-500 to-violet-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-axora-500/20">
                     <Bot className="w-4 h-4 text-white" />
                   </div>
-                  <div className="max-w-[70%] px-4 py-3 rounded-2xl bg-white/5">
+                  <div className="max-w-[75%] px-5 py-4 rounded-2xl bg-surface-100/50 border border-white/5 backdrop-blur-xl">
                     {streamingContent ? (
-                      <p className="text-sm text-white/90 whitespace-pre-wrap">
+                      <p className="text-sm text-white/90 whitespace-pre-wrap leading-relaxed">
                         {streamingContent}
-                        <span className="inline-block w-1.5 h-4 bg-axora-400 ml-0.5 animate-pulse" />
+                        <span className="inline-block w-1.5 h-4 bg-axora-400 ml-1 animate-pulse rounded-sm" />
                       </p>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 text-white/60 animate-spin" />
-                        <span className="text-white/60 text-sm">Réflexion...</span>
+                      <div className="flex items-center gap-3">
+                        <Loader2 className="w-4 h-4 text-axora-400 animate-spin" />
+                        <span className="text-white/60 text-sm">Réflexion en cours...</span>
                       </div>
                     )}
                   </div>
@@ -414,57 +471,88 @@ export function Assistant() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="p-4 border-t border-white/5">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                  placeholder="Posez votre question..."
-                  disabled={isStreaming}
-                  className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-axora-500/50 focus:outline-none transition-colors disabled:opacity-50"
-                />
-                <button
+            {/* Input premium */}
+            <div className="p-4 border-t border-white/5 bg-surface-50/30 backdrop-blur-xl">
+              <div className="flex gap-3 items-end">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    placeholder="Posez votre question..."
+                    disabled={isStreaming}
+                    className="w-full px-5 py-3.5 rounded-xl bg-surface-100/50 border border-white/5 text-white placeholder-white/30 focus:bg-surface-100/70 focus:border-axora-500/30 focus:outline-none transition-all duration-200 disabled:opacity-50"
+                  />
+                </div>
+                <motion.button
                   onClick={handleSendMessage}
                   disabled={!input.trim() || isStreaming}
                   className={cn(
-                    'px-4 py-3 rounded-xl font-medium transition-all',
-                    'flex items-center gap-2',
+                    'p-3.5 rounded-xl font-medium transition-all duration-200',
+                    'flex items-center justify-center',
                     input.trim() && !isStreaming
-                      ? 'bg-axora-500 text-white hover:bg-axora-600'
-                      : 'bg-white/5 text-white/40 cursor-not-allowed'
+                      ? 'bg-gradient-to-r from-axora-500 to-violet-500 text-white shadow-lg shadow-axora-500/25 hover:from-axora-600 hover:to-violet-600'
+                      : 'bg-surface-100/50 border border-white/5 text-white/30 cursor-not-allowed'
                   )}
+                  whileHover={input.trim() && !isStreaming ? { scale: 1.05 } : {}}
+                  whileTap={input.trim() && !isStreaming ? { scale: 0.95 } : {}}
                 >
-                  <Send className="w-4 h-4" />
-                </button>
+                  <Send className="w-5 h-5" />
+                </motion.button>
               </div>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-2xl bg-axora-500/20 flex items-center justify-center mx-auto mb-4">
-                <Bot className="w-8 h-8 text-axora-400" />
-              </div>
-              <h2 className="text-xl font-semibold text-white mb-2">
+          /* État vide premium */
+          <motion.div
+            className="flex-1 flex items-center justify-center p-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="text-center max-w-lg">
+              {/* Icône premium avec glow */}
+              <motion.div
+                className="relative w-20 h-20 mx-auto mb-6"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-axora-500 to-violet-500 opacity-20 blur-xl" />
+                <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-axora-500/20 to-violet-500/20 border border-axora-500/30 flex items-center justify-center">
+                  <Bot className="w-9 h-9 text-axora-400" />
+                </div>
+              </motion.div>
+
+              <h2 className="text-2xl font-semibold text-white mb-3 tracking-tight">
                 Assistant IA Axora
               </h2>
-              <p className="text-white/60 max-w-md">
+              <p className="text-white/50 leading-relaxed">
                 Posez vos questions sur les médicaments, interactions, posologies et bien plus.
               </p>
-              <p className="text-sm text-white/40 mt-2">
-                Provider actuel : {PROVIDER_LABELS[selectedProvider]} ({selectedModel})
-              </p>
-              <button
+
+              {/* Badge provider */}
+              <div
+                className="flex items-center justify-center gap-2 mt-4 px-4 py-2 rounded-full bg-surface-100/50 border border-white/5 mx-auto w-fit"
+                title={`API: ${selectedModel}`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-axora-400" />
+                <span className="text-xs font-medium text-white/60">
+                  {getModelDisplayName(selectedProvider, selectedModel)}
+                </span>
+              </div>
+
+              <motion.button
                 onClick={handleNewConversation}
-                className="mt-6 px-6 py-3 rounded-xl bg-axora-500 text-white font-medium hover:bg-axora-600 transition-colors"
+                className="mt-8 px-8 py-3.5 rounded-xl bg-gradient-to-r from-axora-500 to-violet-500 text-white font-medium hover:from-axora-600 hover:to-violet-600 transition-all shadow-lg shadow-axora-500/25"
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
               >
                 Démarrer une conversation
-              </button>
+              </motion.button>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
 
@@ -492,12 +580,15 @@ function MessageBubble({ message }: MessageBubbleProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className={cn('flex items-start gap-3', isUser && 'flex-row-reverse')}
+      className={cn('flex items-start gap-4', isUser && 'flex-row-reverse')}
     >
+      {/* Avatar premium */}
       <div
         className={cn(
-          'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-          isUser ? 'bg-cyan-500' : 'bg-axora-500'
+          'w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg',
+          isUser
+            ? 'bg-gradient-to-br from-cyan-500 to-teal-500 shadow-cyan-500/20'
+            : 'bg-gradient-to-br from-axora-500 to-violet-500 shadow-axora-500/20'
         )}
       >
         {isUser ? (
@@ -506,16 +597,23 @@ function MessageBubble({ message }: MessageBubbleProps) {
           <Bot className="w-4 h-4 text-white" />
         )}
       </div>
+
+      {/* Message bubble premium */}
       <div
         className={cn(
-          'max-w-[70%] px-4 py-3 rounded-2xl',
+          'max-w-[75%] px-5 py-4 rounded-2xl backdrop-blur-xl transition-all duration-200',
           isUser
-            ? 'bg-cyan-500/20 text-white'
-            : 'bg-white/5 text-white/90'
+            ? 'bg-cyan-500/15 border border-cyan-500/20'
+            : 'bg-surface-100/50 border border-white/5'
         )}
       >
-        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-        <p className="text-[10px] text-white/40 mt-2">
+        <p className="text-sm whitespace-pre-wrap leading-relaxed text-white/90">
+          {message.content}
+        </p>
+        <p className={cn(
+          "text-[10px] mt-2.5 flex items-center gap-1",
+          isUser ? "text-cyan-400/60" : "text-white/30"
+        )}>
           {message.timestamp.toLocaleTimeString('fr-FR', {
             hour: '2-digit',
             minute: '2-digit',

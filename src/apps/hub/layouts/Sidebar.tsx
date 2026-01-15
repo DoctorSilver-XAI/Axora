@@ -66,34 +66,68 @@ function NavItem({ path, icon: Icon, label }: NavItemProps) {
       to={path}
       className={({ isActive }) =>
         cn(
-          'relative flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 group overflow-hidden',
+          'relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group overflow-hidden',
           'text-sm font-medium',
           isActive
-            ? 'text-white shadow-lg shadow-axora-500/10'
-            : 'text-white/50 hover:text-white hover:bg-white/5'
+            ? 'text-white'
+            : 'text-white/50 hover:text-white/90 hover:bg-white/[0.03]'
         )
       }
     >
       {({ isActive }) => (
         <>
+          {/* Active background with subtle gradient */}
           {isActive && (
             <motion.div
               layoutId="nav-bg"
-              className="absolute inset-0 bg-gradient-to-r from-axora-600/20 to-transparent border-l-2 border-axora-500"
+              className="absolute inset-0 bg-gradient-to-r from-axora-500/15 via-axora-500/5 to-transparent"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
             />
           )}
 
-          <Icon className={cn("relative z-10 w-5 h-5 transition-transform duration-300 group-hover:scale-110", isActive ? "text-axora-400" : "text-current")} />
+          {/* Active left border accent */}
+          {isActive && (
+            <motion.div
+              layoutId="nav-border"
+              className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-axora-400"
+              initial={{ opacity: 0, scaleY: 0.5 }}
+              animate={{ opacity: 1, scaleY: 1 }}
+              exit={{ opacity: 0, scaleY: 0.5 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+            />
+          )}
+
+          {/* Icon with subtle animation */}
+          <div className="relative z-10">
+            <Icon
+              className={cn(
+                "w-[18px] h-[18px] transition-all duration-200",
+                isActive ? "text-axora-400" : "text-current group-hover:scale-105"
+              )}
+            />
+            {isActive && (
+              <div className="absolute inset-0 bg-axora-400/30 blur-md -z-10" />
+            )}
+          </div>
+
+          {/* Label */}
           <span className="relative z-10 tracking-wide">{label}</span>
 
+          {/* Active indicator dot */}
           {isActive && (
             <motion.div
               layoutId="nav-glow"
-              className="absolute right-3 w-1.5 h-1.5 rounded-full bg-axora-400 shadow-[0_0_10px_rgba(99,102,241,0.8)]"
-            />
+              className="absolute right-3 w-1 h-1 rounded-full bg-axora-400"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            >
+              <div className="absolute inset-0 bg-axora-400 rounded-full animate-ping opacity-75" />
+            </motion.div>
           )}
         </>
       )}

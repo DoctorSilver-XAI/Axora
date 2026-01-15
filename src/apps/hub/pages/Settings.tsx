@@ -12,7 +12,12 @@ import {
   Bot
 } from 'lucide-react'
 import { useAIPreference } from '@features/assistant/hooks/useAIPreference'
-import { PROVIDER_LABELS } from './Assistant'
+import {
+  PROVIDER_LABELS,
+  PROVIDER_DESCRIPTIONS,
+  getModelTierLabel,
+  MODEL_DESCRIPTIONS,
+} from '@features/assistant/constants/providers'
 import { cn } from '@shared/utils/cn'
 
 type SettingsSection = 'account' | 'api' | 'ai' | 'appearance' | 'shortcuts' | 'data' | 'notifications'
@@ -334,9 +339,7 @@ function AISettings() {
               >
                 <div className="font-semibold">{PROVIDER_LABELS[p]}</div>
                 <div className="text-xs opacity-70 mt-1 font-normal">
-                  {p === 'mistral' && 'Recommandé pour Axora'}
-                  {p === 'openai' && 'Performance maximale'}
-                  {p === 'local' && 'Confidentialité totale'}
+                  {PROVIDER_DESCRIPTIONS[p]}
                 </div>
               </button>
             ))}
@@ -350,6 +353,7 @@ function AISettings() {
               <button
                 key={m}
                 onClick={() => setModel(m)}
+                title={`API: ${m}${MODEL_DESCRIPTIONS[m] ? `\n${MODEL_DESCRIPTIONS[m]}` : ''}`}
                 className={cn(
                   'px-4 py-2.5 rounded-lg text-sm text-left transition-colors flex items-center justify-between',
                   model === m
@@ -357,7 +361,10 @@ function AISettings() {
                     : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
                 )}
               >
-                <span>{m}</span>
+                <div>
+                  <span className="font-medium">{getModelTierLabel(m)}</span>
+                  <span className="text-white/40 ml-2 text-xs">({m})</span>
+                </div>
                 {model === m && (
                   <div className="w-2 h-2 rounded-full bg-axora-400" />
                 )}

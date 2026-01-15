@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Cloud, HardDrive, Lock, Globe } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
 import { StorageType, AIProvider } from '../types'
+import { getModelDisplayName } from '../constants/providers'
 
 interface NewConversationModalProps {
   isOpen: boolean
@@ -10,12 +11,6 @@ interface NewConversationModalProps {
   onConfirm: (storageType: StorageType) => void
   selectedProvider: AIProvider
   selectedModel: string
-}
-
-const PROVIDER_LABELS: Record<AIProvider, string> = {
-  mistral: 'Mistral AI',
-  openai: 'OpenAI',
-  local: 'Local (Ollama)',
 }
 
 export function NewConversationModal({
@@ -147,9 +142,11 @@ export function NewConversationModal({
                 </div>
 
                 {/* Provider info */}
-                <div className="p-3 rounded-lg bg-white/5 text-sm text-white/50">
-                  Provider : <span className="text-white/80">{PROVIDER_LABELS[selectedProvider]}</span>{' '}
-                  - Modele : <span className="text-white/80">{selectedModel}</span>
+                <div
+                  className="p-3 rounded-lg bg-white/5 text-sm text-white/50"
+                  title={`API: ${selectedModel}`}
+                >
+                  <span className="text-white/80">{getModelDisplayName(selectedProvider, selectedModel)}</span>
                 </div>
               </div>
 

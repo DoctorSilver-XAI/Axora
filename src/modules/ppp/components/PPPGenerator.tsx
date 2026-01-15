@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FileText, Loader2, Printer, Eye, EyeOff, Eraser, FileCheck, Monitor, Upload, Image as ImageIcon, X, Trash2, Check, Mic } from 'lucide-react'
+import { FileText, Loader2, Printer, Eye, EyeOff, Eraser, FileCheck, Monitor, Upload, Trash2, Check, Mic, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@shared/utils/cn'
 import { PPPData, AgeRange, PPPGenerationRequest } from '../types'
@@ -20,6 +20,31 @@ const PHARMACISTS = [
   'Marjorie Lahaie',
   'Pierre Gil',
 ]
+
+// Animation variants pour effet stagger premium
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.1,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: 'spring',
+      stiffness: 400,
+      damping: 30,
+    },
+  },
+}
 
 export function PPPGenerator() {
   // Form state
@@ -298,30 +323,49 @@ export function PPPGenerator() {
   }
 
   return (
-    <div className="flex flex-col gap-6 -mx-6 h-full">
-      {/* Header */}
-      <div className="px-6">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-axora-500/20 flex items-center justify-center">
-            <FileText className="w-5 h-5 text-axora-400" />
-          </div>
+    <motion.div
+      className="flex flex-col gap-6 -mx-6 h-full"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Header Premium */}
+      <motion.div variants={itemVariants} className="px-6">
+        <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-white">Plan Personnalisé de Prévention</h2>
-            <p className="text-sm text-white/60">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-xl bg-emerald-500/10">
+                <FileText className="w-5 h-5 text-emerald-400" />
+              </div>
+              <span className="text-xs font-medium uppercase tracking-wider text-white/40">
+                Module Prévention
+              </span>
+            </div>
+            <h1 className="text-2xl font-semibold text-white tracking-tight">
+              Plan Personnalisé de Prévention
+            </h1>
+            <p className="text-white/50 mt-1.5 text-[15px]">
               Générez un bilan de prévention personnalisé pour vos patients
             </p>
           </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-100/50 border border-white/5 backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-xs font-medium text-white/60">PhiGenix Rx</span>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Form */}
-      <div className="flex-1 overflow-auto px-6">
-        <div className="max-w-4xl space-y-6">
+      <div className="flex-1 overflow-auto px-6 scrollbar-thin">
+        <motion.div
+          className="max-w-4xl space-y-6"
+          variants={containerVariants}
+        >
           {/* Patient & Pharmacist Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">
-                Nom du patient *
+          <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-white/70">
+                Nom du patient <span className="text-emerald-400">*</span>
               </label>
               <input
                 id="input-patientName"
@@ -329,134 +373,167 @@ export function PPPGenerator() {
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
                 placeholder="Nom et prénom"
-                className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-axora-500/50 focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-surface-100/30 border border-white/5 text-white placeholder-white/30 focus:bg-surface-100/50 focus:border-axora-500/30 focus:outline-none transition-all duration-200"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">
-                Pharmacien *
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-white/70">
+                Pharmacien <span className="text-emerald-400">*</span>
               </label>
               <select
                 id="select-pharmacist"
                 value={pharmacistName}
                 onChange={(e) => setPharmacistName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white focus:border-axora-500/50 focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-surface-100/30 border border-white/5 text-white focus:bg-surface-100/50 focus:border-axora-500/30 focus:outline-none transition-all duration-200 cursor-pointer"
               >
-                <option value="">Sélectionner...</option>
+                <option value="" className="bg-surface-100">Sélectionner...</option>
                 {PHARMACISTS.map((name) => (
-                  <option key={name} value={name}>
+                  <option key={name} value={name} className="bg-surface-100">
                     {name}
                   </option>
                 ))}
               </select>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Age Range */}
-          <div>
-            <label className="block text-sm font-medium text-white/80 mb-2">
+          {/* Age Range - Premium Buttons */}
+          <motion.div variants={itemVariants} className="space-y-3">
+            <label className="block text-sm font-medium text-white/70">
               Tranche d'âge
             </label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-3">
               {AGE_RANGES.map((range) => (
-                <button
+                <motion.button
                   key={range.value}
                   onClick={() => setAgeRange(range.value)}
                   className={cn(
-                    'px-4 py-2.5 rounded-lg border text-sm font-medium transition-all',
+                    'relative px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 overflow-hidden',
                     ageRange === range.value
-                      ? 'bg-axora-500 border-axora-500 text-white'
-                      : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'
+                      ? 'text-white'
+                      : 'bg-surface-100/30 border border-white/5 text-white/50 hover:text-white/80 hover:bg-surface-100/50 hover:border-white/10'
                   )}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  {range.label}
-                </button>
+                  {ageRange === range.value && (
+                    <motion.div
+                      layoutId="age-range-bg"
+                      className="absolute inset-0 bg-gradient-to-r from-emerald-500/80 to-teal-500/80 rounded-xl"
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    />
+                  )}
+                  <span className="relative z-10">{range.label}</span>
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Image Source Selection (Screen Capture or File Upload) */}
-          <div>
-            <label className="block text-sm font-medium text-white/80 mb-2">
+          <motion.div variants={itemVariants} className="space-y-3">
+            <label className="block text-sm font-medium text-white/70">
               Dossier pharmaceutique / Contexte médical
             </label>
 
             {imageBase64 ? (
-              <div className="relative rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col items-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="relative rounded-2xl border border-white/10 bg-surface-100/30 backdrop-blur-xl p-6 flex flex-col items-center"
+              >
                 <img
                   src={imageBase64}
                   alt="Capture"
-                  className="h-48 object-contain rounded-lg border border-white/10 mb-4"
+                  className="h-48 object-contain rounded-xl border border-white/10 mb-5 shadow-lg"
                 />
 
                 {isImageValidated ? (
-                  <div className="flex flex-col items-center gap-3 w-full">
-                    <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium">
-                      <FileCheck className="w-5 h-5" />
-                      Document prêt pour l'analyse
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-col items-center gap-4 w-full"
+                  >
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                      <FileCheck className="w-4 h-4 text-emerald-400" />
+                      <span className="text-emerald-400 text-sm font-medium">Document prêt pour l'analyse</span>
                     </div>
-                    <button
+                    <motion.button
                       onClick={() => {
                         setImageBase64('')
                         setIsImageValidated(false)
                       }}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all text-xs font-medium"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all text-xs font-medium"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="w-3.5 h-3.5" />
                       Supprimer l'image
-                    </button>
-                  </div>
+                    </motion.button>
+                  </motion.div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <button
+                    <motion.button
                       onClick={() => {
                         setImageBase64('')
                         setIsImageValidated(false)
                       }}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all text-sm font-medium"
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-surface-100/50 border border-white/10 text-white/70 hover:bg-surface-100/70 hover:text-white transition-all text-sm font-medium"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       <Trash2 className="w-4 h-4" />
                       Recommencer
-                    </button>
+                    </motion.button>
 
-                    <button
+                    <motion.button
                       onClick={() => setIsImageValidated(true)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-all text-sm font-medium shadow-lg shadow-emerald-500/20"
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 transition-all text-sm font-medium shadow-lg shadow-emerald-500/25"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       <Check className="w-4 h-4" />
                       Valider l'image
-                    </button>
+                    </motion.button>
                   </div>
                 )}
-              </div>
+              </motion.div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 {/* Option 1: Screen Capture */}
-                <button
+                <motion.button
                   onClick={handleScreenCapture}
-                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-dashed border-white/10 bg-white/5 hover:border-axora-500/50 hover:bg-axora-500/5 transition-all group"
+                  className="group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-white/5 bg-surface-100/30 backdrop-blur-xl hover:bg-surface-100/50 hover:border-axora-500/30 transition-all duration-300 overflow-hidden"
+                  whileHover={{ scale: 1.01, y: -2 }}
+                  whileTap={{ scale: 0.99 }}
                 >
-                  <div className="w-12 h-12 rounded-full bg-surface-200/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  {/* Hover gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-axora-500/0 to-violet-500/0 group-hover:from-axora-500/10 group-hover:to-violet-500/5 transition-all duration-300" />
+
+                  <div className="relative w-14 h-14 rounded-xl bg-axora-500/10 border border-axora-500/20 flex items-center justify-center group-hover:scale-110 group-hover:border-axora-500/40 transition-all duration-300">
                     <Monitor className="w-6 h-6 text-axora-400" />
                   </div>
-                  <div className="text-center">
-                    <span className="block font-medium text-white mb-1">Capturer l'écran</span>
-                    <span className="text-xs text-white/50">Via votre LGO ou une autre fenêtre</span>
+                  <div className="relative text-center">
+                    <span className="block font-semibold text-white mb-1">Capturer l'écran</span>
+                    <span className="text-xs text-white/40 group-hover:text-white/60 transition-colors">Via votre LGO ou autre fenêtre</span>
                   </div>
-                </button>
+                </motion.button>
 
                 {/* Option 2: File Upload */}
-                <button
+                <motion.button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-dashed border-white/10 bg-white/5 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all group"
+                  className="group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-white/5 bg-surface-100/30 backdrop-blur-xl hover:bg-surface-100/50 hover:border-cyan-500/30 transition-all duration-300 overflow-hidden"
+                  whileHover={{ scale: 1.01, y: -2 }}
+                  whileTap={{ scale: 0.99 }}
                 >
-                  <div className="w-12 h-12 rounded-full bg-surface-200/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  {/* Hover gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-teal-500/0 group-hover:from-cyan-500/10 group-hover:to-teal-500/5 transition-all duration-300" />
+
+                  <div className="relative w-14 h-14 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center group-hover:scale-110 group-hover:border-cyan-500/40 transition-all duration-300">
                     <Upload className="w-6 h-6 text-cyan-400" />
                   </div>
-                  <div className="text-center">
-                    <span className="block font-medium text-white mb-1">Importer un fichier</span>
-                    <span className="text-xs text-white/50">Images (JPEG, PNG)</span>
+                  <div className="relative text-center">
+                    <span className="block font-semibold text-white mb-1">Importer un fichier</span>
+                    <span className="text-xs text-white/40 group-hover:text-white/60 transition-colors">Images (JPEG, PNG)</span>
                   </div>
                   <input
                     ref={fileInputRef}
@@ -465,43 +542,48 @@ export function PPPGenerator() {
                     className="hidden"
                     onChange={handleFileUpload}
                   />
-                </button>
+                </motion.button>
               </div>
             )}
-            <p className="mt-2 text-xs text-white/40">
-              💡 Astuce : Capturez l'historique médicamenteux de votre logiciel (LGO) pour permettre à l'IA d'analyser le dossier complet.
+            <p className="text-xs text-white/40 flex items-center gap-1.5">
+              <span className="text-amber-400">💡</span>
+              <span>Capturez l'historique médicamenteux de votre LGO pour une analyse complète par l'IA.</span>
             </p>
-          </div>
+          </motion.div>
 
           {/* Thématiques suggérées */}
-          <ThematiquesSuggestions
-            ageRange={ageRange}
-            onInsert={handleToggleThematique}
-            insertedTags={insertedTags}
-          />
+          <motion.div variants={itemVariants}>
+            <ThematiquesSuggestions
+              ageRange={ageRange}
+              onInsert={handleToggleThematique}
+              insertedTags={insertedTags}
+            />
+          </motion.div>
 
           {/* Notes */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-white/80">
+          <motion.div variants={itemVariants} className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-white/70">
                 Notes de l'entretien
               </label>
-              <button
+              <motion.button
                 onClick={() => setShowAudioModal(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 transition-all text-sm font-medium"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/30 transition-all text-sm font-medium"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <Mic className="w-4 h-4" />
                 Importer un enregistrement
-              </button>
+              </motion.button>
             </div>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={6}
               placeholder="Décrivez le déroulé du bilan : sujets abordés, conseils donnés, produits vendus..."
-              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:border-axora-500/50 focus:outline-none resize-none"
+              className="w-full px-4 py-4 rounded-xl bg-surface-100/30 border border-white/5 text-white placeholder-white/30 focus:bg-surface-100/50 focus:border-axora-500/30 focus:outline-none resize-none transition-all duration-200 scrollbar-thin"
             />
-          </div>
+          </motion.div>
 
           {/* Error */}
           <AnimatePresence>
@@ -510,9 +592,9 @@ export function PPPGenerator() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
+                className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 backdrop-blur-xl"
               >
-                {error}
+                <p className="text-red-400 text-sm font-medium">{error}</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -524,15 +606,18 @@ export function PPPGenerator() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="space-y-2"
+                className="space-y-3 p-4 rounded-xl bg-surface-100/30 border border-white/5 backdrop-blur-xl"
               >
-                <div className="flex justify-between text-xs text-white/60 font-medium">
-                  <span>Analyse en cours avec l'IA...</span>
-                  <span>{Math.round(progress)}%</span>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 text-axora-400 animate-spin" />
+                    <span className="text-sm font-medium text-white/80">Analyse en cours avec l'IA...</span>
+                  </div>
+                  <span className="text-sm font-semibold text-axora-400">{Math.round(progress)}%</span>
                 </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-2 bg-surface-200/50 rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full bg-gradient-to-r from-axora-600 to-axora-400"
+                    className="h-full bg-gradient-to-r from-axora-500 via-violet-500 to-cyan-500 rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
                     transition={{ ease: "linear", duration: 0.2 }}
@@ -543,16 +628,18 @@ export function PPPGenerator() {
           </AnimatePresence>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
-            <button
+          <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-3 pt-2">
+            <motion.button
               onClick={handleGenerate}
               disabled={isGenerating}
               className={cn(
-                'flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all relative overflow-hidden',
+                'flex-1 min-w-[200px] flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-medium transition-all duration-200 relative overflow-hidden',
                 isGenerating
-                  ? 'bg-axora-500/50 text-white/50 cursor-not-allowed'
-                  : 'bg-axora-500 text-white hover:bg-axora-600'
+                  ? 'bg-axora-500/30 text-white/50 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-axora-500 to-violet-500 text-white hover:from-axora-600 hover:to-violet-600 shadow-lg shadow-axora-500/25'
               )}
+              whileHover={!isGenerating ? { scale: 1.01 } : {}}
+              whileTap={!isGenerating ? { scale: 0.99 } : {}}
             >
               <div className="relative z-10 flex items-center gap-2">
                 {isGenerating ? (
@@ -562,67 +649,101 @@ export function PPPGenerator() {
                   </>
                 ) : (
                   <>
-                    <FileText className="w-5 h-5" />
+                    <Sparkles className="w-5 h-5" />
                     Générer le PPP
                   </>
                 )}
               </div>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
               onClick={handleLoadExample}
               disabled={isGenerating}
-              className="px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all flex items-center gap-2 disabled:opacity-50"
+              className="px-5 py-3.5 rounded-xl bg-surface-100/30 border border-white/5 text-white/70 hover:bg-surface-100/50 hover:text-white hover:border-white/10 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              whileHover={!isGenerating ? { scale: 1.02 } : {}}
+              whileTap={!isGenerating ? { scale: 0.98 } : {}}
             >
-              <FileCheck className="w-5 h-5" />
-              Remplir l'exemple
-            </button>
+              <FileCheck className="w-4 h-4" />
+              <span className="text-sm font-medium">Exemple</span>
+            </motion.button>
 
-            {pppData && (
-              <>
-                <button
-                  onClick={() => setShowPreview(!showPreview)}
-                  className="px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all flex items-center gap-2"
+            <AnimatePresence>
+              {pppData && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="flex items-center gap-2"
                 >
-                  {showPreview ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  {showPreview ? 'Masquer' : 'Aperçu'}
-                </button>
+                  <motion.button
+                    onClick={() => setShowPreview(!showPreview)}
+                    className={cn(
+                      'px-5 py-3.5 rounded-xl border transition-all duration-200 flex items-center gap-2',
+                      showPreview
+                        ? 'bg-axora-500/10 border-axora-500/30 text-axora-400'
+                        : 'bg-surface-100/30 border-white/5 text-white/70 hover:bg-surface-100/50 hover:text-white hover:border-white/10'
+                    )}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    <span className="text-sm font-medium">{showPreview ? 'Masquer' : 'Aperçu'}</span>
+                  </motion.button>
 
-                <button
-                  onClick={handleClear}
-                  className="px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all flex items-center gap-2"
-                >
-                  <Eraser className="w-5 h-5" />
-                  Effacer
-                </button>
+                  <motion.button
+                    onClick={handleClear}
+                    className="px-5 py-3.5 rounded-xl bg-surface-100/30 border border-white/5 text-white/70 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 transition-all duration-200 flex items-center gap-2"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Eraser className="w-4 h-4" />
+                    <span className="text-sm font-medium">Effacer</span>
+                  </motion.button>
 
-                <button
-                  onClick={handlePrint}
-                  className="px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all flex items-center gap-2"
-                >
-                  <Printer className="w-5 h-5" />
-                  Imprimer
-                </button>
-              </>
-            )}
-          </div>
+                  <motion.button
+                    onClick={handlePrint}
+                    className="px-5 py-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/30 transition-all duration-200 flex items-center gap-2"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span className="text-sm font-medium">Imprimer</span>
+                  </motion.button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
 
           {/* PPP Document (Editable) - Format A4 Paysage */}
-          {showPreview && pppData && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="mt-8 -mx-6 text-black bg-white"
-            >
-              <div className="mb-4 mx-6 p-4 bg-axora-500/10 border border-axora-500/20 rounded-lg text-sm text-axora-700">
-                <strong>💡 Conseil :</strong> Document optimisé pour impression A4 paysage (297mm × 210mm). Cliquez
-                sur les lignes pour éditer avant impression.
-              </div>
-              <PPPDocumentV2 data={pppData} onChange={(updated) => setPppData(updated)} readOnly={false} />
-            </motion.div>
-          )}
-        </div>
+          <AnimatePresence>
+            {showPreview && pppData && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mt-6 space-y-4"
+              >
+                {/* Info banner */}
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-axora-500/10 border border-axora-500/20">
+                  <div className="p-1.5 rounded-lg bg-axora-500/20">
+                    <FileText className="w-4 h-4 text-axora-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-axora-300">Document prêt pour impression</p>
+                    <p className="text-xs text-axora-400/70 mt-0.5">
+                      Format A4 paysage (297mm × 210mm). Cliquez sur les lignes pour éditer avant impression.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Document preview container */}
+                <div className="-mx-6 text-black bg-white rounded-t-2xl overflow-hidden shadow-2xl">
+                  <PPPDocumentV2 data={pppData} onChange={(updated) => setPppData(updated)} readOnly={false} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
 
       {/* Modal de transcription audio */}
@@ -631,6 +752,6 @@ export function PPPGenerator() {
         onClose={() => setShowAudioModal(false)}
         onTranscriptionComplete={handleAudioTranscription}
       />
-    </div>
+    </motion.div>
   )
 }

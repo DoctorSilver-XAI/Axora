@@ -1,9 +1,25 @@
 import { useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Scan, Image, Clock, Trash2, Upload, Sparkles, Copy, Check, AlertCircle, Pill, Star, Pencil, X, ArrowLeft } from 'lucide-react'
+import {
+  Scan,
+  Image,
+  Clock,
+  Trash2,
+  Upload,
+  Sparkles,
+  Copy,
+  Check,
+  AlertCircle,
+  Star,
+  Pencil,
+  X,
+  ArrowLeft,
+} from 'lucide-react'
 import { cn } from '@shared/utils/cn'
 import { usePhiVision } from '@shared/contexts/PhiVisionContext'
 import { CaptureService, Capture } from '@features/phivision/services/CaptureService'
+import { ParsedResultView } from '@features/phivision/components/ParsedResultView'
+import { AgentsSection } from '@features/phivision/components/AgentsSection'
 
 export function PhiVisionPage() {
   const {
@@ -19,6 +35,9 @@ export function PhiVisionPage() {
     deleteCapture,
     toggleFavorite,
     loadHistory,
+    runAgents,
+    getAgentsResults,
+    isRunningAgents,
   } = usePhiVision()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -74,6 +93,25 @@ export function PhiVisionPage() {
   }
 
   const isProcessing = status === 'capturing' || status === 'analyzing'
+
+  // Callback pour lancer les agents sur une capture archivée
+  const handleRunAgentsOnArchive = useCallback(() => {
+    if (!selectedCapture?.rawText || !selectedCapture?.id) return
+
+    try {
+      // Le rawText contient le JSON PhiBrain stringifié
+      const phiBrainData = JSON.parse(selectedCapture.rawText) as Record<string, unknown>
+      runAgents(selectedCapture.id, phiBrainData)
+    } catch (err) {
+      console.error('Failed to parse PhiBrain data from archive:', err)
+    }
+  }, [selectedCapture?.rawText, selectedCapture?.id, runAgents])
+
+  // Callback pour lancer les agents sur le résultat actuel (utilise 'current' comme ID temporaire)
+  const handleRunAgentsOnResult = useCallback(() => {
+    if (!result?.phiBrain) return
+    runAgents('current', result.phiBrain as unknown as Record<string, unknown>)
+  }, [result?.phiBrain, runAgents])
 
   return (
     <div className="flex gap-6 h-full">
@@ -179,53 +217,16 @@ export function PhiVisionPage() {
                     </span>
                   </div>
 
-                  {/* Type badge */}
-                  {selectedCapture.enrichment?.documentType && selectedCapture.enrichment.documentType !== 'unknown' && (
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 capitalize">
-                        {String(selectedCapture.enrichment.documentType)}
-                      </span>
-                    </div>
-                  )}
+                  {/* Parsed Result View */}
+                  <ParsedResultView rawText={selectedCapture.rawText} />
 
-                  {/* Texte extrait */}
-                  {selectedCapture.rawText && (
-                    <div>
-                      <h4 className="text-sm font-medium text-white/60 mb-2">Texte extrait</h4>
-                      <div className="bg-surface-100 rounded-xl p-4 text-sm text-white/90 whitespace-pre-wrap max-h-48 overflow-auto">
-                        {selectedCapture.rawText}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Médicaments détectés */}
-                  {selectedCapture.entities && selectedCapture.entities.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-white/60 mb-2 flex items-center gap-1.5">
-                        <Pill className="w-4 h-4" />
-                        Médicaments détectés
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedCapture.entities.map((entity, i) => (
-                          <span
-                            key={i}
-                            className="px-3 py-1.5 rounded-lg text-sm bg-emerald-500/20 text-emerald-300"
-                          >
-                            {String(entity.name || '')}
-                            {entity.dosage ? ` - ${String(entity.dosage)}` : ''}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Résumé */}
-                  {selectedCapture.enrichment?.summary && (
-                    <div>
-                      <h4 className="text-sm font-medium text-white/60 mb-2">Résumé</h4>
-                      <p className="text-sm text-white/80">{String(selectedCapture.enrichment.summary)}</p>
-                    </div>
-                  )}
+                  {/* Agents Section */}
+                  <AgentsSection
+                    className="mt-4"
+                    agents={selectedCapture?.id ? getAgentsResults(selectedCapture.id) ?? undefined : undefined}
+                    onRunAgents={handleRunAgentsOnArchive}
+                    isRunning={selectedCapture?.id ? isRunningAgents(selectedCapture.id) : false}
+                  />
 
                 </div>
               </motion.div>
@@ -378,50 +379,16 @@ export function PhiVisionPage() {
                     </button>
                   </div>
 
-                  {/* Type badge */}
-                  {result.analysis?.type && result.analysis.type !== 'unknown' && (
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 capitalize">
-                        {result.analysis.type}
-                      </span>
-                    </div>
-                  )}
+                  {/* Parsed Result View */}
+                  <ParsedResultView rawText={result.text} />
 
-                  {/* Extracted text */}
-                  <div>
-                    <h4 className="text-sm font-medium text-white/60 mb-2">Texte extrait</h4>
-                    <div className="bg-surface-100 rounded-xl p-4 text-sm text-white/90 whitespace-pre-wrap max-h-48 overflow-auto">
-                      {result.text}
-                    </div>
-                  </div>
-
-                  {/* Medications */}
-                  {result.analysis?.medications && result.analysis.medications.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-white/60 mb-2 flex items-center gap-1.5">
-                        <Pill className="w-4 h-4" />
-                        Médicaments détectés
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {result.analysis.medications.map((med, i) => (
-                          <span
-                            key={i}
-                            className="px-3 py-1.5 rounded-lg text-sm bg-emerald-500/20 text-emerald-300"
-                          >
-                            {med}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Summary */}
-                  {result.analysis?.summary && (
-                    <div>
-                      <h4 className="text-sm font-medium text-white/60 mb-2">Résumé</h4>
-                      <p className="text-sm text-white/80">{result.analysis.summary}</p>
-                    </div>
-                  )}
+                  {/* Agents Section */}
+                  <AgentsSection
+                    className="mt-6"
+                    agents={getAgentsResults('current') ?? undefined}
+                    onRunAgents={handleRunAgentsOnResult}
+                    isRunning={isRunningAgents('current')}
+                  />
                 </div>
               )}
             </motion.div>

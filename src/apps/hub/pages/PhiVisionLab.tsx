@@ -1,31 +1,18 @@
 import { useState, useEffect, useCallback, memo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Microscope,
-  FileText,
-  Sparkles,
-  Brain,
-  Bot,
-  BarChart3,
-  Trash2,
   RefreshCw,
   Copy,
   Check,
-  User,
-  Stethoscope,
-  Pill,
-  Clock,
+  Trash2,
+  Camera,
+  Code,
   Database,
+  Bot,
   AlertTriangle,
-  Receipt,
-  FileSearch,
-  UserCircle,
-  HelpCircle,
-  Activity,
-  Scan,
+  ChevronRight,
 } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
-import type { Capture, DBCapture } from '@features/phivision/services/CaptureService'
+import type { DBCapture } from '@features/phivision/services/CaptureService'
 import type {
   PhiBrainResult,
   FacturationOrdoResult,
@@ -33,29 +20,49 @@ import type {
 } from '@features/phivision/services/OCRService'
 import { supabase } from '@shared/lib/supabase'
 
-// Types étendus pour le Lab
-interface LabCapture extends Capture {
-  char_count: number
-  parsed_data?: Record<string, unknown>
-  mistral_response?: Record<string, unknown>
-  raw_db_data?: DBCapture
+// =============================================================================
+// Types
+// =============================================================================
+
+interface LabCapture {
+  id: string
+  imageUrl: string | null
+  rawText: string | null
+  ocrConfidence: number | null
+  createdAt: Date
+  updatedAt: Date
+  charCount: number
+  context: string
+  parsedData: PhiBrainResult | null
+  rawDbData: DBCapture
 }
 
-function transformToLabCapture(dbCapture: DBCapture): LabCapture {
-  const rawText = dbCapture.raw_text
-  let parsedData: Record<string, unknown> | undefined
-  let mistralResponse: Record<string, unknown> | undefined
+type TabId = 'capture' | 'response' | 'parsed' | 'agents'
 
-  if (rawText) {
+// =============================================================================
+// Utils
+// =============================================================================
+
+function parseCapture(db: DBCapture): LabCapture {
+  let parsedData: PhiBrainResult | null = null
+  let context = 'UNKNOWN'
+
+  if (db.raw_text) {
     try {
-      const parsed = JSON.parse(rawText)
-      parsedData = parsed
-      if (parsed.document_annotation) {
-        mistralResponse = parsed
+      const parsed = JSON.parse(db.raw_text)
+      if (parsed.context) {
+        parsedData = parsed
+        context = parsed.context
+      } else if (parsed.document_annotation) {
         try {
-          parsedData = JSON.parse(parsed.document_annotation)
+          const inner = JSON.parse(parsed.document_annotation)
+          if (inner.context) {
+            parsedData = inner
+            context = inner.context
+          }
         } catch {
-          // Keep original
+          // Keep raw parsed
+          parsedData = parsed
         }
       }
     } catch {
@@ -64,56 +71,46 @@ function transformToLabCapture(dbCapture: DBCapture): LabCapture {
   }
 
   return {
-    id: dbCapture.id,
-    imageUrl: dbCapture.image_url,
-    thumbnailUrl: dbCapture.thumbnail_url,
-    rawText: dbCapture.raw_text,
-    ocrConfidence: dbCapture.ocr_confidence,
-    entities: dbCapture.entities || [],
-    enrichment: dbCapture.enrichment || {},
-    isFavorite: dbCapture.is_favorite,
-    tags: dbCapture.tags || [],
-    notes: dbCapture.notes,
-    createdAt: new Date(dbCapture.created_at),
-    updatedAt: new Date(dbCapture.updated_at),
-    char_count: rawText?.length || 0,
-    parsed_data: parsedData,
-    mistral_response: mistralResponse,
-    raw_db_data: dbCapture,
+    id: db.id,
+    imageUrl: db.image_url,
+    rawText: db.raw_text,
+    ocrConfidence: db.ocr_confidence,
+    createdAt: new Date(db.created_at),
+    updatedAt: new Date(db.updated_at),
+    charCount: db.raw_text?.length || 0,
+    context,
+    parsedData,
+    rawDbData: db,
   }
 }
 
-type TabId = 'ocr' | 'parsed' | 'enrichment' | 'mistral' | 'metadata'
-
-function getPhiBrainContext(capture: LabCapture): { context: string; icon: React.ElementType; color: string } | null {
-  const data = capture.parsed_data as PhiBrainResult | undefined
-  if (!data?.context) return null
-
-  const config: Record<string, { icon: React.ElementType; color: string }> = {
-    FACTURATION_ORDO: { icon: Receipt, color: 'text-cyan-400 bg-cyan-400/10' },
-    ORDONNANCE_SCAN: { icon: FileSearch, color: 'text-indigo-400 bg-indigo-400/10' },
-    FICHE_PATIENT: { icon: UserCircle, color: 'text-pink-400 bg-pink-400/10' },
-    UNKNOWN: { icon: HelpCircle, color: 'text-surface-400 bg-surface-500/10' },
+function getContextColor(ctx: string): string {
+  switch (ctx) {
+    case 'FACTURATION_ORDO': return 'text-cyan-400'
+    case 'ORDONNANCE_SCAN': return 'text-indigo-400'
+    case 'FICHE_PATIENT': return 'text-pink-400'
+    default: return 'text-white/40'
   }
-
-  const conf = config[data.context] || config.UNKNOWN
-  return { context: data.context, ...conf }
 }
 
-const TABS: readonly { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: 'ocr', label: 'Texte OCR', icon: FileText },
-  { id: 'parsed', label: 'Données Parsées', icon: Sparkles },
-  { id: 'enrichment', label: 'Enrichissement', icon: Brain },
-  { id: 'mistral', label: 'DEBUG Mistral', icon: Bot },
-  { id: 'metadata', label: 'Métadonnées', icon: BarChart3 },
-] as const
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString('fr-FR')
+}
+
+// =============================================================================
+// Main Component
+// =============================================================================
 
 export function PhiVisionLabPage() {
   const [captures, setCaptures] = useState<LabCapture[]>([])
-  const [selectedCapture, setSelectedCapture] = useState<LabCapture | null>(null)
-  const [activeTab, setActiveTab] = useState<TabId>('parsed') // Changed default to parsed for better UX
-  const [copied, setCopied] = useState(false)
+  const [selected, setSelected] = useState<LabCapture | null>(null)
+  const [activeTab, setActiveTab] = useState<TabId>('response')
   const [isLoading, setIsLoading] = useState(true)
+  const [copied, setCopied] = useState(false)
 
   const loadCaptures = useCallback(async () => {
     setIsLoading(true)
@@ -125,18 +122,17 @@ export function PhiVisionLabPage() {
         .limit(50)
 
       if (error) {
-        console.error('[PhiVisionLab] Error loading captures:', error)
+        console.error('[Lab] Load error:', error)
         return
       }
 
-      const transformedCaptures = (data || []).map((c) => transformToLabCapture(c as DBCapture))
-      setCaptures(transformedCaptures)
-
-      if (transformedCaptures.length > 0 && !selectedCapture) {
-        setSelectedCapture(transformedCaptures[0])
+      const parsed = (data || []).map((c) => parseCapture(c as DBCapture))
+      setCaptures(parsed)
+      if (parsed.length > 0 && !selected) {
+        setSelected(parsed[0])
       }
     } catch (err) {
-      console.error('[PhiVisionLab] Error:', err)
+      console.error('[Lab] Error:', err)
     } finally {
       setIsLoading(false)
     }
@@ -149,162 +145,156 @@ export function PhiVisionLabPage() {
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const handleRefresh = async () => {
-    await loadCaptures()
+    setTimeout(() => setCopied(false), 1500)
   }
 
   const handleDelete = async (id: string) => {
     if (!confirm('Supprimer cette capture ?')) return
-
     try {
-      const { error } = await supabase.from('captures').delete().eq('id', id)
-      if (error) {
-        console.error('[PhiVisionLab] Error deleting capture:', error)
-        return
-      }
-
+      await supabase.from('captures').delete().eq('id', id)
       setCaptures((prev) => {
         const filtered = prev.filter((c) => c.id !== id)
-        if (selectedCapture?.id === id) {
-          setSelectedCapture(filtered[0] || null)
-        }
+        if (selected?.id === id) setSelected(filtered[0] || null)
         return filtered
       })
     } catch (err) {
-      console.error('[PhiVisionLab] Error:', err)
+      console.error('[Lab] Delete error:', err)
     }
   }
 
   return (
-    <div className="flex h-full gap-6 p-2">
-      {/* Liste des captures sidebar */}
-      <div className="w-80 flex flex-col bg-surface-50/50 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="p-6 border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-white flex items-center gap-3 tracking-wide">
-              <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 shadow-neon">
-                <Microscope className="w-5 h-5" />
-              </div>
-              PhiVision
-            </h1>
+    <div className="flex h-full bg-black/50">
+      {/* Sidebar */}
+      <div className="w-72 flex flex-col border-r border-white/10 bg-surface-100/50">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+          <span className="text-xs font-bold text-white/80 uppercase tracking-wider">
+            PhiVision Lab
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono text-white/40">
+              {captures.length}
+            </span>
             <button
-              onClick={handleRefresh}
+              onClick={loadCaptures}
               disabled={isLoading}
-              className="p-2 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+              className="p-1 hover:bg-white/10 rounded text-white/40 hover:text-white"
             >
-              <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+              <RefreshCw className={cn('w-3 h-3', isLoading && 'animate-spin')} />
             </button>
-          </div>
-          <div className="flex items-center justify-between text-xs text-white/40 font-medium uppercase tracking-wider">
-            <span>Historique</span>
-            <span>{captures.length} Captures</span>
           </div>
         </div>
 
-        {/* Liste */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+        <div className="flex-1 overflow-y-auto">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <RefreshCw className="w-6 h-6 text-indigo-400 animate-spin" />
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="w-4 h-4 text-white/20 animate-spin" />
             </div>
           ) : captures.length === 0 ? (
-            <div className="text-center py-12 text-white/30 text-sm">
-              Aucune capture récente
+            <div className="text-center py-8 text-white/30 text-xs">
+              Aucune capture
             </div>
           ) : (
             captures.map((capture) => (
-              <CaptureListItem
+              <CaptureRow
                 key={capture.id}
                 capture={capture}
-                isSelected={selectedCapture?.id === capture.id}
-                onClick={() => setSelectedCapture(capture)}
+                isSelected={selected?.id === capture.id}
+                onClick={() => setSelected(capture)}
               />
             ))
           )}
         </div>
       </div>
 
-      {/* Main Detail View */}
-      <div className="flex-1 flex flex-col bg-surface-50/30 backdrop-blur-2xl border border-white/5 rounded-3xl shadow-2xl overflow-hidden relative">
-        <div className="absolute inset-0 bg-gradient-radial from-axora-900/10 to-transparent pointer-events-none" />
-
-        {selectedCapture ? (
+      {/* Main Panel */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {selected ? (
           <>
-            {/* Toolbar / Tabs */}
-            <div className="flex items-center gap-2 p-4 border-b border-white/5 bg-surface-50/50 backdrop-blur-md sticky top-0 z-10">
-              <div className="flex bg-surface-100/50 p-1 rounded-xl border border-white/5">
-                {TABS.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={cn(
-                      'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300',
-                      activeTab === tab.id
-                        ? 'text-white shadow-lg'
-                        : 'text-white/40 hover:text-white hover:bg-white/5'
-                    )}
-                  >
-                    {activeTab === tab.id && (
-                      <motion.div
-                        layoutId="active-tab"
-                        className="absolute inset-0 bg-surface-200/80 rounded-lg border border-white/10"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                      />
-                    )}
-                    <tab.icon className="w-4 h-4 relative z-10" />
-                    <span className="relative z-10">{tab.label}</span>
-                  </button>
-                ))}
+            {/* Header */}
+            <div className="flex items-center gap-3 px-3 py-2 border-b border-white/10 bg-surface-100/30">
+              {/* Mini thumbnail */}
+              {selected.imageUrl && (
+                <img
+                  src={selected.imageUrl}
+                  alt=""
+                  className="w-8 h-8 rounded object-cover border border-white/10"
+                />
+              )}
+
+              <div className="flex items-center gap-2 text-xs font-mono flex-1 min-w-0">
+                <span className="text-white/40">ID:</span>
+                <span className="text-white/80">{selected.id.substring(0, 8)}</span>
+                <span className="text-white/20">│</span>
+                <span className={cn('font-semibold', getContextColor(selected.context))}>
+                  {selected.context}
+                </span>
+                <span className="text-white/20">│</span>
+                <span className={cn(
+                  selected.ocrConfidence && selected.ocrConfidence > 0.8
+                    ? 'text-emerald-400'
+                    : 'text-amber-400'
+                )}>
+                  {selected.ocrConfidence ? `${(selected.ocrConfidence * 100).toFixed(1)}%` : 'N/A'}
+                </span>
+                <span className="text-white/20">│</span>
+                <span className="text-white/50">
+                  {formatDate(selected.createdAt)} {formatTime(selected.createdAt)}
+                </span>
+                <span className="text-white/20">│</span>
+                <span className="text-white/40">{selected.charCount}c</span>
               </div>
 
-              <div className="flex-1" />
-
               <button
-                onClick={() => handleDelete(selectedCapture.id)}
-                className="flex items-center justify-center w-10 h-10 rounded-xl text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
+                onClick={() => handleDelete(selected.id)}
+                className="p-1.5 hover:bg-red-500/20 rounded text-red-400/50 hover:text-red-400"
                 title="Supprimer"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* Content Area */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-8 relative">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                  transition={{ duration: 0.2 }}
-                  className="max-w-5xl mx-auto space-y-8"
-                >
-                  {/* Common Header for all tabs (Context Summary) */}
-                  <CaptureHeader capture={selectedCapture} />
+            {/* Tabs */}
+            <div className="flex border-b border-white/10 bg-surface-100/20">
+              <TabButton
+                active={activeTab === 'capture'}
+                onClick={() => setActiveTab('capture')}
+                icon={Camera}
+                label="1. Capture"
+              />
+              <TabButton
+                active={activeTab === 'response'}
+                onClick={() => setActiveTab('response')}
+                icon={Code}
+                label="2. Response"
+              />
+              <TabButton
+                active={activeTab === 'parsed'}
+                onClick={() => setActiveTab('parsed')}
+                icon={Database}
+                label="3. Parsed"
+              />
+              <TabButton
+                active={activeTab === 'agents'}
+                onClick={() => setActiveTab('agents')}
+                icon={Bot}
+                label="4. Agents"
+                disabled
+              />
+            </div>
 
-                  {activeTab === 'ocr' && (
-                    <TabOCR capture={selectedCapture} onCopy={handleCopy} copied={copied} />
-                  )}
-                  {activeTab === 'parsed' && <TabParsed capture={selectedCapture} />}
-                  {activeTab === 'enrichment' && <TabEnrichment capture={selectedCapture} />}
-                  {activeTab === 'mistral' && (
-                    <TabMistral capture={selectedCapture} onCopy={handleCopy} copied={copied} />
-                  )}
-                  {activeTab === 'metadata' && <TabMetadata capture={selectedCapture} />}
-                </motion.div>
-              </AnimatePresence>
+            {/* Content */}
+            <div className="flex-1 overflow-auto p-3">
+              {activeTab === 'capture' && <TabCapture capture={selected} />}
+              {activeTab === 'response' && (
+                <TabResponse capture={selected} onCopy={handleCopy} copied={copied} />
+              )}
+              {activeTab === 'parsed' && <TabParsed capture={selected} />}
+              {activeTab === 'agents' && <TabAgents />}
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-white/30 gap-4">
-            <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center animate-pulse-slow">
-              <Scan className="w-10 h-10 opacity-50" />
-            </div>
-            <p className="text-lg font-medium">Sélectionnez une capture pour l'analyser</p>
+          <div className="flex-1 flex items-center justify-center text-white/30 text-sm">
+            Sélectionnez une capture
           </div>
         )}
       </div>
@@ -312,374 +302,493 @@ export function PhiVisionLabPage() {
   )
 }
 
-// ----------------------------------------------------------------------------
-// Components
-// ----------------------------------------------------------------------------
+// =============================================================================
+// Sidebar Components
+// =============================================================================
 
-const CaptureListItem = memo(function CaptureListItem({ capture, isSelected, onClick }: { capture: LabCapture, isSelected: boolean, onClick: () => void }) {
-  const ctx = getPhiBrainContext(capture)
-
+const CaptureRow = memo(function CaptureRow({
+  capture,
+  isSelected,
+  onClick,
+}: {
+  capture: LabCapture
+  isSelected: boolean
+  onClick: () => void
+}) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        'w-full text-left p-4 rounded-2xl transition-all duration-300 group border relative overflow-hidden',
+        'w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-white/5 border-l-2 transition-colors',
         isSelected
-          ? 'bg-surface-100/80 border-axora-500/30'
-          : 'bg-transparent border-transparent hover:bg-white/5 hover:border-white/5'
+          ? 'bg-white/10 border-l-cyan-400'
+          : 'border-l-transparent'
       )}
     >
-      {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-axora-500" />}
-
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center gap-2">
-          {ctx ? (
-            <div className={cn("p-1.5 rounded-lg", ctx.color)}>
-              <ctx.icon className="w-3.5 h-3.5" />
-            </div>
-          ) : (
-            <div className="p-1.5 rounded-lg bg-surface-300/20 text-surface-400">
-              <HelpCircle className="w-3.5 h-3.5" />
-            </div>
-          )}
-          <span className="text-xs font-semibold text-white/90 tracking-wide">
-            {ctx?.context.replace('_', ' ') || 'Inconnu'}
-          </span>
-        </div>
-        {capture.ocrConfidence && (
-          <span className={cn(
-            "text-[10px] font-bold px-1.5 py-0.5 rounded-md",
-            capture.ocrConfidence > 0.8 ? "text-emerald-400 bg-emerald-400/10" : "text-amber-400 bg-amber-400/10"
-          )}>
-            {(capture.ocrConfidence * 100).toFixed(0)}%
-          </span>
+      <ChevronRight
+        className={cn(
+          'w-3 h-3 transition-transform',
+          isSelected ? 'text-cyan-400 rotate-90' : 'text-white/20'
         )}
-      </div>
-
-      <div className="text-xs text-white/40 font-mono mb-2 pl-1">
-        {capture.createdAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-        <span className="mx-1.5 opacity-30">|</span>
-        {capture.createdAt.toLocaleDateString('fr-FR')}
-      </div>
-
-      <div className="text-xs text-surface-400 pl-1 truncate group-hover:text-surface-300 transition-colors">
-        {capture.rawText?.substring(0, 40) || 'Aucun texte extrait...'}
-      </div>
+      />
+      <span className={cn('text-[10px] font-bold uppercase w-24 truncate', getContextColor(capture.context))}>
+        {capture.context.replace('_', ' ')}
+      </span>
+      <span className="text-[10px] font-mono text-white/50">
+        {formatTime(capture.createdAt)}
+      </span>
+      <span className="text-[10px] font-mono text-white/30">
+        {capture.charCount}c
+      </span>
+      <span className="text-[10px] font-mono text-white/20 ml-auto">
+        {capture.id.substring(0, 7)}
+      </span>
     </button>
   )
 })
 
-function CaptureHeader({ capture }: { capture: LabCapture }) {
+// =============================================================================
+// Tab Components
+// =============================================================================
+
+function TabButton({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+  disabled,
+}: {
+  active: boolean
+  onClick: () => void
+  icon: React.ElementType
+  label: string
+  disabled?: boolean
+}) {
   return (
-    <div className="flex items-start gap-6 p-6 rounded-3xl bg-surface-100/40 border border-white/5 backdrop-blur-md shadow-glass">
-      <div className="w-24 h-24 rounded-2xl bg-black/40 border border-white/10 overflow-hidden flex-shrink-0 relative group">
-        {capture.imageUrl ? (
-          <img src={capture.imageUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-        ) : (
-          <div className="flex items-center justify-center w-full h-full text-white/20">
-            <FileText className="w-8 h-8" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-      </div>
-
-      <div className="flex-1 space-y-3">
-        <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-bold text-white tracking-tight">Analyse PhiVision</h2>
-          <div className="px-3 py-1 rounded-full bg-surface-200/50 border border-white/5 text-xs font-mono text-white/60">
-            ID: {capture.id.substring(0, 8)}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-200/20 border border-white/5">
-            <Clock className="w-4 h-4 text-axora-400" />
-            <span className="text-sm text-white/80">{capture.createdAt.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-200/20 border border-white/5">
-            <Database className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm text-white/80">{capture.char_count} chars</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        'flex items-center gap-1.5 px-3 py-2 text-xs font-mono border-b-2 transition-colors',
+        active
+          ? 'text-white border-b-cyan-400 bg-white/5'
+          : disabled
+            ? 'text-white/20 border-b-transparent cursor-not-allowed'
+            : 'text-white/50 border-b-transparent hover:text-white hover:bg-white/5'
+      )}
+    >
+      <Icon className="w-3.5 h-3.5" />
+      {label}
+    </button>
   )
 }
 
-// Tab: Texte OCR
-function TabOCR({ capture, onCopy, copied }: { capture: LabCapture; onCopy: (t: string) => void; copied: boolean }) {
+// -----------------------------------------------------------------------------
+// Tab 1: Capture
+// -----------------------------------------------------------------------------
+
+function TabCapture({ capture }: { capture: LabCapture }) {
+  const db = capture.rawDbData
+
+  const rows = [
+    ['id', capture.id],
+    ['created_at', capture.createdAt.toISOString()],
+    ['updated_at', capture.updatedAt.toISOString()],
+    ['ocr_provider', db.ocr_provider || 'mistral'],
+    ['ocr_confidence', capture.ocrConfidence?.toFixed(4) || 'null'],
+    ['char_count', capture.charCount.toString()],
+    ['context', capture.context],
+    ['image_url', capture.imageUrl || 'null'],
+    ['is_favorite', db.is_favorite ? 'true' : 'false'],
+    ['tags', JSON.stringify(db.tags || [])],
+    ['notes', db.notes || 'null'],
+  ]
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-white">Texte Brut Extrait</h3>
-        <button onClick={() => capture.rawText && onCopy(capture.rawText)} className="text-xs flex items-center gap-2 text-axora-400 hover:text-axora-300 transition-colors">
-          {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          {copied ? 'Copié !' : 'Copier le texte'}
-        </button>
-      </div>
-      <div className="bg-black/40 rounded-2xl border border-white/5 p-6 font-mono text-sm text-surface-400 leading-relaxed max-h-[500px] overflow-auto shadow-inner">
-        {capture.rawText}
-      </div>
-    </div>
-  )
-}
+      {/* Image preview */}
+      {capture.imageUrl && (
+        <div className="flex gap-4">
+          <a href={capture.imageUrl} target="_blank" rel="noopener noreferrer">
+            <img
+              src={capture.imageUrl}
+              alt="Capture"
+              className="max-w-xs max-h-48 rounded border border-white/10 hover:border-cyan-400/50 transition-colors"
+            />
+          </a>
+        </div>
+      )}
 
-// Tab: Données Parsées - PhiBRAIN-V2
-function TabParsed({ capture }: { capture: LabCapture }) {
-  const data = capture.parsed_data
-  const phiBrainData = data as PhiBrainResult | undefined
+      {/* Metadata table */}
+      <table className="w-full text-xs font-mono">
+        <tbody>
+          {rows.map(([key, value]) => (
+            <tr key={key} className="border-b border-white/5 hover:bg-white/5">
+              <td className="py-1.5 px-2 text-white/40 w-36">{key}</td>
+              <td className="py-1.5 px-2 text-white/80 break-all">{value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-  if (phiBrainData?.context) {
-    return <PhiBrainResultView result={phiBrainData} />
-  }
+      {/* Enrichment */}
+      {db.enrichment && Object.keys(db.enrichment).length > 0 && (
+        <div className="mt-4">
+          <h4 className="text-xs font-mono text-white/40 mb-2">enrichment</h4>
+          <pre className="text-xs font-mono text-purple-400 bg-black/30 p-2 rounded overflow-auto">
+            {JSON.stringify(db.enrichment, null, 2)}
+          </pre>
+        </div>
+      )}
 
-  // Fallback generic json
-  return (
-    <div className="bg-surface-100/50 rounded-3xl border border-white/5 p-6">
-      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <Sparkles className="w-5 h-5 text-amber-400" /> Données Structurées
-      </h3>
-      <pre className="text-xs text-medical-300 font-mono whitespace-pre-wrap">
-        {JSON.stringify(data, null, 2)}
-      </pre>
-    </div>
-  )
-}
-
-// ===== Result Views =====
-
-function PhiBrainResultView({ result }: { result: PhiBrainResult }) {
-  switch (result.context) {
-    case 'FACTURATION_ORDO': return <FacturationOrdoView result={result} />
-    case 'ORDONNANCE_SCAN': return <OrdonnanceScanView result={result} />
-    default: return <div className="text-white/40">Vue non implémentée pour ce contexte</div>
-  }
-}
-
-function FacturationOrdoView({ result }: { result: FacturationOrdoResult }) {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <InfoCard title="Patient" icon={User} color="text-pink-400">
-          <InfoRow label="Nom" value={result.patient_fullname} />
-          <InfoRow label="Âge" value={result.patient_age_years ? `${result.patient_age_years} ans` : undefined} />
-          <InfoRow label="Assurance" value={result.insurance} highlight />
-        </InfoCard>
-
-        <InfoCard title="Prescripteur" icon={Stethoscope} color="text-cyan-400">
-          <InfoRow label="Nom" value={result.prescriber} />
-        </InfoCard>
-      </div>
-
-      {result.lines.length > 0 && (
-        <div className="bg-surface-50/50 border border-white/5 rounded-3xl overflow-hidden shadow-glass">
-          <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
-            <h4 className="font-semibold text-white flex items-center gap-2">
-              <Pill className="w-4 h-4 text-axora-400" /> Lignes de Facturation
-            </h4>
-            <div className="px-3 py-1 rounded-full bg-white/5 text-xs text-white/60 font-mono">
-              {result.lines.length} lignes
-            </div>
-          </div>
-          <table className="w-full text-sm">
-            <thead className="bg-white/5 text-white/40 uppercase text-[10px] tracking-wider">
-              <tr>
-                <th className="text-left py-3 px-4 font-medium">Désignation</th>
-                <th className="text-right py-3 px-4 font-medium">Qté</th>
-                <th className="text-right py-3 px-4 font-medium">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {result.lines.map((line, i) => (
-                <tr key={i} className="hover:bg-white/5 transition-colors">
-                  <td className="py-3 px-4 text-white/90 font-medium">{line.designation}</td>
-                  <td className="py-3 px-4 text-right text-cyan-400 font-mono">{line.qty}</td>
-                  <td className="py-3 px-4 text-right text-white/60 font-mono">{(line.unit_price_eur || 0).toFixed(2)}€</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {result.total_eur !== null && (
-            <div className="p-4 bg-axora-900/20 border-t border-white/5 flex justify-between items-center">
-              <span className="text-white/60 uppercase tracking-wider text-xs font-bold">Total Facturé</span>
-              <span className="text-2xl font-bold text-medical-400 font-mono">{result.total_eur.toFixed(2)} €</span>
-            </div>
-          )}
+      {/* Entities */}
+      {db.entities && db.entities.length > 0 && (
+        <div className="mt-4">
+          <h4 className="text-xs font-mono text-white/40 mb-2">
+            entities ({db.entities.length})
+          </h4>
+          <pre className="text-xs font-mono text-amber-400 bg-black/30 p-2 rounded overflow-auto">
+            {JSON.stringify(db.entities, null, 2)}
+          </pre>
         </div>
       )}
     </div>
   )
 }
 
-function OrdonnanceScanView({ result }: { result: OrdonnanceScanResult }) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <InfoCard title="Prescripteur" icon={Stethoscope} color="text-indigo-400">
-        <InfoRow label="Nom" value={result.prescriber_name} />
-        <InfoRow label="RPPS" value={result.prescriber_rpps} fontMono />
-        <InfoRow label="Spécialité" value={result.prescriber_specialty} />
-      </InfoCard>
-      <InfoCard title="Patient" icon={User} color="text-pink-400">
-        <InfoRow label="Nom" value={result.patient_fullname} />
-        <InfoRow label="Date de naissance" value={result.patient_birthdate} />
-        <InfoRow label="Date prescription" value={result.prescription_date} />
-      </InfoCard>
-    </div>
-  )
-}
+// -----------------------------------------------------------------------------
+// Tab 2: Response
+// -----------------------------------------------------------------------------
 
-// Helpers Components
-function InfoCard({ title, icon: Icon, color, children }: { title: string, icon: React.ElementType, color: string, children: React.ReactNode }) {
-  return (
-    <div className="bg-surface-100/40 border border-white/5 rounded-3xl p-5 hover:bg-surface-100/60 transition-colors duration-300">
-      <h4 className="text-sm font-medium text-white/80 flex items-center gap-2 mb-4 uppercase tracking-wider">
-        <Icon className={cn("w-4 h-4", color)} />
-        {title}
-      </h4>
-      <div className="space-y-3">
-        {children}
-      </div>
-    </div>
-  )
-}
+function TabResponse({
+  capture,
+  onCopy,
+  copied,
+}: {
+  capture: LabCapture
+  onCopy: (text: string) => void
+  copied: boolean
+}) {
+  let content = ''
+  let isValidJson = false
 
-function InfoRow({ label, value, highlight, fontMono }: { label: string, value?: string | null, highlight?: boolean, fontMono?: boolean }) {
-  if (!value) return null
-  return (
-    <div className="flex justify-between items-center group">
-      <span className="text-surface-400 text-xs font-medium">{label}</span>
-      <span className={cn(
-        "text-sm relative z-10",
-        highlight ? "text-cyan-400" : "text-white/90",
-        fontMono && "font-mono"
-      )}>{value}</span>
-      {/* Dots leader effect on hover could go here */}
-    </div>
-  )
-}
+  if (capture.rawText) {
+    try {
+      const parsed = JSON.parse(capture.rawText)
+      content = JSON.stringify(parsed, null, 2)
+      isValidJson = true
+    } catch {
+      content = capture.rawText
+    }
+  }
 
-// Tab: Enrichissement (Restored)
-function TabEnrichment({ capture }: { capture: LabCapture }) {
-  // Parsing enrichment data safely
-  const enrichmentData = capture.enrichment || {};
-
-  // If enrichment is empty, check if we can show tags or other metadata
-  const hasData = Object.keys(enrichmentData).length > 0;
-  const tags = capture.tags || [];
-
-  // Extract typed values safely
-  const confidence = typeof enrichmentData.confidence === 'number' ? enrichmentData.confidence : null;
-  const summary = typeof enrichmentData.summary === 'string' ? enrichmentData.summary : null;
-
-  if (!hasData && tags.length === 0) {
+  if (!content) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center bg-surface-100/30 rounded-3xl border border-white/5 border-dashed">
-        <Brain className="w-12 h-12 text-white/20 mb-4" />
-        <p className="text-white/40">Aucune donnée d'enrichissement disponible pour cette capture.</p>
+      <div className="flex items-center justify-center h-32 text-white/30 text-xs">
+        Aucune réponse disponible
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Résumé / Tags */}
-      {(tags.length > 0 || hasData) && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          {tags.map((tag, i) => (
-            <span key={i} className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-              {tag}
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2 text-xs font-mono">
+          {isValidJson ? (
+            <span className="flex items-center gap-1 text-emerald-400">
+              <Check className="w-3 h-3" /> JSON valide
             </span>
-          ))}
-          {/* Try to extract confidence or summary from enrichment if available */}
-          {confidence !== null && (
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              Confiance: {confidence <= 1 ? (confidence * 100).toFixed(0) : confidence}%
+          ) : (
+            <span className="flex items-center gap-1 text-amber-400">
+              <AlertTriangle className="w-3 h-3" /> Texte brut
             </span>
           )}
         </div>
+        <button
+          onClick={() => onCopy(content)}
+          className="flex items-center gap-1 text-xs font-mono text-white/50 hover:text-white"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3 h-3" /> Copié
+            </>
+          ) : (
+            <>
+              <Copy className="w-3 h-3" /> Copier
+            </>
+          )}
+        </button>
+      </div>
+
+      <pre className="flex-1 text-xs font-mono text-cyan-400 bg-black/40 p-3 rounded border border-white/5 overflow-auto whitespace-pre-wrap break-all">
+        {content}
+      </pre>
+    </div>
+  )
+}
+
+// -----------------------------------------------------------------------------
+// Tab 3: Parsed
+// -----------------------------------------------------------------------------
+
+function TabParsed({ capture }: { capture: LabCapture }) {
+  const data = capture.parsedData
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center h-32 text-white/30 text-xs">
+        Aucune donnée parsée (contexte non reconnu)
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Structured view based on context */}
+      {data.context === 'FACTURATION_ORDO' && (
+        <FacturationView data={data as FacturationOrdoResult} />
+      )}
+      {data.context === 'ORDONNANCE_SCAN' && (
+        <OrdonnanceView data={data as OrdonnanceScanResult} />
+      )}
+      {data.context === 'FICHE_PATIENT' && (
+        <GenericJsonView data={data} label="Fiche Patient" />
+      )}
+      {data.context === 'UNKNOWN' && (
+        <GenericJsonView data={data} label="Contexte Inconnu" />
       )}
 
-      {/* Structured Enrichment Data (if any specific fields exist) */}
-      {summary && (
-        <InfoCard title="Résumé" icon={FileText} color="text-amber-400">
-          <p className="text-sm text-white/80 leading-relaxed">{summary}</p>
-        </InfoCard>
-      )}
-
-      {/* Raw Enrichment JSON */}
-      <div className="bg-surface-100/50 rounded-3xl border border-white/5 p-6 shadow-sm">
-        <h4 className="text-sm font-medium text-white/80 mb-4 flex items-center gap-2">
-          <Database className="w-4 h-4 text-purple-400" /> Données Brutes
-        </h4>
-        <pre className="text-xs text-purple-300 font-mono whitespace-pre-wrap overflow-auto max-h-[400px]">
-          {JSON.stringify(enrichmentData, null, 2)}
+      {/* Raw JSON below */}
+      <div className="mt-6 pt-4 border-t border-white/10">
+        <h4 className="text-xs font-mono text-white/40 mb-2">JSON brut</h4>
+        <pre className="text-xs font-mono text-white/60 bg-black/30 p-3 rounded overflow-auto max-h-64">
+          {JSON.stringify(data, null, 2)}
         </pre>
       </div>
     </div>
   )
 }
 
-function TabMistral({ capture, onCopy, copied }: { capture: LabCapture; onCopy: (t: string) => void; copied: boolean }) {
-  let contentToDisplay = "";
-  let isJson = false;
-
-  // Try to use rawText and pretty print it first
-  if (capture.rawText) {
-    try {
-      const parsed = JSON.parse(capture.rawText);
-      contentToDisplay = JSON.stringify(parsed, null, 2);
-      isJson = true;
-    } catch (e) {
-      contentToDisplay = capture.rawText;
-      isJson = false;
-    }
-  } else if (capture.mistral_response) {
-    contentToDisplay = JSON.stringify(capture.mistral_response, null, 2);
-    isJson = true;
-  }
-
-  if (!contentToDisplay) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 text-center bg-surface-100/30 rounded-3xl border border-white/5 border-dashed">
-        <Bot className="w-12 h-12 text-white/20 mb-4" />
-        <p className="text-white/40">Aucune donnée disponible.</p>
-      </div>
-    )
-  }
-
+function FacturationView({ data }: { data: FacturationOrdoResult }) {
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center mb-2">
-        <span className={cn("text-xs font-medium flex items-center gap-1", isJson ? "text-emerald-400" : "text-amber-400")}>
-          {isJson ? <Check className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-          {isJson ? "JSON Reçu & Formatté" : "Texte Brut (Non-JSON)"}
-        </span>
-        <button onClick={() => onCopy(contentToDisplay)} className="text-xs text-white/40 hover:text-white flex items-center gap-1 transition-colors">
-          <Copy className="w-3 h-3" />
-          {copied ? 'Copié !' : 'Copier'}
-        </button>
+      {/* Info grid */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-black/20 rounded p-2">
+          <h5 className="text-[10px] font-mono text-white/40 uppercase mb-1">Patient</h5>
+          <div className="text-xs font-mono text-white/80">
+            {data.patient_fullname || '—'}
+          </div>
+          <div className="text-[10px] font-mono text-white/50">
+            {data.patient_age_years ? `${data.patient_age_years} ans` : '—'}
+            {data.insurance && ` • ${data.insurance}`}
+          </div>
+        </div>
+        <div className="bg-black/20 rounded p-2">
+          <h5 className="text-[10px] font-mono text-white/40 uppercase mb-1">Prescripteur</h5>
+          <div className="text-xs font-mono text-white/80">
+            {data.prescriber || '—'}
+          </div>
+        </div>
       </div>
-      <div className="bg-black/40 p-6 rounded-3xl border border-white/10 font-mono text-xs text-cyan-300 overflow-auto max-h-[600px] shadow-inner">
-        <pre className="whitespace-pre-wrap break-all">{contentToDisplay}</pre>
-      </div>
+
+      {/* Flags */}
+      {data.flags && data.flags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {data.flags.map((flag, i) => (
+            <span
+              key={i}
+              className="px-1.5 py-0.5 text-[10px] font-mono bg-amber-500/20 text-amber-400 rounded"
+            >
+              {flag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Lines table */}
+      {data.lines && data.lines.length > 0 && (
+        <table className="w-full text-xs font-mono">
+          <thead>
+            <tr className="text-white/40 text-left border-b border-white/10">
+              <th className="py-1 px-2">Désignation</th>
+              <th className="py-1 px-2 text-right">Qté</th>
+              <th className="py-1 px-2 text-right">Prix</th>
+              <th className="py-1 px-2 text-right">Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.lines.map((line, i) => (
+              <tr key={i} className="border-b border-white/5 hover:bg-white/5">
+                <td className="py-1 px-2 text-white/80">{line.designation}</td>
+                <td className="py-1 px-2 text-right text-cyan-400">{line.qty}</td>
+                <td className="py-1 px-2 text-right text-white/60">
+                  {line.unit_price_eur?.toFixed(2) || '—'}€
+                </td>
+                <td className="py-1 px-2 text-right text-white/40">
+                  {line.stock ?? '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {/* Total */}
+      {data.total_eur !== null && (
+        <div className="flex justify-end items-center gap-2 pt-2 border-t border-white/10">
+          <span className="text-xs font-mono text-white/40">TOTAL</span>
+          <span className="text-sm font-mono font-bold text-emerald-400">
+            {data.total_eur.toFixed(2)}€
+          </span>
+        </div>
+      )}
+
+      {/* Missing fields */}
+      {data.missing_fields && data.missing_fields.length > 0 && (
+        <div className="text-[10px] font-mono text-red-400/60">
+          Missing: {data.missing_fields.join(', ')}
+        </div>
+      )}
     </div>
   )
 }
 
-function TabMetadata({ capture }: { capture: LabCapture }) {
+function OrdonnanceView({ data }: { data: OrdonnanceScanResult }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <InfoCard title="Technique" icon={Activity} color="text-surface-400">
-        <InfoRow label="ID Capture" value={capture.id} fontMono />
-        <InfoRow label="Créé le" value={capture.createdAt.toLocaleString()} />
-        <InfoRow label="Mis à jour" value={capture.updatedAt.toLocaleString()} />
-      </InfoCard>
+    <div className="space-y-4">
+      {/* Info grid */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-black/20 rounded p-2">
+          <h5 className="text-[10px] font-mono text-white/40 uppercase mb-1">Prescripteur</h5>
+          <div className="text-xs font-mono text-white/80">{data.prescriber_name || '—'}</div>
+          <div className="text-[10px] font-mono text-white/50">
+            {data.prescriber_specialty || '—'}
+            {data.prescriber_rpps && ` • RPPS: ${data.prescriber_rpps}`}
+          </div>
+        </div>
+        <div className="bg-black/20 rounded p-2">
+          <h5 className="text-[10px] font-mono text-white/40 uppercase mb-1">Patient</h5>
+          <div className="text-xs font-mono text-white/80">{data.patient_fullname || '—'}</div>
+          <div className="text-[10px] font-mono text-white/50">
+            {data.patient_birthdate || '—'}
+          </div>
+        </div>
+      </div>
 
-      <InfoCard title="Performance" icon={BarChart3} color="text-emerald-400">
-        <InfoRow label="Confiance OCR" value={capture.ocrConfidence != null ? `${(capture.ocrConfidence * 100).toFixed(1)}%` : 'Non disponible'} highlight={capture.ocrConfidence != null} />
-        <InfoRow label="Nb Carbon" value={capture.char_count.toString()} />
-        <InfoRow label="Taille JSON" value={capture.rawText ? `${(capture.rawText.length / 1024).toFixed(2)} KB` : '0 KB'} fontMono />
-      </InfoCard>
+      {/* Date */}
+      {data.prescription_date && (
+        <div className="text-xs font-mono text-white/50">
+          Date prescription: {data.prescription_date}
+        </div>
+      )}
+
+      {/* Mentions */}
+      {data.mentions && data.mentions.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {data.mentions.map((m, i) => (
+            <span
+              key={i}
+              className="px-1.5 py-0.5 text-[10px] font-mono bg-indigo-500/20 text-indigo-400 rounded"
+            >
+              {m}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Medications */}
+      {data.medications && data.medications.length > 0 && (
+        <div>
+          <h5 className="text-[10px] font-mono text-white/40 uppercase mb-1">
+            Médicaments ({data.medications.length})
+          </h5>
+          <table className="w-full text-xs font-mono">
+            <thead>
+              <tr className="text-white/40 text-left border-b border-white/10">
+                <th className="py-1 px-2">Nom</th>
+                <th className="py-1 px-2">DCI</th>
+                <th className="py-1 px-2">Posologie</th>
+                <th className="py-1 px-2">Durée</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.medications.map((med, i) => (
+                <tr key={i} className="border-b border-white/5 hover:bg-white/5">
+                  <td className="py-1 px-2 text-white/80">{med.name}</td>
+                  <td className="py-1 px-2 text-cyan-400">{med.dci || '—'}</td>
+                  <td className="py-1 px-2 text-white/60">{med.posology || '—'}</td>
+                  <td className="py-1 px-2 text-white/40">{med.duration || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Missing fields */}
+      {data.missing_fields && data.missing_fields.length > 0 && (
+        <div className="text-[10px] font-mono text-red-400/60">
+          Missing: {data.missing_fields.join(', ')}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function GenericJsonView({ data, label }: { data: PhiBrainResult; label: string }) {
+  return (
+    <div>
+      <h4 className="text-xs font-mono text-white/40 mb-2">{label}</h4>
+      <pre className="text-xs font-mono text-white/70 bg-black/30 p-3 rounded overflow-auto">
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    </div>
+  )
+}
+
+// -----------------------------------------------------------------------------
+// Tab 4: Agents (Placeholder)
+// -----------------------------------------------------------------------------
+
+function TabAgents() {
+  const agents = [
+    { name: 'PhiBRAIN', desc: 'Orchestrateur principal', status: 'planned' },
+    { name: 'PhiMEDS', desc: 'Traitement médicaments (DCI, recommandations)', status: 'planned' },
+    { name: 'PhiADVICES', desc: 'Conseils patients', status: 'planned' },
+    { name: 'PhiCROSS_SELL', desc: 'Suggestions cross-selling', status: 'planned' },
+    { name: 'PhiCHIPS', desc: 'Micro-rappels (chips/badges)', status: 'planned' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-xs font-mono text-white/40">
+        <Bot className="w-4 h-4" />
+        Système Multi-Agent (à venir)
+      </div>
+
+      <div className="bg-black/20 rounded p-3 border border-dashed border-white/10">
+        <p className="text-xs text-white/50 mb-4">
+          Cette section affichera le pipeline d'agents PhiBRAIN avec leurs inputs/outputs
+          pour chaque étape du traitement.
+        </p>
+
+        <div className="space-y-2">
+          {agents.map((agent) => (
+            <div
+              key={agent.name}
+              className="flex items-center gap-3 px-2 py-1.5 bg-black/30 rounded"
+            >
+              <div className="w-2 h-2 rounded-full bg-white/20" />
+              <span className="text-xs font-mono text-white/60 w-28">{agent.name}</span>
+              <span className="text-[10px] text-white/40">{agent.desc}</span>
+              <span className="ml-auto text-[10px] font-mono text-white/20 uppercase">
+                {agent.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

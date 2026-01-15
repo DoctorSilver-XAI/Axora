@@ -10,6 +10,7 @@ import { Settings } from './pages/Settings'
 import { Login, Register } from './pages/Auth'
 import { ProtectedRoute } from '@shared/components/ProtectedRoute'
 import { ModuleLoaderProvider } from '@/modules'
+import { ToastProvider } from '@shared/contexts/ToastContext'
 
 // Import modules to register them
 import '@/modules'
@@ -26,19 +27,21 @@ export function Hub() {
         path="/*"
         element={
           <ProtectedRoute>
-            <ModuleLoaderProvider>
-              <MainLayout>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/nexus" element={<Nexus />} />
-                  <Route path="/phivision" element={<PhiVisionPage />} />
-                  <Route path="/phivision-lab" element={<PhiVisionLabPage />} />
-                  <Route path="/assistant" element={<Assistant />} />
-                  <Route path="/messaging" element={<Messaging />} />
-                  <Route path="/settings" element={<Settings />} />
-                </Routes>
-              </MainLayout>
-            </ModuleLoaderProvider>
+            <ToastProvider>
+              <ModuleLoaderProvider>
+                <MainLayout>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/nexus" element={<Nexus />} />
+                    <Route path="/phivision" element={<PhiVisionPage />} />
+                    <Route path="/phivision-lab" element={<PhiVisionLabPage />} />
+                    <Route path="/assistant" element={<Assistant />} />
+                    <Route path="/messaging" element={<Messaging />} />
+                    <Route path="/settings" element={<Settings />} />
+                  </Routes>
+                </MainLayout>
+              </ModuleLoaderProvider>
+            </ToastProvider>
           </ProtectedRoute>
         }
       />

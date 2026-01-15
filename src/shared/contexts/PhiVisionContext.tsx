@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
 import { analyzeImage, OCRResult } from '@features/phivision/services/OCRService'
 import { CaptureService, Capture } from '@features/phivision/services/CaptureService'
+import { AgentsService, initializeAgentsService } from '@features/phivision/services/AgentsService'
+import type { AgentsResults } from '@features/phivision/types/agents'
 
 type PhiVisionStatus = 'idle' | 'capturing' | 'analyzing' | 'saving' | 'complete' | 'error'
 
@@ -11,6 +13,9 @@ interface PhiVisionState {
   error: string | null
   history: Capture[]
   isLoadingHistory: boolean
+  // Agents - stockés par ID de capture ('current' pour le résultat non sauvegardé)
+  agentsResultsByCapture: Record<string, AgentsResults>
+  runningAgentsCaptureId: string | null // ID de la capture en cours d'analyse
 }
 
 interface PhiVisionContextType extends PhiVisionState {
@@ -21,6 +26,9 @@ interface PhiVisionContextType extends PhiVisionState {
   loadHistory: () => Promise<void>
   deleteCapture: (id: string) => Promise<void>
   toggleFavorite: (id: string, isFavorite: boolean) => Promise<void>
+  runAgents: (captureId: string, phiBrainData: Record<string, unknown>) => Promise<void>
+  getAgentsResults: (captureId: string) => AgentsResults | null
+  isRunningAgents: (captureId: string) => boolean
 }
 
 const PhiVisionContext = createContext<PhiVisionContextType | undefined>(undefined)
@@ -33,7 +41,14 @@ export function PhiVisionProvider({ children }: { children: ReactNode }) {
     error: null,
     history: [],
     isLoadingHistory: true,
+    agentsResultsByCapture: {},
+    runningAgentsCaptureId: null,
   })
+
+  // Initialize AgentsService on mount
+  useEffect(() => {
+    initializeAgentsService()
+  }, [])
 
   // Load history from Supabase on mount
   useEffect(() => {
@@ -372,6 +387,52 @@ export function PhiVisionProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const runAgents = useCallback(async (captureId: string, phiBrainData: Record<string, unknown>) => {
+    if (!phiBrainData) {
+      console.warn('[PhiVisionContext] No PhiBrain data provided for agents')
+      return
+    }
+
+    console.log(`[PhiVisionContext] Starting agents for capture ${captureId}...`)
+    setState((prev) => ({ ...prev, runningAgentsCaptureId: captureId }))
+
+    try {
+      const results = await AgentsService.runAllAgents(phiBrainData)
+      console.log(`[PhiVisionContext] Agents completed for ${captureId}:`, {
+        phiMeds: results.phiMeds?.status,
+        phiAdvices: results.phiAdvices?.status,
+        phiCrossSell: results.phiCrossSell?.status,
+        phiChips: results.phiChips?.status,
+      })
+
+      setState((prev) => ({
+        ...prev,
+        runningAgentsCaptureId: null,
+        agentsResultsByCapture: {
+          ...prev.agentsResultsByCapture,
+          [captureId]: results,
+        },
+      }))
+    } catch (err) {
+      console.error(`[PhiVisionContext] Agents failed for ${captureId}:`, err)
+      setState((prev) => ({
+        ...prev,
+        runningAgentsCaptureId: null,
+        error: err instanceof Error ? err.message : 'Erreur des agents',
+      }))
+    }
+  }, [])
+
+  // Helper pour récupérer les résultats agents d'une capture spécifique
+  const getAgentsResults = useCallback((captureId: string): AgentsResults | null => {
+    return state.agentsResultsByCapture[captureId] || null
+  }, [state.agentsResultsByCapture])
+
+  // Helper pour vérifier si les agents sont en cours pour une capture
+  const isRunningAgents = useCallback((captureId: string): boolean => {
+    return state.runningAgentsCaptureId === captureId
+  }, [state.runningAgentsCaptureId])
+
   return (
     <PhiVisionContext.Provider
       value={{
@@ -383,6 +444,9 @@ export function PhiVisionProvider({ children }: { children: ReactNode }) {
         loadHistory,
         deleteCapture,
         toggleFavorite,
+        runAgents,
+        getAgentsResults,
+        isRunningAgents,
       }}
     >
       {children}

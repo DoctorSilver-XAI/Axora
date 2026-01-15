@@ -17,7 +17,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         {/* Header with window controls */}
         <Header />
 
-        {/* Page content */}
+        {/* Page content - animations handled by individual pages */}
         <main className="flex-1 overflow-auto p-6">
           {children}
         </main>
