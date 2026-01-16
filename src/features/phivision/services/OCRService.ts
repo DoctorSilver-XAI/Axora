@@ -6,7 +6,7 @@ const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions'
 // ============================================================================
 
 // Type de contexte détecté
-export type ContextType = 'FACTURATION_ORDO' | 'ORDONNANCE_SCAN' | 'FICHE_PATIENT' | 'UNKNOWN'
+export type ContextType = 'FACTURATION_ORDO' | 'ORDONNANCE_SCAN' | 'FICHE_PATIENT' | 'CONTROLE_ORDONNANCE' | 'UNKNOWN'
 
 // Ligne de facturation
 export interface FacturationLine {
@@ -77,6 +77,48 @@ export interface FichePatientResult {
   missing_fields: string[]
 }
 
+// Médicament délivré dans le contrôle d'ordonnance
+export interface ControlOrdonnanceMedication {
+  type: string | null          // ALD, Nexo, standard, etc.
+  qty: number
+  designation: string
+  due: number | null           // Quantité restante due
+}
+
+// Résultat pour contexte CONTROLE_ORDONNANCE
+export interface ControlOrdonnanceResult {
+  context: 'CONTROLE_ORDONNANCE'
+  // Données facture
+  facture_number: string | null
+  delivery_date: string | null
+  delivery_time: string | null
+  delivered_by: string | null     // Opérateur qui a délivré
+  renewal_count: number | null    // Nombre de renouvellements
+  // Prescripteur
+  prescriber_name: string | null
+  prescriber_rpps: string | null
+  prescriber_specialty: string | null
+  prescriber_city: string | null
+  prescriber_phone: string | null
+  // Patient
+  patient_fullname: string | null
+  patient_age_years: number | null
+  patient_birthdate: string | null
+  patient_sex: 'Homme' | 'Femme' | null
+  patient_city: string | null
+  // Données cliniques (critiques pour le contrôle)
+  pathologies: string[]
+  allergies: string[]
+  other_info: string[]
+  // Médicaments délivrés
+  medications: ControlOrdonnanceMedication[]
+  // Statut du contrôle
+  control_status: 'pending' | 'validated' | 'rejected' | null
+  // Méta
+  confidence: number
+  missing_fields: string[]
+}
+
 // Résultat pour contexte UNKNOWN
 export interface UnknownContextResult {
   context: 'UNKNOWN'
@@ -92,6 +134,7 @@ export type PhiBrainResult =
   | FacturationOrdoResult
   | OrdonnanceScanResult
   | FichePatientResult
+  | ControlOrdonnanceResult
   | UnknownContextResult
 
 // Interface de résultat OCR exportée (rétrocompatibilité)
@@ -132,7 +175,19 @@ Scan ou photo d'une ordonnance papier.
 Écran de fiche patient dans le LGO.
 Éléments caractéristiques : données administratives, historique, allergies, traitements.
 
-## 4. UNKNOWN
+## 4. CONTROLE_ORDONNANCE
+Écran de contrôle/validation d'ordonnances déjà délivrées (revue a posteriori).
+Éléments caractéristiques :
+- Onglet "Contrôle Ordonnances" actif dans la barre de navigation du LGO
+- Liste des factures à contrôler en haut avec colonnes : Date, Facture, Patient, Montant, Praticien, Statut contrôle
+- Zone de visualisation de l'ordonnance scannée (partie gauche)
+- Zone d'informations patient avec Constantes (âge, sexe), Pathologies, Allergies (partie droite)
+- Tableau des médicaments délivrés avec colonnes : Type (ALD/Nexo), Qté, Libellé, Dû
+- Indicateurs de renouvellement
+- Statut de contrôle : icône verte (validé), orange/? (en attente), rouge (rejeté)
+ATTENTION : Ce contexte est différent de FACTURATION_ORDO. Le contrôle d'ordonnance sert à vérifier la cohérence clinique des délivrances (interactions, posologies, quantités) et NON à facturer.
+
+## 5. UNKNOWN
 Contexte non identifié ou image non pharmaceutique.
 
 # PRODUITS PHARMACEUTIQUES FRANÇAIS
@@ -229,6 +284,46 @@ RÉPONDS UNIQUEMENT EN JSON selon le contexte détecté :
   "missing_fields": ["email"]
 }
 
+## Si CONTROLE_ORDONNANCE :
+{
+  "context": "CONTROLE_ORDONNANCE",
+  "facture_number": "710249",
+  "delivery_date": "2025-08-23",
+  "delivery_time": "08:46",
+  "delivered_by": "7",
+  "renewal_count": 3,
+  "prescriber_name": "Dr CANDERAN Bruno",
+  "prescriber_rpps": "10001021467",
+  "prescriber_specialty": "Omnipraticien-Médecine Générale",
+  "prescriber_city": "ST RAPHAEL",
+  "prescriber_phone": "07 66 12 11 61",
+  "patient_fullname": "KHALIFA RIM",
+  "patient_age_years": 39,
+  "patient_birthdate": "1985-11-22",
+  "patient_sex": "Femme",
+  "patient_city": "FREJUS",
+  "pathologies": ["Endocrinologie"],
+  "allergies": [],
+  "other_info": [],
+  "medications": [
+    {
+      "type": "ALD",
+      "qty": 2,
+      "designation": "HYDROCORTISONE 10MG ARW CPR SEC25",
+      "due": null
+    },
+    {
+      "type": "ALD",
+      "qty": 1,
+      "designation": "MINIRINMELT 120MCG LYOPH ORAL 100",
+      "due": null
+    }
+  ],
+  "control_status": "pending",
+  "confidence": 0.94,
+  "missing_fields": ["allergies"]
+}
+
 ## Si UNKNOWN :
 {
   "context": "UNKNOWN",
@@ -249,6 +344,94 @@ IMPORTANT:
 // FONCTIONS D'ANALYSE
 // ============================================================================
 
+// Analyze image from a public URL (preferred method - used after upload to Supabase)
+export async function analyzeImageFromUrl(imageUrl: string): Promise<OCRResult> {
+  if (!MISTRAL_API_KEY) {
+    throw new Error('Mistral API key not configured')
+  }
+
+  console.log('[OCRService] Analyzing image from URL:', imageUrl.substring(0, 80) + '...')
+
+  const response = await fetch(MISTRAL_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${MISTRAL_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'pixtral-12b-2409',
+      messages: [
+        {
+          role: 'system',
+          content: PHI_BRAIN_V2_SYSTEM_PROMPT,
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: PHI_BRAIN_V2_USER_PROMPT,
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: imageUrl,
+              },
+            },
+          ],
+        },
+      ],
+      max_tokens: 4096,
+      temperature: 0.1,
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Mistral API error: ${error}`)
+  }
+
+  const data = await response.json()
+  const content = data.choices[0]?.message?.content
+
+  if (!content) {
+    throw new Error('No response from Mistral API')
+  }
+
+  // Parse JSON response
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]) as PhiBrainResult
+
+      const result: OCRResult = {
+        text: extractRawText(parsed),
+        confidence: parsed.confidence || 0.5,
+        phiBrain: parsed,
+      }
+
+      result.analysis = convertToLegacyAnalysis(parsed)
+      return result
+    }
+  } catch {
+    // If JSON parsing fails, return raw text with UNKNOWN context
+  }
+
+  return {
+    text: content,
+    confidence: 0.3,
+    phiBrain: {
+      context: 'UNKNOWN',
+      raw_text: content,
+      detected_elements: [],
+      possible_context: null,
+      confidence: 0.3,
+      missing_fields: [],
+    },
+  }
+}
+
+// Analyze image from base64 (fallback method for manual uploads)
 export async function analyzeImage(base64Image: string): Promise<OCRResult> {
   if (!MISTRAL_API_KEY) {
     throw new Error('Mistral API key not configured')
@@ -353,6 +536,12 @@ function extractRawText(result: PhiBrainResult): string {
         result.active_treatments?.join(', '),
         result.notes,
       ].filter(Boolean).join('\n')
+    case 'CONTROLE_ORDONNANCE':
+      return [
+        result.patient_fullname,
+        result.medications.map(m => `${m.designation} x${m.qty}`).join(', '),
+        result.pathologies?.join(', '),
+      ].filter(Boolean).join('\n')
     case 'UNKNOWN':
       return result.raw_text
     default:
@@ -387,14 +576,29 @@ function convertToLegacyAnalysis(result: PhiBrainResult): OCRResult['analysis'] 
         instructions: [],
         summary: `Fiche patient: ${result.patient_fullname || 'inconnu'}`,
       }
+    case 'CONTROLE_ORDONNANCE':
+      return {
+        type: 'prescription',
+        medications: result.medications.map(m => m.designation),
+        dosages: [],
+        instructions: [],
+        summary: `Contrôle ordonnance - ${result.medications.length} médicaments - ${result.patient_fullname || 'patient'}`,
+      }
     case 'UNKNOWN':
-    default:
       return {
         type: 'unknown',
         medications: [],
         dosages: [],
         instructions: [],
         summary: result.possible_context || 'Contexte non identifié',
+      }
+    default:
+      return {
+        type: 'unknown',
+        medications: [],
+        dosages: [],
+        instructions: [],
+        summary: 'Contexte non identifié',
       }
   }
 }
@@ -466,6 +670,11 @@ export function isOrdonnanceScan(result: PhiBrainResult): result is OrdonnanceSc
 // Helper pour vérifier si un résultat est de type FICHE_PATIENT
 export function isFichePatient(result: PhiBrainResult): result is FichePatientResult {
   return result.context === 'FICHE_PATIENT'
+}
+
+// Helper pour vérifier si un résultat est de type CONTROLE_ORDONNANCE
+export function isControlOrdonnance(result: PhiBrainResult): result is ControlOrdonnanceResult {
+  return result.context === 'CONTROLE_ORDONNANCE'
 }
 
 // Helper pour vérifier si un résultat est de type UNKNOWN

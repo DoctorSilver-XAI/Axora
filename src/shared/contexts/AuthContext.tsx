@@ -51,6 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Synchroniser le user ID vers le Main Process pour les opérations background (PhiVision)
+  useEffect(() => {
+    if (window.axora?.auth?.syncUserId) {
+      window.axora.auth.syncUserId(state.user?.id ?? null)
+      console.log('[AuthContext] User ID synced to Main Process:', state.user?.id ?? 'null')
+    }
+  }, [state.user?.id])
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     return { error: error as Error | null }

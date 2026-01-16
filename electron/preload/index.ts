@@ -24,6 +24,8 @@ const axoraAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.PHIVISION.ANALYZE, imageData),
     getPending: () => ipcRenderer.invoke(IPC_CHANNELS.PHIVISION.GET_PENDING),
     close: () => ipcRenderer.send(IPC_CHANNELS.PHIVISION.CLOSE),
+    // Permet au Renderer d'envoyer un statut au Main (qui le broadcast)
+    sendStatus: (status: string) => ipcRenderer.send(IPC_CHANNELS.PHIVISION.STATUS, status),
     onTrigger: (callback: () => void) => {
       const handler = () => callback()
       ipcRenderer.on(IPC_CHANNELS.PHIVISION.TRIGGER, handler)

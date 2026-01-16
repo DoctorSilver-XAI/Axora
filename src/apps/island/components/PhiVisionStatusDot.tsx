@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@shared/utils/cn'
 
-export type PhiVisionStatus = 'idle' | 'capturing' | 'analyzing' | 'complete' | 'error'
+export type PhiVisionStatus = 'idle' | 'capturing' | 'analyzing' | 'saving' | 'complete' | 'error'
 
 interface PhiVisionStatusDotProps {
   status: PhiVisionStatus
@@ -25,6 +25,11 @@ const COLORS = {
     bg: '#818cf8', // indigo-400
     glow: 'rgba(129, 140, 248, 0.6)',
     tailwind: 'bg-indigo-400',
+  },
+  saving: {
+    bg: '#a78bfa', // violet-400
+    glow: 'rgba(167, 139, 250, 0.6)',
+    tailwind: 'bg-violet-400',
   },
   complete: {
     bg: '#22d3ee', // cyan-400

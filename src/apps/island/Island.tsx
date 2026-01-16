@@ -37,43 +37,35 @@ export function Island() {
       window.axora.phivision.trigger()
     })
 
-    // Ecouter les changements de statut du main process (seulement pour 'capturing')
+    // Ecouter TOUS les changements de statut (broadcastés par le Main Process)
     const unsubscribeStatus = window.axora.phivision.onStatusChange((status) => {
+      console.log('[Island] Status changed:', status)
+      setPhiVisionState((prev) => ({ ...prev, status: status as PhiVisionStatus }))
       if (status === 'capturing') {
-        setPhiVisionState((prev) => ({ ...prev, status: 'capturing' }))
         setShowCaptureEffect(true)
+      } else {
+        setShowCaptureEffect(false)
       }
     })
 
-    // Ecouter le resultat de capture - NE PAS analyser ici, le Hub le fera
+    // Ecouter le resultat de capture (pour stocker l'image)
     const unsubscribeResult = window.axora.phivision.onResult((result: unknown) => {
       console.log('[Island] === onResult callback triggered ===')
       const data = result as { image?: string; error?: string }
       console.log('[Island] Data received:', data.image ? `image (${data.image.length} chars)` : 'no image')
 
-      // Fin de l'effet de capture
-      setShowCaptureEffect(false)
-
       if (data.image) {
-        console.log('[Island] Image captured! Showing success badge (analysis will be done by Hub)')
+        // Stocker l'image localement pour l'affichage Island
+        setPhiVisionState((prev) => ({
+          ...prev,
+          capturedImage: data.image ?? null,
+          error: null,
+        }))
 
-        console.log('[Island] Image captured! Starting artificial processing delay')
-
-        // Stocker l'image et passer en mode analyzing pour l'animation
-        // Le vrai résultat est déjà là, mais on simule le calcul
-        setPhiVisionState((prev) => ({ ...prev, status: 'analyzing' }))
-
-        // Simuler un "temps de process complex" (3 à 5 secondes)
-        const delay = Math.random() * 2000 + 3000
-
-        setTimeout(() => {
-          setPhiVisionState((prev) => ({
-            ...prev,
-            capturedImage: data.image ?? null,
-            status: 'complete',
-            error: null,
-          }))
-        }, delay)
+        // IMPORTANT: Ouvrir automatiquement le Hub pour déclencher le workflow
+        // (upload → OCR → save) qui s'exécute dans PhiVisionContext
+        console.log('[Island] Opening Hub to trigger PhiVision workflow...')
+        window.axora.window.openHub()
       } else if (data.error) {
         setPhiVisionState((prev) => ({
           ...prev,
@@ -144,6 +136,7 @@ export function Island() {
     idle: 'Pret',
     capturing: 'Capture...',
     analyzing: '', // Empty for animation
+    saving: 'Sauvegarde...',
     complete: 'Termine',
     error: 'Erreur',
   }
@@ -356,9 +349,7 @@ export function Island() {
                       color:
                         status === 'error'
                           ? PHIVISION_COLORS.error.bg
-                          : status === 'complete'
-                            ? PHIVISION_COLORS.complete.bg
-                            : undefined,
+                          : undefined,
                     }}
                   >
                     {statusLabels[status]}

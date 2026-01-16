@@ -87,11 +87,18 @@ export function registerIpcHandlers(windowManager: WindowManager): void {
       // L'Island gérera la transition vers 'analyzing' puis 'complete'
       // On envoie juste le résultat de la capture
       console.log('[PhiVision] Capture successful, image size:', base64Image.length)
-      console.log('[PhiVision] Broadcasting RESULT to Island...')
+      console.log('[PhiVision] Broadcasting RESULT...')
       windowManager.broadcast(IPC_CHANNELS.PHIVISION.RESULT, { image: base64Image })
 
-      // Stocker le resultat pour le Hub qui pourrait s'ouvrir plus tard
-      windowManager.setPendingPhiVisionResult(base64Image)
+      // Stocker le resultat SEULEMENT si le Hub n'est pas ouvert
+      // (sinon il recevra déjà le broadcast et on évite les doublons)
+      const hub = windowManager.getHub()
+      if (!hub || hub.isDestroyed()) {
+        console.log('[PhiVision] Hub not open, storing pending result for later')
+        windowManager.setPendingPhiVisionResult(base64Image)
+      } else {
+        console.log('[PhiVision] Hub is open, it received the broadcast directly')
+      }
 
       console.log('[PhiVision] RESULT broadcast complete')
       return { success: true, image: base64Image }
@@ -140,6 +147,12 @@ export function registerIpcHandlers(windowManager: WindowManager): void {
 
   ipcMain.on(IPC_CHANNELS.PHIVISION.CLOSE, () => {
     windowManager.broadcast(IPC_CHANNELS.PHIVISION.STATUS, 'idle')
+  })
+
+  // Permet au Renderer (Hub) d'envoyer un statut qui sera broadcasté à toutes les fenêtres
+  ipcMain.on(IPC_CHANNELS.PHIVISION.STATUS, (_event, status: string) => {
+    console.log('[PhiVision] Status received from Renderer:', status)
+    windowManager.broadcast(IPC_CHANNELS.PHIVISION.STATUS, status)
   })
 
   // Le Hub peut demander le pending result quand il est pret

@@ -380,7 +380,7 @@ export function PhiVisionPage() {
                   </div>
 
                   {/* Parsed Result View */}
-                  <ParsedResultView rawText={result.text} />
+                  <ParsedResultView rawText={result.phiBrain ? JSON.stringify(result.phiBrain) : result.text} />
 
                   {/* Agents Section */}
                   <AgentsSection

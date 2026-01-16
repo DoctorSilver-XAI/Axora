@@ -195,5 +195,22 @@ export function extractAgentContext(phiBrainResult: Record<string, unknown>): Ag
     }
   }
 
+  // CONTROLE_ORDONNANCE
+  if (phiBrainResult.context === 'CONTROLE_ORDONNANCE') {
+    context.patientFullname = phiBrainResult.patient_fullname as string | null
+    context.patientAge = phiBrainResult.patient_age_years as number | null
+    context.isMinor = context.patientAge ? context.patientAge < 18 : undefined
+    context.prescriberName = phiBrainResult.prescriber_name as string | null
+    context.prescriberSpecialty = phiBrainResult.prescriber_specialty as string | null
+
+    // Extraire les noms des médicaments depuis medications (structure avec designation)
+    const meds = phiBrainResult.medications as Array<{ designation?: string }> | undefined
+    if (meds) {
+      context.medications = meds
+        .map((m) => m.designation)
+        .filter((d): d is string => !!d)
+    }
+  }
+
   return context
 }

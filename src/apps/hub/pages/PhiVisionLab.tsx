@@ -17,6 +17,7 @@ import type {
   PhiBrainResult,
   FacturationOrdoResult,
   OrdonnanceScanResult,
+  ControlOrdonnanceResult,
 } from '@features/phivision/services/OCRService'
 import { supabase } from '@shared/lib/supabase'
 
@@ -89,6 +90,7 @@ function getContextColor(ctx: string): string {
     case 'FACTURATION_ORDO': return 'text-cyan-400'
     case 'ORDONNANCE_SCAN': return 'text-indigo-400'
     case 'FICHE_PATIENT': return 'text-pink-400'
+    case 'CONTROLE_ORDONNANCE': return 'text-orange-400'
     default: return 'text-white/40'
   }
 }
@@ -554,6 +556,9 @@ function TabParsed({ capture }: { capture: LabCapture }) {
       {data.context === 'FICHE_PATIENT' && (
         <GenericJsonView data={data} label="Fiche Patient" />
       )}
+      {data.context === 'CONTROLE_ORDONNANCE' && (
+        <ControlOrdonnanceView data={data as ControlOrdonnanceResult} />
+      )}
       {data.context === 'UNKNOWN' && (
         <GenericJsonView data={data} label="Contexte Inconnu" />
       )}
@@ -719,6 +724,142 @@ function OrdonnanceView({ data }: { data: OrdonnanceScanResult }) {
                   <td className="py-1 px-2 text-cyan-400">{med.dci || '—'}</td>
                   <td className="py-1 px-2 text-white/60">{med.posology || '—'}</td>
                   <td className="py-1 px-2 text-white/40">{med.duration || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Missing fields */}
+      {data.missing_fields && data.missing_fields.length > 0 && (
+        <div className="text-[10px] font-mono text-red-400/60">
+          Missing: {data.missing_fields.join(', ')}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ControlOrdonnanceView({ data }: { data: ControlOrdonnanceResult }) {
+  return (
+    <div className="space-y-4">
+      {/* Control status */}
+      {data.control_status && (
+        <div className={cn(
+          'inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono font-bold uppercase',
+          data.control_status === 'validated' && 'bg-emerald-500/20 text-emerald-400',
+          data.control_status === 'pending' && 'bg-amber-500/20 text-amber-400',
+          data.control_status === 'rejected' && 'bg-red-500/20 text-red-400'
+        )}>
+          {data.control_status === 'validated' && '✓ Validé'}
+          {data.control_status === 'pending' && '⏳ En attente'}
+          {data.control_status === 'rejected' && '✗ Rejeté'}
+        </div>
+      )}
+
+      {/* Info grid */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-black/20 rounded p-2">
+          <h5 className="text-[10px] font-mono text-white/40 uppercase mb-1">Patient</h5>
+          <div className="text-xs font-mono text-white/80">{data.patient_fullname || '—'}</div>
+          <div className="text-[10px] font-mono text-white/50">
+            {data.patient_age_years ? `${data.patient_age_years} ans` : '—'}
+            {data.patient_sex && ` • ${data.patient_sex}`}
+            {data.patient_city && ` • ${data.patient_city}`}
+          </div>
+        </div>
+        <div className="bg-black/20 rounded p-2">
+          <h5 className="text-[10px] font-mono text-white/40 uppercase mb-1">Prescripteur</h5>
+          <div className="text-xs font-mono text-white/80">{data.prescriber_name || '—'}</div>
+          <div className="text-[10px] font-mono text-white/50">
+            {data.prescriber_specialty || '—'}
+            {data.prescriber_rpps && ` • RPPS: ${data.prescriber_rpps}`}
+          </div>
+        </div>
+      </div>
+
+      {/* Pathologies & Allergies */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-indigo-500/10 rounded p-2 border border-indigo-500/20">
+          <h5 className="text-[10px] font-mono text-indigo-400 uppercase mb-1">Pathologies</h5>
+          {data.pathologies && data.pathologies.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {data.pathologies.map((p, i) => (
+                <span key={i} className="px-1.5 py-0.5 text-[10px] font-mono bg-indigo-500/20 text-indigo-300 rounded">
+                  {p}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-[10px] font-mono text-white/30 italic">Non renseigné</span>
+          )}
+        </div>
+        <div className="bg-red-500/10 rounded p-2 border border-red-500/20">
+          <h5 className="text-[10px] font-mono text-red-400 uppercase mb-1">Allergies</h5>
+          {data.allergies && data.allergies.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {data.allergies.map((a, i) => (
+                <span key={i} className="px-1.5 py-0.5 text-[10px] font-mono bg-red-500/20 text-red-300 rounded">
+                  {a}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-[10px] font-mono text-white/30 italic">Aucune connue</span>
+          )}
+        </div>
+      </div>
+
+      {/* Delivery info */}
+      <div className="flex flex-wrap gap-3 text-[10px] font-mono text-white/50">
+        {data.facture_number && (
+          <span>Facture: <span className="text-white/70">{data.facture_number}</span></span>
+        )}
+        {data.delivery_date && (
+          <span>Date: <span className="text-white/70">{data.delivery_date}</span></span>
+        )}
+        {data.delivery_time && (
+          <span>Heure: <span className="text-white/70">{data.delivery_time}</span></span>
+        )}
+        {data.renewal_count !== null && data.renewal_count > 0 && (
+          <span className="text-cyan-400">Renouvellement: {data.renewal_count}</span>
+        )}
+      </div>
+
+      {/* Medications table */}
+      {data.medications && data.medications.length > 0 && (
+        <div>
+          <h5 className="text-[10px] font-mono text-orange-400 uppercase mb-1">
+            Médicaments délivrés ({data.medications.length})
+          </h5>
+          <table className="w-full text-xs font-mono">
+            <thead>
+              <tr className="text-white/40 text-left border-b border-white/10">
+                <th className="py-1 px-2 w-16">Type</th>
+                <th className="py-1 px-2 text-center w-12">Qté</th>
+                <th className="py-1 px-2">Désignation</th>
+                <th className="py-1 px-2 text-center w-12">Dû</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.medications.map((med, i) => (
+                <tr key={i} className="border-b border-white/5 hover:bg-white/5">
+                  <td className="py-1 px-2">
+                    {med.type && (
+                      <span className={cn(
+                        'px-1 py-0.5 text-[10px] font-bold rounded',
+                        med.type === 'ALD' && 'bg-emerald-500/20 text-emerald-400',
+                        med.type === 'Nexo' && 'bg-purple-500/20 text-purple-400',
+                        !['ALD', 'Nexo'].includes(med.type) && 'bg-white/10 text-white/50'
+                      )}>
+                        {med.type}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-1 px-2 text-center text-cyan-400">{med.qty}</td>
+                  <td className="py-1 px-2 text-white/80">{med.designation}</td>
+                  <td className="py-1 px-2 text-center text-white/40">{med.due ?? '—'}</td>
                 </tr>
               ))}
             </tbody>

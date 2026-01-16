@@ -54,6 +54,80 @@ function toAppCapture(dbCapture: DBCapture): Capture {
 }
 
 export const CaptureService = {
+  // Upload image to storage and return the public URL (without creating capture record)
+  async uploadImage(imageBase64: string): Promise<{ url: string; path: string }> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('User not authenticated')
+
+    // Convert base64 to blob
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '')
+    const byteCharacters = atob(base64Data)
+    const byteNumbers = new Array(byteCharacters.length)
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    const byteArray = new Uint8Array(byteNumbers)
+    const blob = new Blob([byteArray], { type: 'image/png' })
+
+    // Upload to storage
+    const fileName = `${user.id}/${Date.now()}.png`
+    const { error: uploadError } = await supabase
+      .storage
+      .from('captures')
+      .upload(fileName, blob, {
+        contentType: 'image/png',
+        cacheControl: '3600',
+      })
+
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError)
+      throw uploadError
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase
+      .storage
+      .from('captures')
+      .getPublicUrl(fileName)
+
+    return {
+      url: urlData.publicUrl,
+      path: fileName,
+    }
+  },
+
+  // Create capture record with already uploaded image URL
+  async createWithUrl(
+    imageUrl: string,
+    rawText: string | null,
+    entities: Array<Record<string, unknown>> = [],
+    enrichment: Record<string, unknown> = {}
+  ): Promise<Capture> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('User not authenticated')
+
+    // Create capture record
+    const { data, error } = await supabase
+      .from('captures')
+      .insert({
+        user_id: user.id,
+        image_url: imageUrl,
+        raw_text: rawText,
+        entities,
+        enrichment,
+        ocr_provider: 'mistral',
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating capture:', error)
+      throw error
+    }
+
+    return toAppCapture(data as DBCapture)
+  },
+
   // Fetch all captures for the current user
   async getAll(limit = 50): Promise<Capture[]> {
     const { data, error } = await supabase

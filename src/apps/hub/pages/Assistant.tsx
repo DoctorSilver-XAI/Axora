@@ -9,6 +9,7 @@ import { getConversationService, UnifiedConversationService } from '@features/as
 import { NewConversationModal } from '@features/assistant/components/NewConversationModal'
 import { StorageBadge } from '@features/assistant/components/StorageBadge'
 import { PROVIDER_LABELS, getModelDisplayName } from '@features/assistant/constants/providers'
+import { MarkdownPreview } from '@modules/notes/components/MarkdownPreview'
 
 // Animation variants pour effet premium
 const containerVariants = {
@@ -454,10 +455,13 @@ export function Assistant() {
                   </div>
                   <div className="max-w-[75%] px-5 py-4 rounded-2xl bg-surface-100/50 border border-white/5 backdrop-blur-xl">
                     {streamingContent ? (
-                      <p className="text-sm text-white/90 whitespace-pre-wrap leading-relaxed">
-                        {streamingContent}
-                        <span className="inline-block w-1.5 h-4 bg-axora-400 ml-1 animate-pulse rounded-sm" />
-                      </p>
+                      <div className="relative">
+                        <MarkdownPreview
+                          content={streamingContent}
+                          className="text-sm leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:mb-2 [&_ol]:mb-2"
+                        />
+                        <span className="inline-block w-1.5 h-4 bg-axora-400 ml-1 animate-pulse rounded-sm align-middle" />
+                      </div>
                     ) : (
                       <div className="flex items-center gap-3">
                         <Loader2 className="w-4 h-4 text-axora-400 animate-spin" />
@@ -607,9 +611,16 @@ function MessageBubble({ message }: MessageBubbleProps) {
             : 'bg-surface-100/50 border border-white/5'
         )}
       >
-        <p className="text-sm whitespace-pre-wrap leading-relaxed text-white/90">
-          {message.content}
-        </p>
+        {isUser ? (
+          <p className="text-sm whitespace-pre-wrap leading-relaxed text-white/90">
+            {message.content}
+          </p>
+        ) : (
+          <MarkdownPreview
+            content={message.content}
+            className="text-sm leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:mb-2 [&_ol]:mb-2"
+          />
+        )}
         <p className={cn(
           "text-[10px] mt-2.5 flex items-center gap-1",
           isUser ? "text-cyan-400/60" : "text-white/30"
