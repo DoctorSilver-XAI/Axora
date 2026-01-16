@@ -99,12 +99,13 @@ export const AgentsService = {
   async runPhiMeds(context: AgentContext): Promise<PhiAgentResult<PhiMedsOutput>> {
     const startedAt = new Date()
     const agentConfig = this.getAgentConfig('PhiMEDS')
+    const userPrompt = buildPhiMedsUserPrompt(context.medications)
 
     try {
       const response = await this.callAI(
         agentConfig,
         PHI_MEDS_SYSTEM_PROMPT,
-        buildPhiMedsUserPrompt(context.medications)
+        userPrompt
       )
 
       const output = this.parseJsonResponse<PhiMedsOutput>(response)
@@ -117,9 +118,11 @@ export const AgentsService = {
         durationMs: Date.now() - startedAt.getTime(),
         input: { medications: context.medications },
         output,
+        prompts: { system: PHI_MEDS_SYSTEM_PROMPT, user: userPrompt },
+        rawResponse: response,
       }
     } catch (error) {
-      return this.createErrorResult('PhiMEDS', error, startedAt, { medications: context.medications })
+      return this.createErrorResult('PhiMEDS', error, startedAt, { medications: context.medications }, PHI_MEDS_SYSTEM_PROMPT, userPrompt)
     }
   },
 
@@ -129,17 +132,18 @@ export const AgentsService = {
   async runPhiAdvices(context: AgentContext): Promise<PhiAgentResult<PhiAdvicesOutput>> {
     const startedAt = new Date()
     const agentConfig = this.getAgentConfig('PhiADVICES')
+    const userPrompt = buildPhiAdvicesUserPrompt({
+      patientAge: context.patientAge,
+      isMinor: context.isMinor,
+      prescriberSpecialty: context.prescriberSpecialty,
+      medications: context.medications,
+    })
 
     try {
       const response = await this.callAI(
         agentConfig,
         PHI_ADVICES_SYSTEM_PROMPT,
-        buildPhiAdvicesUserPrompt({
-          patientAge: context.patientAge,
-          isMinor: context.isMinor,
-          prescriberSpecialty: context.prescriberSpecialty,
-          medications: context.medications,
-        })
+        userPrompt
       )
 
       const output = this.parseJsonResponse<PhiAdvicesOutput>(response)
@@ -152,9 +156,11 @@ export const AgentsService = {
         durationMs: Date.now() - startedAt.getTime(),
         input: context,
         output,
+        prompts: { system: PHI_ADVICES_SYSTEM_PROMPT, user: userPrompt },
+        rawResponse: response,
       }
     } catch (error) {
-      return this.createErrorResult('PhiADVICES', error, startedAt, context)
+      return this.createErrorResult('PhiADVICES', error, startedAt, context, PHI_ADVICES_SYSTEM_PROMPT, userPrompt)
     }
   },
 
@@ -164,17 +170,18 @@ export const AgentsService = {
   async runPhiCrossSell(context: AgentContext): Promise<PhiAgentResult<PhiCrossSellOutput>> {
     const startedAt = new Date()
     const agentConfig = this.getAgentConfig('PhiCROSS_SELL')
+    const userPrompt = buildPhiCrossSellUserPrompt({
+      patientAge: context.patientAge,
+      isMinor: context.isMinor,
+      prescriberSpecialty: context.prescriberSpecialty,
+      medications: context.medications,
+    })
 
     try {
       const response = await this.callAI(
         agentConfig,
         PHI_CROSS_SELL_SYSTEM_PROMPT,
-        buildPhiCrossSellUserPrompt({
-          patientAge: context.patientAge,
-          isMinor: context.isMinor,
-          prescriberSpecialty: context.prescriberSpecialty,
-          medications: context.medications,
-        })
+        userPrompt
       )
 
       const output = this.parseJsonResponse<PhiCrossSellOutput>(response)
@@ -187,9 +194,11 @@ export const AgentsService = {
         durationMs: Date.now() - startedAt.getTime(),
         input: context,
         output,
+        prompts: { system: PHI_CROSS_SELL_SYSTEM_PROMPT, user: userPrompt },
+        rawResponse: response,
       }
     } catch (error) {
-      return this.createErrorResult('PhiCROSS_SELL', error, startedAt, context)
+      return this.createErrorResult('PhiCROSS_SELL', error, startedAt, context, PHI_CROSS_SELL_SYSTEM_PROMPT, userPrompt)
     }
   },
 
@@ -199,17 +208,18 @@ export const AgentsService = {
   async runPhiChips(context: AgentContext): Promise<PhiAgentResult<PhiChipsOutput>> {
     const startedAt = new Date()
     const agentConfig = this.getAgentConfig('PhiCHIPS')
+    const userPrompt = buildPhiChipsUserPrompt({
+      patientAge: context.patientAge,
+      isMinor: context.isMinor,
+      prescriberSpecialty: context.prescriberSpecialty,
+      medications: context.medications,
+    })
 
     try {
       const response = await this.callAI(
         agentConfig,
         PHI_CHIPS_SYSTEM_PROMPT,
-        buildPhiChipsUserPrompt({
-          patientAge: context.patientAge,
-          isMinor: context.isMinor,
-          prescriberSpecialty: context.prescriberSpecialty,
-          medications: context.medications,
-        })
+        userPrompt
       )
 
       const output = this.parseJsonResponse<PhiChipsOutput>(response)
@@ -222,9 +232,11 @@ export const AgentsService = {
         durationMs: Date.now() - startedAt.getTime(),
         input: context,
         output,
+        prompts: { system: PHI_CHIPS_SYSTEM_PROMPT, user: userPrompt },
+        rawResponse: response,
       }
     } catch (error) {
-      return this.createErrorResult('PhiCHIPS', error, startedAt, context)
+      return this.createErrorResult('PhiCHIPS', error, startedAt, context, PHI_CHIPS_SYSTEM_PROMPT, userPrompt)
     }
   },
 
@@ -333,7 +345,9 @@ export const AgentsService = {
     agent: AgentName,
     error: unknown,
     startedAt?: Date,
-    input?: Record<string, unknown>
+    input?: Record<string, unknown>,
+    systemPrompt?: string,
+    userPrompt?: string
   ): PhiAgentResult<T> {
     const errorMessage = error instanceof Error ? error.message : String(error)
     console.error(`[AgentsService] ${agent} error:`, errorMessage)
@@ -347,6 +361,7 @@ export const AgentsService = {
       input: input || {},
       output: null,
       error: errorMessage,
+      prompts: systemPrompt && userPrompt ? { system: systemPrompt, user: userPrompt } : undefined,
     }
   },
 }

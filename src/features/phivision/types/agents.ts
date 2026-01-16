@@ -21,6 +21,12 @@ export interface PhiAgentResult<T = unknown> {
   input: Record<string, unknown>
   output: T | null
   error?: string
+  // Traçabilité des prompts pour le debug
+  prompts?: {
+    system: string
+    user: string
+  }
+  rawResponse?: string // Réponse brute de l'API avant parsing
 }
 
 // =============================================================================

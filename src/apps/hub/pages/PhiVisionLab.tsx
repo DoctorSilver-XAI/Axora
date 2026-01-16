@@ -10,9 +10,14 @@ import {
   Bot,
   AlertTriangle,
   ChevronRight,
+  Play,
+  ChevronDown,
+  ChevronUp,
+  Clock,
 } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
 import type { DBCapture } from '@features/phivision/services/CaptureService'
+import { CaptureService } from '@features/phivision/services/CaptureService'
 import type {
   PhiBrainResult,
   FacturationOrdoResult,
@@ -20,6 +25,10 @@ import type {
   ControlOrdonnanceResult,
 } from '@features/phivision/services/OCRService'
 import { supabase } from '@shared/lib/supabase'
+import { AgentsService, initializeAgentsService } from '@features/phivision/services/AgentsService'
+import { extractAgentContext } from '@features/phivision/services/agentPrompts'
+import type { AgentsResults, PhiAgentResult } from '@features/phivision/types/agents'
+import { AGENT_DEFINITIONS } from '@features/phivision/types/agents'
 
 // =============================================================================
 // Types
@@ -36,6 +45,8 @@ interface LabCapture {
   context: string
   parsedData: PhiBrainResult | null
   rawDbData: DBCapture
+  // Résultats des agents stockés
+  agentResults: AgentsResults | null
 }
 
 type TabId = 'capture' | 'response' | 'parsed' | 'agents'
@@ -71,6 +82,17 @@ function parseCapture(db: DBCapture): LabCapture {
     }
   }
 
+  // Reconstruire les résultats des agents depuis la DB
+  const agentResults: AgentsResults | null =
+    db.agent_phimeds || db.agent_phiadvices || db.agent_phicrosssell || db.agent_phichips
+      ? {
+          phiMeds: db.agent_phimeds as PhiAgentResult | null,
+          phiAdvices: db.agent_phiadvices as PhiAgentResult | null,
+          phiCrossSell: db.agent_phicrosssell as PhiAgentResult | null,
+          phiChips: db.agent_phichips as PhiAgentResult | null,
+        }
+      : null
+
   return {
     id: db.id,
     imageUrl: db.image_url,
@@ -81,6 +103,7 @@ function parseCapture(db: DBCapture): LabCapture {
     charCount: db.raw_text?.length || 0,
     context,
     parsedData,
+    agentResults,
     rawDbData: db,
   }
 }
@@ -113,6 +136,14 @@ export function PhiVisionLabPage() {
   const [activeTab, setActiveTab] = useState<TabId>('response')
   const [isLoading, setIsLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  // État pour les agents
+  const [isRunningAgents, setIsRunningAgents] = useState(false)
+  const [currentAgentsResults, setCurrentAgentsResults] = useState<AgentsResults | null>(null)
+
+  // Initialiser le service agents au montage
+  useEffect(() => {
+    initializeAgentsService()
+  }, [])
 
   const loadCaptures = useCallback(async () => {
     setIsLoading(true)
@@ -161,6 +192,46 @@ export function PhiVisionLabPage() {
       })
     } catch (err) {
       console.error('[Lab] Delete error:', err)
+    }
+  }
+
+  // Exécuter les agents sur la capture sélectionnée
+  const handleRunAgents = async () => {
+    if (!selected?.parsedData) {
+      console.warn('[Lab] No parsed data to run agents')
+      return
+    }
+
+    setIsRunningAgents(true)
+    setCurrentAgentsResults(null)
+
+    try {
+      console.log('[Lab] Running agents for capture:', selected.id)
+      const results = await AgentsService.runAllAgents(selected.parsedData as Record<string, unknown>)
+      console.log('[Lab] Agents completed:', results)
+
+      setCurrentAgentsResults(results)
+
+      // Sauvegarder les résultats dans Supabase
+      await CaptureService.saveAgentResults(selected.id, {
+        phiMeds: results.phiMeds as Record<string, unknown> | null,
+        phiAdvices: results.phiAdvices as Record<string, unknown> | null,
+        phiCrossSell: results.phiCrossSell as Record<string, unknown> | null,
+        phiChips: results.phiChips as Record<string, unknown> | null,
+      })
+
+      // Mettre à jour la capture dans la liste
+      setCaptures((prev) =>
+        prev.map((c) =>
+          c.id === selected.id ? { ...c, agentResults: results } : c
+        )
+      )
+      setSelected((prev) => prev ? { ...prev, agentResults: results } : prev)
+
+    } catch (err) {
+      console.error('[Lab] Agent error:', err)
+    } finally {
+      setIsRunningAgents(false)
     }
   }
 
@@ -280,7 +351,6 @@ export function PhiVisionLabPage() {
                 onClick={() => setActiveTab('agents')}
                 icon={Bot}
                 label="4. Agents"
-                disabled
               />
             </div>
 
@@ -291,7 +361,14 @@ export function PhiVisionLabPage() {
                 <TabResponse capture={selected} onCopy={handleCopy} copied={copied} />
               )}
               {activeTab === 'parsed' && <TabParsed capture={selected} />}
-              {activeTab === 'agents' && <TabAgents />}
+              {activeTab === 'agents' && (
+                <TabAgents
+                  capture={selected}
+                  agentsResults={currentAgentsResults || selected.agentResults}
+                  isRunning={isRunningAgents}
+                  onRunAgents={handleRunAgents}
+                />
+              )}
             </div>
           </>
         ) : (
@@ -889,47 +966,237 @@ function GenericJsonView({ data, label }: { data: PhiBrainResult; label: string 
 }
 
 // -----------------------------------------------------------------------------
-// Tab 4: Agents (Placeholder)
+// Tab 4: Agents
 // -----------------------------------------------------------------------------
 
-function TabAgents() {
-  const agents = [
-    { name: 'PhiBRAIN', desc: 'Orchestrateur principal', status: 'planned' },
-    { name: 'PhiMEDS', desc: 'Traitement médicaments (DCI, recommandations)', status: 'planned' },
-    { name: 'PhiADVICES', desc: 'Conseils patients', status: 'planned' },
-    { name: 'PhiCROSS_SELL', desc: 'Suggestions cross-selling', status: 'planned' },
-    { name: 'PhiCHIPS', desc: 'Micro-rappels (chips/badges)', status: 'planned' },
-  ]
+interface TabAgentsProps {
+  capture: LabCapture
+  agentsResults: AgentsResults | null
+  isRunning: boolean
+  onRunAgents: () => void
+}
+
+function TabAgents({ capture, agentsResults, isRunning, onRunAgents }: TabAgentsProps) {
+  const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>({})
+
+  const toggleExpand = (agentId: string) => {
+    setExpandedAgents((prev) => ({ ...prev, [agentId]: !prev[agentId] }))
+  }
+
+  const canRunAgents = capture.parsedData && !isRunning
+
+  // Extraction du contexte pour afficher les médicaments
+  const context = capture.parsedData
+    ? extractAgentContext(capture.parsedData as Record<string, unknown>)
+    : null
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-xs font-mono text-white/40">
-        <Bot className="w-4 h-4" />
-        Système Multi-Agent (à venir)
-      </div>
-
-      <div className="bg-black/20 rounded p-3 border border-dashed border-white/10">
-        <p className="text-xs text-white/50 mb-4">
-          Cette section affichera le pipeline d'agents PhiBRAIN avec leurs inputs/outputs
-          pour chaque étape du traitement.
-        </p>
-
-        <div className="space-y-2">
-          {agents.map((agent) => (
-            <div
-              key={agent.name}
-              className="flex items-center gap-3 px-2 py-1.5 bg-black/30 rounded"
-            >
-              <div className="w-2 h-2 rounded-full bg-white/20" />
-              <span className="text-xs font-mono text-white/60 w-28">{agent.name}</span>
-              <span className="text-[10px] text-white/40">{agent.desc}</span>
-              <span className="ml-auto text-[10px] font-mono text-white/20 uppercase">
-                {agent.status}
-              </span>
-            </div>
-          ))}
+      {/* Header avec bouton Run */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs font-mono text-white/60">
+          <Bot className="w-4 h-4" />
+          Système Multi-Agent
+          {agentsResults && (
+            <span className="text-emerald-400">• Exécuté</span>
+          )}
         </div>
+
+        <button
+          onClick={onRunAgents}
+          disabled={!canRunAgents}
+          className={cn(
+            'flex items-center gap-2 px-3 py-1.5 rounded text-xs font-mono transition-colors',
+            canRunAgents
+              ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 border border-indigo-500/30'
+              : 'bg-white/5 text-white/30 border border-white/10 cursor-not-allowed'
+          )}
+        >
+          {isRunning ? (
+            <>
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              Exécution...
+            </>
+          ) : (
+            <>
+              <Play className="w-3.5 h-3.5" />
+              Exécuter les agents
+            </>
+          )}
+        </button>
       </div>
+
+      {/* Contexte input */}
+      {context && context.medications.length > 0 && (
+        <div className="bg-black/20 rounded p-2 border border-white/10">
+          <h5 className="text-[10px] font-mono text-white/40 uppercase mb-1">
+            Input: {context.medications.length} médicament(s)
+          </h5>
+          <div className="flex flex-wrap gap-1">
+            {context.medications.map((med, i) => (
+              <span
+                key={i}
+                className="px-1.5 py-0.5 text-[10px] font-mono bg-cyan-500/10 text-cyan-400 rounded"
+              >
+                {med}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Pas de données */}
+      {!capture.parsedData && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded p-3 text-center">
+          <AlertTriangle className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+          <p className="text-xs text-amber-400">
+            Aucune donnée parsée disponible pour cette capture.
+          </p>
+        </div>
+      )}
+
+      {/* Résultats des agents */}
+      {agentsResults && (
+        <div className="space-y-3">
+          {AGENT_DEFINITIONS.map((agentDef) => {
+            const key = agentDef.id === 'PhiMEDS' ? 'phiMeds'
+              : agentDef.id === 'PhiADVICES' ? 'phiAdvices'
+              : agentDef.id === 'PhiCROSS_SELL' ? 'phiCrossSell'
+              : 'phiChips'
+            const result = agentsResults[key as keyof AgentsResults]
+            const isExpanded = expandedAgents[agentDef.id]
+
+            return (
+              <AgentResultCard
+                key={agentDef.id}
+                definition={agentDef}
+                result={result}
+                isExpanded={isExpanded}
+                onToggle={() => toggleExpand(agentDef.id)}
+              />
+            )
+          })}
+        </div>
+      )}
+
+      {/* Pas encore exécuté */}
+      {!agentsResults && capture.parsedData && !isRunning && (
+        <div className="bg-black/20 border border-dashed border-white/10 rounded p-4 text-center">
+          <p className="text-xs text-white/40 mb-2">
+            Cliquez sur "Exécuter les agents" pour lancer l'analyse multi-agents.
+          </p>
+          <p className="text-[10px] text-white/30">
+            Les 4 agents (PhiMEDS, PhiADVICES, PhiCROSS_SELL, PhiCHIPS) seront exécutés en parallèle.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Composant pour afficher le résultat d'un agent
+function AgentResultCard({
+  definition,
+  result,
+  isExpanded,
+  onToggle,
+}: {
+  definition: typeof AGENT_DEFINITIONS[0]
+  result: PhiAgentResult | null
+  isExpanded: boolean
+  onToggle: () => void
+}) {
+  if (!result) return null
+
+  const statusColor = result.status === 'success' ? 'text-emerald-400' : 'text-red-400'
+  const statusBg = result.status === 'success' ? 'bg-emerald-500/10' : 'bg-red-500/10'
+
+  return (
+    <div className={cn('rounded border', definition.bgColor, 'border-white/10')}>
+      {/* Header */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-3 py-2 hover:bg-white/5 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <div className={cn('w-2 h-2 rounded-full', statusBg)} />
+          <span className={cn('text-xs font-mono font-semibold', definition.color)}>
+            {definition.name}
+          </span>
+          <span className={cn('text-[10px] font-mono', statusColor)}>
+            {result.status}
+          </span>
+          {result.durationMs && (
+            <span className="flex items-center gap-1 text-[10px] font-mono text-white/40">
+              <Clock className="w-3 h-3" />
+              {result.durationMs}ms
+            </span>
+          )}
+        </div>
+        {isExpanded ? (
+          <ChevronUp className="w-4 h-4 text-white/40" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-white/40" />
+        )}
+      </button>
+
+      {/* Contenu expandé */}
+      {isExpanded && (
+        <div className="px-3 pb-3 space-y-3 border-t border-white/5">
+          {/* Erreur */}
+          {result.error && (
+            <div className="mt-2 p-2 bg-red-500/10 rounded border border-red-500/20">
+              <span className="text-[10px] font-mono text-red-400">{result.error}</span>
+            </div>
+          )}
+
+          {/* Prompts */}
+          {result.prompts && (
+            <div className="mt-2 space-y-2">
+              <div>
+                <h6 className="text-[10px] font-mono text-white/40 uppercase mb-1">
+                  System Prompt
+                </h6>
+                <pre className="text-[10px] font-mono text-amber-400/80 bg-black/30 p-2 rounded overflow-auto max-h-32 whitespace-pre-wrap">
+                  {result.prompts.system}
+                </pre>
+              </div>
+              <div>
+                <h6 className="text-[10px] font-mono text-white/40 uppercase mb-1">
+                  User Prompt
+                </h6>
+                <pre className="text-[10px] font-mono text-cyan-400/80 bg-black/30 p-2 rounded overflow-auto max-h-24 whitespace-pre-wrap">
+                  {result.prompts.user}
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {/* Réponse brute */}
+          {result.rawResponse && (
+            <div>
+              <h6 className="text-[10px] font-mono text-white/40 uppercase mb-1">
+                Raw Response
+              </h6>
+              <pre className="text-[10px] font-mono text-white/60 bg-black/30 p-2 rounded overflow-auto max-h-32 whitespace-pre-wrap">
+                {result.rawResponse}
+              </pre>
+            </div>
+          )}
+
+          {/* Output parsé */}
+          {result.output && (
+            <div>
+              <h6 className="text-[10px] font-mono text-white/40 uppercase mb-1">
+                Parsed Output
+              </h6>
+              <pre className="text-[10px] font-mono text-emerald-400/80 bg-black/30 p-2 rounded overflow-auto max-h-48 whitespace-pre-wrap">
+                {JSON.stringify(result.output, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

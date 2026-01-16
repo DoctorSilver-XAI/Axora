@@ -19,6 +19,11 @@ export interface DBCapture {
   notes: string | null
   created_at: string
   updated_at: string
+  // Résultats des agents multi-agents
+  agent_phimeds: Record<string, unknown> | null
+  agent_phiadvices: Record<string, unknown> | null
+  agent_phicrosssell: Record<string, unknown> | null
+  agent_phichips: Record<string, unknown> | null
 }
 
 export interface Capture {
@@ -34,6 +39,11 @@ export interface Capture {
   notes: string | null
   createdAt: Date
   updatedAt: Date
+  // Résultats des agents multi-agents
+  agentPhiMeds: Record<string, unknown> | null
+  agentPhiAdvices: Record<string, unknown> | null
+  agentPhiCrossSell: Record<string, unknown> | null
+  agentPhiChips: Record<string, unknown> | null
 }
 
 function toAppCapture(dbCapture: DBCapture): Capture {
@@ -50,6 +60,10 @@ function toAppCapture(dbCapture: DBCapture): Capture {
     notes: dbCapture.notes,
     createdAt: new Date(dbCapture.created_at),
     updatedAt: new Date(dbCapture.updated_at),
+    agentPhiMeds: dbCapture.agent_phimeds,
+    agentPhiAdvices: dbCapture.agent_phiadvices,
+    agentPhiCrossSell: dbCapture.agent_phicrosssell,
+    agentPhiChips: dbCapture.agent_phichips,
   }
 }
 
@@ -247,6 +261,49 @@ export const CaptureService = {
       console.error('Error updating notes:', error)
       throw error
     }
+  },
+
+  // Save agent results (4 agents séparément)
+  async saveAgentResults(
+    id: string,
+    agentResults: {
+      phiMeds?: Record<string, unknown> | null
+      phiAdvices?: Record<string, unknown> | null
+      phiCrossSell?: Record<string, unknown> | null
+      phiChips?: Record<string, unknown> | null
+    }
+  ): Promise<void> {
+    const updateData: Record<string, unknown> = {}
+
+    if (agentResults.phiMeds !== undefined) {
+      updateData.agent_phimeds = agentResults.phiMeds
+    }
+    if (agentResults.phiAdvices !== undefined) {
+      updateData.agent_phiadvices = agentResults.phiAdvices
+    }
+    if (agentResults.phiCrossSell !== undefined) {
+      updateData.agent_phicrosssell = agentResults.phiCrossSell
+    }
+    if (agentResults.phiChips !== undefined) {
+      updateData.agent_phichips = agentResults.phiChips
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      console.log('[CaptureService] No agent results to save')
+      return
+    }
+
+    const { error } = await supabase
+      .from('captures')
+      .update(updateData)
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error saving agent results:', error)
+      throw error
+    }
+
+    console.log('[CaptureService] Agent results saved for capture:', id)
   },
 
   // Update tags

@@ -11,19 +11,30 @@ export const PHI_MEDS_SYSTEM_PROMPT = `# Rôle – PhiMEDS
 
 Sous-agent dédié au traitement d'une liste brute de médicaments issue de l'OCR.
 
+## RÈGLE ABSOLUE - INTERDICTION D'INVENTION
+⚠️ Tu ne dois JAMAIS ajouter, inventer ou supposer des médicaments qui ne sont pas explicitement dans la liste fournie.
+⚠️ Le nombre d'éléments dans "meds" DOIT être EXACTEMENT égal au nombre de médicaments en entrée.
+⚠️ Si la liste d'entrée contient 3 médicaments, ta sortie DOIT contenir exactement 3 objets dans "meds".
+
 ## Instructions
-Pour chaque médicament en entrée (préserve strictement l'ordre et le nombre d'éléments), produis un objet : { "dci": string|null, "recommendation": string|null }.
+Pour CHAQUE médicament en entrée (et UNIQUEMENT ceux-là), produis un objet : { "dci": string|null, "recommendation": string|null }.
 
 ### Règles de traitement
-1. **Correspondance stricte** : Génère un élément de sortie pour chaque médicament de la liste d'entrée, sans ajout ni retrait.
+1. **Correspondance 1:1 STRICTE** :
+   - Si l'entrée a N médicaments → la sortie a EXACTEMENT N éléments
+   - Jamais d'ajout, jamais de suppression, jamais d'invention
+   - L'ordre des éléments en sortie correspond à l'ordre des éléments en entrée
+
 2. **Champ "dci"** :
-   - Si la DCI est identifiée de façon certaine, restitue la DCI standardisée.
-   - Sinon, recopie textuellement le libellé original.
-   - Si illisible ou ambigu, mets null.
+   - Si la DCI est identifiée de façon certaine (médicament connu), restitue la DCI standardisée
+   - Sinon, recopie TEXTUELLEMENT le libellé original tel qu'il apparaît
+   - Si illisible ou ambigu, mets null
+
 3. **Champ "recommendation"** :
-   - Contenu à forte valeur ajoutée pharmaceutique : "Classe pharmacologique" - "sécurité d'usage" - "posologie usuelle" - "rappel pertinent".
-   - Maximum 200 caractères. Pas de clause de non-responsabilité.
-   - Si aucune recommandation pertinente, indique null.
+   - Conseil pharmaceutique pertinent : classe, sécurité d'usage, posologie usuelle
+   - Maximum 200 caractères
+   - Si pas de recommandation pertinente → null
+
 4. **Format de sortie** :
 \`\`\`json
 {
@@ -33,13 +44,24 @@ Pour chaque médicament en entrée (préserve strictement l'ordre et le nombre d
 }
 \`\`\`
 
+## Exemple
+Entrée: ["DOLIPRANE 1000mg", "INEXIUM 40"]
+Sortie CORRECTE (2 entrées → 2 sorties):
+{
+  "meds": [
+    { "dci": "paracétamol", "recommendation": "Antalgique palier 1 - Max 4g/j - Attention hépatotoxicité" },
+    { "dci": "ésoméprazole", "recommendation": "IPP - Prise à jeun 30min avant repas - Risque hypoMg au long cours" }
+  ]
+}
+
 ## Langue
-Emploie un français clinique, précis et clair.`
+Français clinique, précis et clair.`
 
 export function buildPhiMedsUserPrompt(medications: string[]): string {
-  return `Voici la liste des médicaments extraits de l'OCR :
+  return `Voici la liste des ${medications.length} médicament(s) extraits de l'OCR :
 ${JSON.stringify(medications, null, 2)}
 
+RAPPEL: Tu dois retourner EXACTEMENT ${medications.length} élément(s) dans le tableau "meds", pas plus, pas moins.
 Traite chaque médicament et retourne le JSON structuré.`
 }
 
