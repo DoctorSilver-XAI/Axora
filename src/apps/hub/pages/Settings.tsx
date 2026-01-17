@@ -9,7 +9,8 @@ import {
   Bell,
   LogOut,
   ChevronRight,
-  Bot
+  Bot,
+  RotateCcw
 } from 'lucide-react'
 import { useAIPreference } from '@features/assistant/hooks/useAIPreference'
 import {
@@ -313,7 +314,18 @@ function SettingsRow({ label, description, action }: { label: string; descriptio
 }
 
 function AISettings() {
-  const { provider, model, setProvider, setModel, availableProviders, getModelsForProvider } = useAIPreference()
+  const {
+    provider,
+    model,
+    setProvider,
+    setModel,
+    availableProviders,
+    getModelsForProvider,
+    systemPrompt,
+    setSystemPrompt,
+    resetSystemPrompt,
+    isCustomPrompt
+  } = useAIPreference()
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -370,6 +382,44 @@ function AISettings() {
                 )}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Section personnalisation du prompt */}
+        <div className="pt-6 border-t border-white/5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h4 className="text-sm font-medium text-white">Personnalité de l'assistant</h4>
+              <p className="text-xs text-white/40 mt-0.5">
+                Définissez le comportement et le style de réponse
+              </p>
+            </div>
+            {isCustomPrompt && (
+              <button
+                onClick={resetSystemPrompt}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Réinitialiser
+              </button>
+            )}
+          </div>
+          <textarea
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            rows={10}
+            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-white/40 focus:border-axora-500/50 focus:outline-none resize-none font-mono leading-relaxed"
+            placeholder="Définissez la personnalité de votre assistant..."
+          />
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-xs text-white/40">
+              {systemPrompt.length} caractères
+            </p>
+            {isCustomPrompt && (
+              <p className="text-xs text-amber-400">
+                Prompt personnalisé actif
+              </p>
+            )}
           </div>
         </div>
       </div>

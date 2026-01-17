@@ -10,6 +10,8 @@ import { NewConversationModal } from '@features/assistant/components/NewConversa
 import { StorageBadge } from '@features/assistant/components/StorageBadge'
 import { PROVIDER_LABELS, getModelDisplayName } from '@features/assistant/constants/providers'
 import { MarkdownPreview } from '@modules/notes/components/MarkdownPreview'
+import { QuickPromptsGrid } from '@features/assistant/components/QuickPromptsGrid'
+import { QuickPrompt } from '@features/assistant/constants/quickPrompts'
 
 // Animation variants pour effet premium
 const containerVariants = {
@@ -45,29 +47,40 @@ export function Assistant() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showNewConversationModal, setShowNewConversationModal] = useState(false)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // AI Config
-  const { provider: selectedProvider, model: selectedModel } = useAIPreference()
+  const { provider: selectedProvider, model: selectedModel, systemPrompt } = useAIPreference()
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Auto-resize textarea
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current
+    if (textarea) {
+      textarea.style.height = 'auto'
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
+    }
+  }, [])
+
+  // Sync textarea height with input value (handles clear after send)
+  useEffect(() => {
+    adjustTextareaHeight()
+  }, [input, adjustTextareaHeight])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  // Handle window resize for responsive sidebar
+  // Handle window resize for responsive sidebar (only collapse on small screens)
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 1024) { // Collapse on tablet/mobile
+      if (window.innerWidth < 1024) {
         setIsSidebarOpen(false)
-      } else {
-        setIsSidebarOpen(true)
       }
+      // Ne pas forcer l'ouverture sur grand écran - laisser l'utilisateur décider
     }
-
-    // Initial check
-    handleResize()
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
@@ -150,6 +163,24 @@ export function Assistant() {
     }
   }
 
+  const handleQuickPromptSelect = useCallback(async (prompt: QuickPrompt) => {
+    // Si pas de conversation active, créer une conversation cloud automatiquement
+    if (!currentConversation) {
+      try {
+        setError(null)
+        const service = getConversationService('cloud')
+        const newConversation = await service.create(selectedProvider, selectedModel)
+        setConversations((prev) => [newConversation, ...prev])
+        setCurrentConversation(newConversation)
+      } catch (err) {
+        console.error('Failed to create conversation:', err)
+        setError('Impossible de créer la conversation')
+        return
+      }
+    }
+    setInput(prompt.prompt)
+  }, [currentConversation, selectedProvider, selectedModel])
+
   const updateConversationMessages = useCallback((conversationId: string, updater: (msgs: Message[]) => Message[]) => {
     setConversations((prev) =>
       prev.map((conv) =>
@@ -214,6 +245,7 @@ export function Assistant() {
         model: selectedModel,
         temperature: 0.7,
         maxTokens: 2048,
+        systemPrompt,
       }
 
       const allMessages: Message[] = [
@@ -436,7 +468,7 @@ export function Assistant() {
             </AnimatePresence>
 
             {/* Messages */}
-            <div className="flex-1 overflow-auto p-6 space-y-4 scrollbar-thin">
+            <div className="flex-1 overflow-auto p-4 space-y-3 scrollbar-thin">
               <AnimatePresence mode="popLayout">
                 {currentConversation.messages.map((message) => (
                   <MessageBubble key={message.id} message={message} />
@@ -475,34 +507,54 @@ export function Assistant() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input premium */}
-            <div className="p-4 border-t border-white/5 bg-surface-50/30 backdrop-blur-xl">
-              <div className="flex gap-3 items-end">
+            {/* Input compact */}
+            <div className="p-3 border-t border-white/5 bg-surface-50/30 backdrop-blur-xl">
+              {/* Quick prompts pour conversation vide */}
+              {currentConversation.messages.length === 0 && !isStreaming && (
+                <div className="mb-2">
+                  <QuickPromptsGrid
+                    onSelectPrompt={handleQuickPromptSelect}
+                    variant="inline"
+                    maxItems={4}
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-2 items-end">
                 <div className="flex-1 relative">
-                  <input
-                    type="text"
+                  <textarea
+                    ref={textareaRef}
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    onChange={(e) => {
+                      setInput(e.target.value)
+                      adjustTextareaHeight()
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSendMessage()
+                      }
+                    }}
                     placeholder="Posez votre question..."
                     disabled={isStreaming}
-                    className="w-full px-5 py-3.5 rounded-xl bg-surface-100/50 border border-white/5 text-white placeholder-white/30 focus:bg-surface-100/70 focus:border-axora-500/30 focus:outline-none transition-all duration-200 disabled:opacity-50"
+                    rows={1}
+                    className="w-full px-4 py-2.5 text-sm rounded-xl bg-surface-100/50 border border-white/5 text-white placeholder-white/30 focus:bg-surface-100/70 focus:border-axora-500/30 focus:outline-none transition-all duration-200 disabled:opacity-50 resize-none overflow-hidden"
                   />
                 </div>
                 <motion.button
                   onClick={handleSendMessage}
                   disabled={!input.trim() || isStreaming}
                   className={cn(
-                    'p-3.5 rounded-xl font-medium transition-all duration-200',
+                    'p-2.5 rounded-lg font-medium transition-all duration-200',
                     'flex items-center justify-center',
                     input.trim() && !isStreaming
-                      ? 'bg-gradient-to-r from-axora-500 to-violet-500 text-white shadow-lg shadow-axora-500/25 hover:from-axora-600 hover:to-violet-600'
+                      ? 'bg-gradient-to-r from-axora-500 to-violet-500 text-white shadow-md shadow-axora-500/25 hover:from-axora-600 hover:to-violet-600'
                       : 'bg-surface-100/50 border border-white/5 text-white/30 cursor-not-allowed'
                   )}
                   whileHover={input.trim() && !isStreaming ? { scale: 1.05 } : {}}
                   whileTap={input.trim() && !isStreaming ? { scale: 0.95 } : {}}
                 >
-                  <Send className="w-5 h-5" />
+                  <Send className="w-4 h-4" />
                 </motion.button>
               </div>
             </div>
@@ -510,7 +562,7 @@ export function Assistant() {
         ) : (
           /* État vide premium */
           <motion.div
-            className="flex-1 flex items-center justify-center p-8"
+            className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -556,6 +608,13 @@ export function Assistant() {
                 Démarrer une conversation
               </motion.button>
             </div>
+
+            {/* Quick Prompts Grid */}
+            <QuickPromptsGrid
+              onSelectPrompt={handleQuickPromptSelect}
+              variant="grid"
+              maxItems={6}
+            />
           </motion.div>
         )}
       </div>
@@ -584,45 +643,45 @@ function MessageBubble({ message }: MessageBubbleProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className={cn('flex items-start gap-4', isUser && 'flex-row-reverse')}
+      className={cn('flex items-start gap-3', isUser && 'flex-row-reverse')}
     >
-      {/* Avatar premium */}
+      {/* Avatar compact */}
       <div
         className={cn(
-          'w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg',
+          'w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md',
           isUser
             ? 'bg-gradient-to-br from-cyan-500 to-teal-500 shadow-cyan-500/20'
             : 'bg-gradient-to-br from-axora-500 to-violet-500 shadow-axora-500/20'
         )}
       >
         {isUser ? (
-          <User className="w-4 h-4 text-white" />
+          <User className="w-3.5 h-3.5 text-white" />
         ) : (
-          <Bot className="w-4 h-4 text-white" />
+          <Bot className="w-3.5 h-3.5 text-white" />
         )}
       </div>
 
-      {/* Message bubble premium */}
+      {/* Message bubble compact */}
       <div
         className={cn(
-          'max-w-[75%] px-5 py-4 rounded-2xl backdrop-blur-xl transition-all duration-200',
+          'max-w-[80%] px-3.5 py-2.5 rounded-xl backdrop-blur-xl transition-all duration-200',
           isUser
             ? 'bg-cyan-500/15 border border-cyan-500/20'
             : 'bg-surface-100/50 border border-white/5'
         )}
       >
         {isUser ? (
-          <p className="text-sm whitespace-pre-wrap leading-relaxed text-white/90">
+          <p className="text-xs whitespace-pre-wrap leading-relaxed text-white/90">
             {message.content}
           </p>
         ) : (
           <MarkdownPreview
             content={message.content}
-            className="text-sm leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:mb-2 [&_ol]:mb-2"
+            className="text-xs leading-relaxed [&_p]:mb-1.5 [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ol]:mb-1.5"
           />
         )}
         <p className={cn(
-          "text-[10px] mt-2.5 flex items-center gap-1",
+          "text-[9px] mt-1.5 flex items-center gap-1",
           isUser ? "text-cyan-400/60" : "text-white/30"
         )}>
           {message.timestamp.toLocaleTimeString('fr-FR', {

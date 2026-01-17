@@ -37,6 +37,10 @@ export interface IndexDefinition {
   status: IndexStatus
   createdAt: Date
   updatedAt: Date
+
+  // Champs pour index custom (créés par l'utilisateur)
+  _customId?: string // ID dans la table custom_rag_indexes
+  _isCustom?: boolean // true si créé par l'utilisateur
 }
 
 export interface IndexStats {

@@ -45,7 +45,7 @@ export interface AgentsServiceConfig {
 }
 
 const DEFAULT_MODELS: Record<AIProvider, string> = {
-  mistral: 'mistral-small-latest',
+  mistral: 'mistral-large-latest',
   openai: 'gpt-4o-mini',
 }
 

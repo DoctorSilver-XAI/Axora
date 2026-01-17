@@ -5,10 +5,11 @@
  * - AI-Enriched : Mode → Upload → Enrichissement AI + Review → Ingestion
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { IngestionMode, ProcessedDocument } from '../../types'
+import { IngestionMode, ProcessedDocument, IndexDefinition } from '../../types'
 import { ValidationService } from '../../services/ValidationService'
+import { IndexRegistry } from '../../services/IndexRegistry'
 import { ModeSelector } from './ModeSelector'
 import { JSONUploader } from './JSONUploader'
 import { SchemaValidator } from './SchemaValidator'
@@ -32,6 +33,21 @@ export function IngestionWizard({ indexId, onComplete }: IngestionWizardProps) {
   const [productNames, setProductNames] = useState<string[]>([]) // Pour le mode langage naturel
   const [processedDocuments, setProcessedDocuments] = useState<ProcessedDocument[]>([])
   const [documentsToIngest, setDocumentsToIngest] = useState<ProcessedDocument[]>([])
+
+  // État du sélecteur d'index
+  const [availableIndexes, setAvailableIndexes] = useState<IndexDefinition[]>([])
+  const [selectedIndexId, setSelectedIndexId] = useState<string>(indexId)
+
+  // Charger les index custom disponibles au montage
+  useEffect(() => {
+    const loadIndexes = async () => {
+      await IndexRegistry.loadCustomIndexes()
+      // Filtrer uniquement les index qui acceptent l'ingestion (custom indexes)
+      const customIndexes = IndexRegistry.getAll().filter((idx) => idx._isCustom)
+      setAvailableIndexes(customIndexes)
+    }
+    loadIndexes()
+  }, [])
 
   // Handlers de navigation
   const handleModeSelected = useCallback((mode: IngestionMode) => {
@@ -61,12 +77,12 @@ export function IngestionWizard({ indexId, onComplete }: IngestionWizardProps) {
         setCurrentStep('ai-enrich')
       } else {
         // Mode structuré : valider les documents d'abord
-        const processed = ValidationService.validateBatch(rawDocuments, indexId)
+        const processed = ValidationService.validateBatch(rawDocuments, selectedIndexId)
         setProcessedDocuments(processed)
         setCurrentStep('validate')
       }
     }
-  }, [rawDocuments, indexId, selectedMode])
+  }, [rawDocuments, selectedIndexId, selectedMode])
 
   const handleUploadBack = useCallback(() => {
     setCurrentStep('mode')
@@ -144,6 +160,9 @@ export function IngestionWizard({ indexId, onComplete }: IngestionWizardProps) {
                 selectedMode={selectedMode}
                 onSelectMode={handleModeSelected}
                 onContinue={handleModeContinue}
+                availableIndexes={availableIndexes}
+                selectedIndexId={selectedIndexId}
+                onSelectIndex={setSelectedIndexId}
               />
             </StepWrapper>
           )}
@@ -163,7 +182,7 @@ export function IngestionWizard({ indexId, onComplete }: IngestionWizardProps) {
             <StepWrapper key="validate">
               <SchemaValidator
                 documents={processedDocuments}
-                indexId={indexId}
+                indexId={selectedIndexId}
                 onBack={handleValidateBack}
                 onContinue={handleValidateContinue}
                 onDocumentsUpdated={setProcessedDocuments}
@@ -184,7 +203,7 @@ export function IngestionWizard({ indexId, onComplete }: IngestionWizardProps) {
             <StepWrapper key="nl-enrich">
               <NaturalLanguagePipeline
                 productNames={productNames}
-                indexId={indexId}
+                indexId={selectedIndexId}
                 onBack={handleNLEnrichBack}
                 onContinue={handleNLEnrichContinue}
               />
@@ -195,7 +214,7 @@ export function IngestionWizard({ indexId, onComplete }: IngestionWizardProps) {
             <StepWrapper key="ai-enrich">
               <AIEnrichmentPipeline
                 rawDocuments={rawDocuments}
-                indexId={indexId}
+                indexId={selectedIndexId}
                 onBack={handleAIEnrichmentBack}
                 onContinue={handleAIEnrichmentContinue}
               />
@@ -206,7 +225,7 @@ export function IngestionWizard({ indexId, onComplete }: IngestionWizardProps) {
             <StepWrapper key="ingest">
               <IngestionProgress
                 documents={documentsToIngest}
-                indexId={indexId}
+                indexId={selectedIndexId}
                 onComplete={handleIngestionComplete}
                 onReset={handleReset}
               />

@@ -6,14 +6,18 @@
  */
 
 import { motion } from 'framer-motion'
-import { FileJson, Sparkles, ArrowRight, MessageSquareText } from 'lucide-react'
+import { FileJson, Sparkles, ArrowRight, MessageSquareText, Database, ChevronDown } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
-import { IngestionMode } from '../../types'
+import { IngestionMode, IndexDefinition } from '../../types'
 
 interface ModeSelectorProps {
   selectedMode: IngestionMode | null
   onSelectMode: (mode: IngestionMode) => void
   onContinue: () => void
+  // Sélecteur d'index
+  availableIndexes?: IndexDefinition[]
+  selectedIndexId?: string
+  onSelectIndex?: (indexId: string) => void
 }
 
 const MODES = [
@@ -57,15 +61,65 @@ const MODES = [
   },
 ]
 
-export function ModeSelector({ selectedMode, onSelectMode, onContinue }: ModeSelectorProps) {
+export function ModeSelector({
+  selectedMode,
+  onSelectMode,
+  onContinue,
+  availableIndexes = [],
+  selectedIndexId,
+  onSelectIndex,
+}: ModeSelectorProps) {
+  const hasIndexes = availableIndexes.length > 0
+  const canContinue = selectedMode && selectedIndexId
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Header avec sélecteur d'index */}
       <div className="px-6 py-4 border-b border-white/5">
-        <h3 className="text-lg font-semibold text-white">Mode d'ingestion</h3>
-        <p className="text-sm text-white/50 mt-1">
-          Choisissez comment vous souhaitez ajouter vos données
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Mode d'ingestion</h3>
+            <p className="text-sm text-white/50 mt-1">
+              Choisissez comment vous souhaitez ajouter vos données
+            </p>
+          </div>
+
+          {/* Sélecteur d'index */}
+          {hasIndexes && onSelectIndex && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-white/40">Index cible :</span>
+              <div className="relative">
+                <select
+                  value={selectedIndexId || ''}
+                  onChange={(e) => onSelectIndex(e.target.value)}
+                  className={cn(
+                    'appearance-none pl-10 pr-8 py-2 rounded-xl text-sm font-medium',
+                    'bg-surface-100 border border-white/10 text-white',
+                    'focus:border-axora-500/50 focus:outline-none focus:ring-2 focus:ring-axora-500/20',
+                    'cursor-pointer transition-all'
+                  )}
+                >
+                  {availableIndexes.map((idx) => (
+                    <option key={idx.id} value={idx.id}>
+                      {idx.name}
+                    </option>
+                  ))}
+                </select>
+                <Database className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-axora-400" />
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Message si pas d'index custom disponible */}
+        {!hasIndexes && (
+          <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <p className="text-sm text-amber-300">
+              Aucun index custom disponible. Créez d'abord un index depuis le dashboard.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Mode cards */}
@@ -163,10 +217,10 @@ export function ModeSelector({ selectedMode, onSelectMode, onContinue }: ModeSel
         <div className="flex justify-end">
           <button
             onClick={onContinue}
-            disabled={!selectedMode}
+            disabled={!canContinue}
             className={cn(
               'flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all',
-              selectedMode
+              canContinue
                 ? 'bg-axora-500 text-white hover:bg-axora-600'
                 : 'bg-white/5 text-white/30 cursor-not-allowed'
             )}

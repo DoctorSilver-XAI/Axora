@@ -3,9 +3,21 @@
  * Pattern singleton similaire à ModuleRegistry
  */
 
-import { Pill, Layers, FileText, ClipboardList, Database } from 'lucide-react'
+import { Pill, Layers, FileText, ClipboardList, Database, Building2, Sparkles } from 'lucide-react'
 import { IndexDefinition, IndexCategory, IndexStats, IndexStatus } from '../types'
 import { supabase } from '@shared/lib/supabase'
+import { CustomIndexService, CustomIndexDefinition } from './CustomIndexService'
+
+// Mapping des noms d'icônes vers les composants Lucide
+const ICON_MAP: Record<string, typeof Database> = {
+  Database,
+  Building2,
+  FileText,
+  Pill,
+  Layers,
+  ClipboardList,
+  Sparkles,
+}
 
 // ============================================================================
 // INDEX PAR DÉFAUT
@@ -44,9 +56,77 @@ const DEFAULT_INDEXES: IndexDefinition[] = [
 class IndexRegistryClass {
   private indexes: Map<string, IndexDefinition> = new Map()
   private statsCache: Map<string, IndexStats> = new Map()
+  private customIndexesLoaded = false
 
   constructor() {
     DEFAULT_INDEXES.forEach((idx) => this.register(idx))
+  }
+
+  /**
+   * Charge les index custom depuis Supabase
+   */
+  async loadCustomIndexes(): Promise<void> {
+    if (this.customIndexesLoaded) return
+
+    try {
+      const customIndexes = await CustomIndexService.listIndexes()
+
+      for (const custom of customIndexes) {
+        const definition = this.mapCustomToDefinition(custom)
+        this.register(definition)
+      }
+
+      this.customIndexesLoaded = true
+      console.log(`[IndexRegistry] ${customIndexes.length} index custom chargés`)
+    } catch (err) {
+      console.error('[IndexRegistry] Erreur chargement custom indexes:', err)
+    }
+  }
+
+  /**
+   * Force le rechargement des index custom
+   */
+  async reloadCustomIndexes(): Promise<void> {
+    // Supprimer les anciens custom
+    for (const [id, index] of this.indexes) {
+      if (index._isCustom) {
+        this.indexes.delete(id)
+        this.statsCache.delete(id)
+      }
+    }
+    this.customIndexesLoaded = false
+    await this.loadCustomIndexes()
+  }
+
+  /**
+   * Convertit un CustomIndexDefinition en IndexDefinition
+   */
+  private mapCustomToDefinition(custom: CustomIndexDefinition): IndexDefinition {
+    return {
+      id: `custom_${custom.slug}`,
+      name: custom.name,
+      description: custom.description || '',
+      icon: ICON_MAP[custom.icon] || Database,
+      category: 'custom',
+      tableName: 'custom_rag_documents',
+      schemaVersion: '1.0',
+      searchConfig: {
+        rpcFunctionName: 'search_custom_index',
+        vectorWeight: custom.searchWeights.vector,
+        textWeight: custom.searchWeights.text,
+        defaultMatchCount: 5,
+      },
+      embeddingConfig: {
+        model: custom.embeddingModel,
+        dimensions: 1536,
+        prepareTextFn: 'prepareGenericText',
+      },
+      status: custom.status as IndexStatus,
+      createdAt: custom.createdAt,
+      updatedAt: custom.updatedAt,
+      _customId: custom.id,
+      _isCustom: true,
+    }
   }
 
   /**
@@ -145,11 +225,20 @@ class IndexRegistryClass {
     if (!index) return null
 
     try {
+      // Pour les index custom, on filtre par index_id
+      const isCustom = index._isCustom && index._customId
+
       // Compter les documents
-      const { count, error: countError } = await supabase
+      let countQuery = supabase
         .from(index.tableName)
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true)
+
+      if (isCustom) {
+        countQuery = countQuery.eq('index_id', index._customId)
+      }
+
+      const { count, error: countError } = await countQuery
 
       if (countError) {
         const stats: IndexStats = {
@@ -164,12 +253,17 @@ class IndexRegistryClass {
       }
 
       // Récupérer la dernière mise à jour
-      const { data: lastDoc } = await supabase
+      let lastDocQuery = supabase
         .from(index.tableName)
         .select('created_at')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+
+      if (isCustom) {
+        lastDocQuery = lastDocQuery.eq('index_id', index._customId)
+      }
+
+      const { data: lastDoc } = await lastDocQuery.single()
 
       const stats: IndexStats = {
         indexId,

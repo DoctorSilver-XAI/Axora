@@ -2,7 +2,7 @@
  * IndexCard - Carte d'un index RAG avec stats et actions
  */
 
-import { Search, Upload, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
+import { Search, Upload, CheckCircle, AlertTriangle, XCircle, Trash2, Settings } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
 import { IndexDefinition, IndexStats } from '../../types'
 import { CATEGORY_LABELS } from '../../services/IndexRegistry'
@@ -12,9 +12,11 @@ interface IndexCardProps {
   stats: IndexStats | null
   onExplore: () => void
   onIngest: () => void
+  onEdit?: () => void // Optionnel, pour les custom indexes
+  onDelete?: () => void // Optionnel, pour les custom indexes
 }
 
-export function IndexCard({ index, stats, onExplore, onIngest }: IndexCardProps) {
+export function IndexCard({ index, stats, onExplore, onIngest, onEdit, onDelete }: IndexCardProps) {
   const Icon = index.icon
 
   // Formatage du nombre de documents
@@ -140,15 +142,45 @@ export function IndexCard({ index, stats, onExplore, onIngest }: IndexCardProps)
 
         <button
           onClick={onIngest}
-          disabled
+          disabled={!index._isCustom}
           className={cn(
-            'flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl',
-            'bg-white/5 text-white/40 font-medium text-sm',
-            'cursor-not-allowed opacity-50'
+            'flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm',
+            index._isCustom
+              ? 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors'
+              : 'bg-white/5 text-white/40 cursor-not-allowed opacity-50'
           )}
+          title={index._isCustom ? 'Importer des documents' : 'Index système (lecture seule)'}
         >
           <Upload className="w-4 h-4" />
         </button>
+
+        {/* Bouton édition (custom indexes uniquement) */}
+        {index._isCustom && onEdit && (
+          <button
+            onClick={onEdit}
+            className={cn(
+              'flex items-center justify-center p-2.5 rounded-xl',
+              'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white transition-colors'
+            )}
+            title="Modifier l'index"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Bouton suppression (custom indexes uniquement) */}
+        {index._isCustom && onDelete && (
+          <button
+            onClick={onDelete}
+            className={cn(
+              'flex items-center justify-center p-2.5 rounded-xl',
+              'bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors'
+            )}
+            title="Supprimer l'index"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Beta badge for module */}

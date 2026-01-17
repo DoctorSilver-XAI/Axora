@@ -2,13 +2,16 @@
  * IndexDashboard - Grille des index RAG avec stats
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { RefreshCw, Plus, Database } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
 import { IndexRegistry } from '../../services/IndexRegistry'
 import { IndexDefinition, IndexStats } from '../../types'
 import { IndexCard } from './IndexCard'
+import { CreateIndexModal } from './CreateIndexModal'
+import { EditIndexModal } from './EditIndexModal'
+import { DeleteIndexDialog } from './DeleteIndexDialog'
 
 interface IndexDashboardProps {
   onExplore: (indexId: string) => void
@@ -20,15 +23,17 @@ export function IndexDashboard({ onExplore, onIngest }: IndexDashboardProps) {
   const [stats, setStats] = useState<Map<string, IndexStats>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [indexToEdit, setIndexToEdit] = useState<IndexDefinition | null>(null)
+  const [indexToDelete, setIndexToDelete] = useState<IndexDefinition | null>(null)
 
-  // Charger les index et stats au montage
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
+  // Charger les index (y compris custom) et stats
+  const loadData = useCallback(async () => {
     setIsLoading(true)
     try {
+      // Charger les index custom depuis Supabase
+      await IndexRegistry.loadCustomIndexes()
+
       const allIndexes = IndexRegistry.getAll()
       setIndexes(allIndexes)
 
@@ -39,13 +44,44 @@ export function IndexDashboard({ onExplore, onIngest }: IndexDashboardProps) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  // Charger au montage
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
     IndexRegistry.invalidateStatsCache()
+    await IndexRegistry.reloadCustomIndexes()
     await loadData()
     setIsRefreshing(false)
+  }
+
+  // Callback après création d'un index (optimisé)
+  const handleIndexCreated = async () => {
+    await IndexRegistry.reloadCustomIndexes()
+    const allIndexes = IndexRegistry.getAll()
+    setIndexes(allIndexes)
+    const allStats = await IndexRegistry.refreshAllStats()
+    setStats(allStats)
+  }
+
+  // Callback après modification d'un index
+  const handleIndexUpdated = async () => {
+    await IndexRegistry.reloadCustomIndexes()
+    const allIndexes = IndexRegistry.getAll()
+    setIndexes(allIndexes)
+  }
+
+  // Callback après suppression d'un index
+  const handleIndexDeleted = async () => {
+    await IndexRegistry.reloadCustomIndexes()
+    const allIndexes = IndexRegistry.getAll()
+    setIndexes(allIndexes)
+    const allStats = await IndexRegistry.refreshAllStats()
+    setStats(allStats)
   }
 
   // Calcul des stats globales
@@ -79,10 +115,10 @@ export function IndexDashboard({ onExplore, onIngest }: IndexDashboardProps) {
           </button>
 
           <button
-            disabled
+            onClick={() => setShowCreateModal(true)}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
-              'bg-axora-500/20 text-axora-400 cursor-not-allowed opacity-50'
+              'bg-axora-500 text-white hover:bg-axora-600'
             )}
           >
             <Plus className="w-4 h-4" />
@@ -117,11 +153,36 @@ export function IndexDashboard({ onExplore, onIngest }: IndexDashboardProps) {
                 stats={stats.get(index.id) || null}
                 onExplore={() => onExplore(index.id)}
                 onIngest={() => onIngest(index.id)}
+                onEdit={index._isCustom ? () => setIndexToEdit(index) : undefined}
+                onDelete={index._isCustom ? () => setIndexToDelete(index) : undefined}
               />
             </motion.div>
           ))}
         </div>
       )}
+
+      {/* Modal de création */}
+      <CreateIndexModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={handleIndexCreated}
+      />
+
+      {/* Modal d'édition */}
+      <EditIndexModal
+        index={indexToEdit}
+        isOpen={indexToEdit !== null}
+        onClose={() => setIndexToEdit(null)}
+        onUpdated={handleIndexUpdated}
+      />
+
+      {/* Dialog de suppression */}
+      <DeleteIndexDialog
+        index={indexToDelete}
+        isOpen={indexToDelete !== null}
+        onClose={() => setIndexToDelete(null)}
+        onDeleted={handleIndexDeleted}
+      />
     </div>
   )
 }

@@ -30,6 +30,7 @@ interface PhiVisionContextType extends PhiVisionState {
   runAgents: (captureId: string, phiBrainData: Record<string, unknown>) => Promise<void>
   getAgentsResults: (captureId: string) => AgentsResults | null
   isRunningAgents: (captureId: string) => boolean
+  loadAgentsFromCapture: (capture: Capture) => void
 }
 
 const PhiVisionContext = createContext<PhiVisionContextType | undefined>(undefined)
@@ -514,6 +515,22 @@ export function PhiVisionProvider({ children }: { children: ReactNode }) {
         phiChips: results.phiChips?.status,
       })
 
+      // Sauvegarder dans Supabase si c'est une vraie capture (pas 'current')
+      if (captureId !== 'current') {
+        try {
+          await CaptureService.saveAgentResults(captureId, {
+            phiMeds: results.phiMeds as Record<string, unknown> | null,
+            phiAdvices: results.phiAdvices as Record<string, unknown> | null,
+            phiCrossSell: results.phiCrossSell as Record<string, unknown> | null,
+            phiChips: results.phiChips as Record<string, unknown> | null,
+          })
+          console.log(`[PhiVisionContext] Agent results saved to Supabase for ${captureId}`)
+        } catch (saveErr) {
+          console.error(`[PhiVisionContext] Failed to save agent results:`, saveErr)
+          // On continue quand même, les résultats sont en mémoire
+        }
+      }
+
       setState((prev) => ({
         ...prev,
         runningAgentsCaptureId: null,
@@ -542,6 +559,44 @@ export function PhiVisionProvider({ children }: { children: ReactNode }) {
     return state.runningAgentsCaptureId === captureId
   }, [state.runningAgentsCaptureId])
 
+  // Charger les résultats agents depuis une capture archivée (depuis Supabase)
+  const loadAgentsFromCapture = useCallback((capture: Capture) => {
+    // Si déjà en mémoire, ne rien faire
+    if (state.agentsResultsByCapture[capture.id]) {
+      console.log(`[PhiVisionContext] Agents already loaded for ${capture.id}`)
+      return
+    }
+
+    // Vérifier si la capture a des résultats d'agents
+    const hasAgentData = capture.agentPhiMeds || capture.agentPhiAdvices ||
+                         capture.agentPhiCrossSell || capture.agentPhiChips
+
+    if (!hasAgentData) {
+      console.log(`[PhiVisionContext] No agent data in capture ${capture.id}`)
+      return
+    }
+
+    console.log(`[PhiVisionContext] Loading agent results from capture ${capture.id}`)
+
+    // Transformer les données Supabase en AgentsResults
+    const agentsResults: AgentsResults = {
+      phiMeds: capture.agentPhiMeds as AgentsResults['phiMeds'],
+      phiAdvices: capture.agentPhiAdvices as AgentsResults['phiAdvices'],
+      phiCrossSell: capture.agentPhiCrossSell as AgentsResults['phiCrossSell'],
+      phiChips: capture.agentPhiChips as AgentsResults['phiChips'],
+    }
+
+    setState((prev) => ({
+      ...prev,
+      agentsResultsByCapture: {
+        ...prev.agentsResultsByCapture,
+        [capture.id]: agentsResults,
+      },
+    }))
+
+    console.log(`[PhiVisionContext] Agent results loaded for ${capture.id}`)
+  }, [state.agentsResultsByCapture])
+
   return (
     <PhiVisionContext.Provider
       value={{
@@ -556,6 +611,7 @@ export function PhiVisionProvider({ children }: { children: ReactNode }) {
         runAgents,
         getAgentsResults,
         isRunningAgents,
+        loadAgentsFromCapture,
       }}
     >
       {children}

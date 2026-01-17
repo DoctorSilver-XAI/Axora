@@ -17,6 +17,9 @@ let IndexRegistry: {
       textWeight: number
       defaultMatchCount: number
     }
+    // Champs pour index custom
+    _customId?: string
+    _isCustom?: boolean
   } | undefined
 } | null = null
 
@@ -60,14 +63,22 @@ export const MultiIndexService = {
 
     const queryEmbedding = await EmbeddingService.embed(query)
 
-    const { data, error } = await supabase.rpc(index.searchConfig.rpcFunctionName, {
+    // Construire les paramètres RPC
+    const rpcParams: Record<string, unknown> = {
       query_text: query,
       query_embedding: queryEmbedding,
       match_count: options.matchCount || index.searchConfig.defaultMatchCount,
       vector_weight: index.searchConfig.vectorWeight,
       text_weight: index.searchConfig.textWeight,
       similarity_threshold: options.threshold || 0.3,
-    })
+    }
+
+    // Pour les custom indexes, ajouter p_index_id (requis par search_custom_index RPC)
+    if (index._isCustom && index._customId) {
+      rpcParams.p_index_id = index._customId
+    }
+
+    const { data, error } = await supabase.rpc(index.searchConfig.rpcFunctionName, rpcParams)
 
     if (error) {
       console.error('[MultiIndexService] Erreur recherche:', error)
@@ -96,6 +107,11 @@ export const MultiIndexService = {
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
+
+    // Pour les custom indexes, filtrer par index_id
+    if (index._isCustom && index._customId) {
+      query = query.eq('index_id', index._customId)
+    }
 
     // Ajouter la recherche textuelle si présente
     if (options.search) {
@@ -152,10 +168,17 @@ export const MultiIndexService = {
     const index = registry.get(indexId)
     if (!index) throw new Error(`Index "${indexId}" non trouvé`)
 
-    const { count, error } = await supabase
+    let query = supabase
       .from(index.tableName)
       .select('*', { count: 'exact', head: true })
       .eq('is_active', true)
+
+    // Pour les custom indexes, filtrer par index_id
+    if (index._isCustom && index._customId) {
+      query = query.eq('index_id', index._customId)
+    }
+
+    const { count, error } = await query
 
     if (error) {
       console.error('[MultiIndexService] Erreur count:', error)
@@ -180,14 +203,22 @@ export const MultiIndexService = {
     // Générer l'embedding
     const embedding = await EmbeddingService.embed(searchableText)
 
+    // Préparer les données à insérer
+    const insertData: Record<string, unknown> = {
+      ...document,
+      searchable_text: searchableText,
+      embedding: embedding,
+    }
+
+    // Pour les custom indexes, ajouter index_id
+    if (index._isCustom && index._customId) {
+      insertData.index_id = index._customId
+    }
+
     // Insérer dans la table
     const { data, error } = await supabase
       .from(index.tableName)
-      .insert({
-        ...document,
-        searchable_text: searchableText,
-        embedding: embedding,
-      })
+      .insert(insertData)
       .select('id')
       .single()
 

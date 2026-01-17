@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
-import { AIProvider } from '../types'
+import { useState, useEffect, useCallback } from 'react'
+import { AIProvider, DEFAULT_SYSTEM_PROMPT } from '../types'
 import { getAvailableProviders, getProviderModels } from '../services/AIService'
 
 const STORAGE_KEYS = {
     PROVIDER: 'axora_ai_provider',
-    MODEL: 'axora_ai_model'
+    MODEL: 'axora_ai_model',
+    SYSTEM_PROMPT: 'axora_custom_system_prompt'
 }
 
 export function useAIPreference() {
@@ -36,6 +37,14 @@ export function useAIPreference() {
         return validModels[0]
     })
 
+    // System prompt state (custom or default)
+    const [systemPrompt, setSystemPromptState] = useState<string>(() => {
+        const saved = localStorage.getItem(STORAGE_KEYS.SYSTEM_PROMPT)
+        return saved || DEFAULT_SYSTEM_PROMPT
+    })
+
+    const isCustomPrompt = systemPrompt !== DEFAULT_SYSTEM_PROMPT
+
     // Update localStorage when state changes
     useEffect(() => {
         localStorage.setItem(STORAGE_KEYS.PROVIDER, provider)
@@ -44,6 +53,24 @@ export function useAIPreference() {
     useEffect(() => {
         localStorage.setItem(STORAGE_KEYS.MODEL, model)
     }, [model])
+
+    useEffect(() => {
+        if (systemPrompt !== DEFAULT_SYSTEM_PROMPT) {
+            localStorage.setItem(STORAGE_KEYS.SYSTEM_PROMPT, systemPrompt)
+        } else {
+            // Remove custom prompt if reset to default
+            localStorage.removeItem(STORAGE_KEYS.SYSTEM_PROMPT)
+        }
+    }, [systemPrompt])
+
+    // System prompt functions
+    const setSystemPrompt = useCallback((newPrompt: string) => {
+        setSystemPromptState(newPrompt)
+    }, [])
+
+    const resetSystemPrompt = useCallback(() => {
+        setSystemPromptState(DEFAULT_SYSTEM_PROMPT)
+    }, [])
 
     // Handle provider change to update valid models
     const updateProvider = (newProvider: AIProvider) => {
@@ -70,6 +97,12 @@ export function useAIPreference() {
         setProvider: updateProvider,
         setModel: updateModel,
         availableProviders,
-        getModelsForProvider: getProviderModels
+        getModelsForProvider: getProviderModels,
+        // System prompt
+        systemPrompt,
+        setSystemPrompt,
+        resetSystemPrompt,
+        isCustomPrompt,
+        defaultSystemPrompt: DEFAULT_SYSTEM_PROMPT
     }
 }

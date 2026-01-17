@@ -38,6 +38,7 @@ export function PhiVisionPage() {
     runAgents,
     getAgentsResults,
     isRunningAgents,
+    loadAgentsFromCapture,
   } = usePhiVision()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -49,6 +50,8 @@ export function PhiVisionPage() {
   // Sélectionner une capture depuis l'historique
   const handleSelectCapture = (capture: Capture) => {
     setSelectedCapture(capture)
+    // Charger les résultats des agents depuis Supabase si disponibles
+    loadAgentsFromCapture(capture)
   }
 
   // Retour à la vue de capture

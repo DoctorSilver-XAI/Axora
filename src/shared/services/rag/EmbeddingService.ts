@@ -193,6 +193,90 @@ export const EmbeddingService = {
   },
 
   /**
+   * Prépare le texte à embedder pour un document générique (index custom)
+   * Combine tous les champs textuels du document de manière intelligente
+   */
+  prepareGenericText(
+    document: Record<string, unknown>,
+    options?: {
+      priorityFields?: string[] // Champs à mettre en premier
+      excludeFields?: string[] // Champs à exclure
+      maxLength?: number // Longueur max du texte
+    }
+  ): string {
+    const priorityFields = options?.priorityFields || ['title', 'name', 'content', 'description']
+    const excludeFields = options?.excludeFields || ['id', 'created_at', 'updated_at', 'embedding', 'search_vector', 'is_active', 'index_id']
+    const maxLength = options?.maxLength || 8000
+
+    const parts: string[] = []
+
+    // Fonction récursive pour extraire le texte d'une valeur
+    const extractText = (value: unknown, prefix?: string): string[] => {
+      if (value === null || value === undefined) return []
+
+      if (typeof value === 'string') {
+        const trimmed = value.trim()
+        return trimmed ? [prefix ? `${prefix}: ${trimmed}` : trimmed] : []
+      }
+
+      if (typeof value === 'number' || typeof value === 'boolean') {
+        return prefix ? [`${prefix}: ${String(value)}`] : [String(value)]
+      }
+
+      if (Array.isArray(value)) {
+        const items = value.filter((v) => v !== null && v !== undefined)
+        if (items.length === 0) return []
+
+        // Si c'est un tableau de strings
+        if (items.every((v) => typeof v === 'string')) {
+          return prefix ? [`${prefix}: ${items.join(', ')}`] : [items.join(', ')]
+        }
+
+        // Si c'est un tableau d'objets, récursif
+        const texts: string[] = []
+        items.forEach((item) => {
+          texts.push(...extractText(item))
+        })
+        return texts
+      }
+
+      if (typeof value === 'object') {
+        const texts: string[] = []
+        for (const [key, val] of Object.entries(value)) {
+          if (!excludeFields.includes(key)) {
+            texts.push(...extractText(val, key))
+          }
+        }
+        return texts
+      }
+
+      return []
+    }
+
+    // D'abord les champs prioritaires
+    for (const field of priorityFields) {
+      if (field in document && !excludeFields.includes(field)) {
+        parts.push(...extractText(document[field], field))
+      }
+    }
+
+    // Ensuite les autres champs
+    for (const [key, value] of Object.entries(document)) {
+      if (!priorityFields.includes(key) && !excludeFields.includes(key)) {
+        parts.push(...extractText(value, key))
+      }
+    }
+
+    // Joindre et tronquer si nécessaire
+    let text = parts.join('\n')
+    if (text.length > maxLength) {
+      text = text.slice(0, maxLength) + '...'
+    }
+
+    return text
+  },
+
+  /**
    * Retourne les dimensions du modèle d'embedding
    */
   getDimensions(): number {
