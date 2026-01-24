@@ -33,6 +33,7 @@ export class HubWindow {
         nodeIntegration: false,
         sandbox: false, // Désactivé pour permettre le preload
       },
+      icon: join(__dirname, '../../resources/icon.png'),
     })
 
     // Afficher la fenêtre quand elle est prête

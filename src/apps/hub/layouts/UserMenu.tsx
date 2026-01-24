@@ -26,6 +26,11 @@ export function UserMenu() {
     .toUpperCase()
     .slice(0, 2) || 'P'
 
+  const handleProfile = () => {
+    navigate('/profile')
+    setIsOpen(false)
+  }
+
   const handleSettings = () => {
     navigate('/settings')
     setIsOpen(false)
@@ -37,7 +42,7 @@ export function UserMenu() {
   }
 
   const menuItems: MenuItem[] = [
-    { icon: User, label: 'Profil', onClick: handleSettings },
+    { icon: User, label: 'Profil', onClick: handleProfile },
     { icon: Settings, label: 'Paramètres', onClick: handleSettings },
     { icon: LogOut, label: 'Déconnexion', onClick: handleSignOut, danger: true },
   ]

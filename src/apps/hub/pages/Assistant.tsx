@@ -1,13 +1,22 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Plus, Settings, User, Bot, Loader2, X, AlertCircle, Trash2, PanelLeft, MessageSquare, Sparkles } from 'lucide-react'
+import { Send, Plus, Settings, User, Bot, Loader2, X, AlertCircle, Trash2, PanelLeft, MessageSquare, Sparkles, Database, CheckCircle2 } from 'lucide-react'
 import { cn } from '@shared/utils/cn'
-import { Message, AIConfig, Conversation, StorageType } from '@features/assistant/types'
+import {
+  Message,
+  AIConfig,
+  Conversation,
+  StorageType,
+  RAGTrace,
+  ToolCall,
+  AgentExecution,
+} from '@features/assistant/types'
 import { sendMessage } from '@features/assistant/services/AIService'
 import { useAIPreference } from '@features/assistant/hooks/useAIPreference'
 import { getConversationService, UnifiedConversationService } from '@features/assistant/services/ConversationServiceFactory'
 import { NewConversationModal } from '@features/assistant/components/NewConversationModal'
 import { StorageBadge } from '@features/assistant/components/StorageBadge'
+import { RAGSourcesIndicator } from '@features/assistant/components/RAGSourcesIndicator'
 import { PROVIDER_LABELS, getModelDisplayName } from '@features/assistant/constants/providers'
 import { MarkdownPreview } from '@modules/notes/components/MarkdownPreview'
 import { QuickPromptsGrid } from '@features/assistant/components/QuickPromptsGrid'
@@ -44,6 +53,8 @@ export function Assistant() {
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
+  const [streamingRAGTrace, setStreamingRAGTrace] = useState<RAGTrace | null>(null)
+  const [activeToolCalls, setActiveToolCalls] = useState<{ name: string; status: 'pending' | 'done' }[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showNewConversationModal, setShowNewConversationModal] = useState(false)
@@ -217,7 +228,12 @@ export function Assistant() {
     setInput('')
     setIsStreaming(true)
     setStreamingContent('')
+    setStreamingRAGTrace(null)
+    setActiveToolCalls([])
     setError(null)
+
+    // Variable pour stocker la trace RAG reçue pendant le streaming
+    let capturedRAGTrace: RAGTrace | null = null
 
     // Get the appropriate service based on storage type
     const service = getConversationService(currentConversation.storageType)
@@ -259,7 +275,7 @@ export function Assistant() {
         },
         onComplete: async (fullResponse) => {
           try {
-            // Add assistant message using the appropriate service
+            // Add assistant message with RAG trace
             const assistantMessage = await service.addMessage(
               currentConversation.id,
               'assistant',
@@ -267,23 +283,55 @@ export function Assistant() {
               selectedProvider,
               selectedModel
             )
+            // Attacher la trace RAG au message
+            assistantMessage.ragTrace = capturedRAGTrace || undefined
             updateConversationMessages(currentConversation.id, (msgs) => [...msgs, assistantMessage])
           } catch (err) {
             console.error('Failed to save assistant message:', err)
           }
           setStreamingContent('')
+          setStreamingRAGTrace(null)
+          setActiveToolCalls([])
           setIsStreaming(false)
         },
         onError: (err) => {
           setError(err.message)
           setIsStreaming(false)
           setStreamingContent('')
+          setStreamingRAGTrace(null)
+          setActiveToolCalls([])
+        },
+      }, {
+        useRAG: true,
+        onRAGTrace: (trace) => {
+          // Stocker la trace pour l'attacher au message
+          capturedRAGTrace = trace
+          setStreamingRAGTrace(trace)
+        },
+        // Callbacks mode agent
+        agentCallbacks: {
+          onToolCall: (toolCall: ToolCall) => {
+            setActiveToolCalls((prev) => [...prev, { name: toolCall.function.name, status: 'pending' }])
+          },
+          onToolResult: (_result, toolName) => {
+            setActiveToolCalls((prev) =>
+              prev.map((tc) => (tc.name === toolName && tc.status === 'pending' ? { ...tc, status: 'done' } : tc))
+            )
+          },
+          onAgentComplete: (execution: AgentExecution) => {
+            console.log('[Agent] Exécution complète:', {
+              toolsUsed: execution.toolsUsed,
+              iterations: execution.iterationCount,
+              duration: execution.totalDurationMs,
+            })
+          },
         },
       })
     } catch (err) {
       console.error('Failed to send message:', err)
       setError('Impossible d\'envoyer le message')
       setIsStreaming(false)
+      setStreamingRAGTrace(null)
     }
   }
 
@@ -486,6 +534,34 @@ export function Assistant() {
                     <Bot className="w-4 h-4 text-white" />
                   </div>
                   <div className="max-w-[75%] px-5 py-4 rounded-2xl bg-surface-100/50 border border-white/5 backdrop-blur-xl">
+                    {/* Indicateur des outils en cours d'exécution */}
+                    {activeToolCalls.length > 0 && (
+                      <div className="mb-3 space-y-1.5">
+                        {activeToolCalls.map((tc, idx) => (
+                          <motion.div
+                            key={`${tc.name}-${idx}`}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-axora-500/10 border border-axora-500/20"
+                          >
+                            {tc.status === 'pending' ? (
+                              <Loader2 className="w-3 h-3 text-axora-400 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                            )}
+                            <Database className="w-3 h-3 text-axora-400" />
+                            <span className="text-xs text-white/70">
+                              {tc.name === 'search_bdpm' && 'Recherche BDPM...'}
+                              {tc.name === 'search_by_cip' && 'Recherche par CIP...'}
+                              {tc.name === 'get_generiques' && 'Recherche génériques...'}
+                              {tc.name === 'check_disponibilite' && 'Vérification disponibilité...'}
+                              {tc.name === 'calculate_dosage' && 'Calcul posologie...'}
+                            </span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+
                     {streamingContent ? (
                       <div className="relative">
                         <MarkdownPreview
@@ -493,11 +569,21 @@ export function Assistant() {
                           className="text-sm leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:mb-2 [&_ol]:mb-2"
                         />
                         <span className="inline-block w-1.5 h-4 bg-axora-400 ml-1 animate-pulse rounded-sm align-middle" />
+                        {/* Indicateur RAG pendant le streaming */}
+                        {streamingRAGTrace && (
+                          <RAGSourcesIndicator trace={streamingRAGTrace} />
+                        )}
                       </div>
                     ) : (
                       <div className="flex items-center gap-3">
                         <Loader2 className="w-4 h-4 text-axora-400 animate-spin" />
-                        <span className="text-white/60 text-sm">Réflexion en cours...</span>
+                        <span className="text-white/60 text-sm">
+                          {activeToolCalls.length > 0
+                            ? 'Agent en action...'
+                            : streamingRAGTrace?.used
+                              ? `Contexte RAG: ${streamingRAGTrace.sources.length} source(s)...`
+                              : 'Réflexion en cours...'}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -675,10 +761,16 @@ function MessageBubble({ message }: MessageBubbleProps) {
             {message.content}
           </p>
         ) : (
-          <MarkdownPreview
-            content={message.content}
-            className="text-xs leading-relaxed [&_p]:mb-1.5 [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ol]:mb-1.5"
-          />
+          <>
+            <MarkdownPreview
+              content={message.content}
+              className="text-xs leading-relaxed [&_p]:mb-1.5 [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ol]:mb-1.5"
+            />
+            {/* Indicateur sources RAG */}
+            {message.ragTrace && (
+              <RAGSourcesIndicator trace={message.ragTrace} />
+            )}
+          </>
         )}
         <p className={cn(
           "text-[9px] mt-1.5 flex items-center gap-1",

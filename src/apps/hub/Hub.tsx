@@ -7,6 +7,7 @@ import { PhiVisionLabPage } from './pages/PhiVisionLab'
 import { Assistant } from './pages/Assistant'
 import { Messaging } from './pages/Messaging'
 import { Settings } from './pages/Settings'
+import { Profile } from './pages/Profile'
 import { Login, Register } from './pages/Auth'
 import { ProtectedRoute } from '@shared/components/ProtectedRoute'
 import { ModuleLoaderProvider } from '@/modules'
@@ -37,6 +38,7 @@ export function Hub() {
                     <Route path="/phivision-lab" element={<PhiVisionLabPage />} />
                     <Route path="/assistant" element={<Assistant />} />
                     <Route path="/messaging" element={<Messaging />} />
+                    <Route path="/profile" element={<Profile />} />
                     <Route path="/settings" element={<Settings />} />
                   </Routes>
                 </MainLayout>

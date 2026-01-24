@@ -8,6 +8,16 @@ export * from './types'
 // Services
 export { EmbeddingService } from './EmbeddingService'
 export { ProductSearchService } from './ProductSearchService'
+export { BDPMSearchService } from './BDPMSearchService'
+export type {
+  BDPMProduct,
+  BDPMProductData,
+  BDPMSearchOptions,
+  BDPMPresentation,
+  BDPMSubstance,
+  BDPMAlerte,
+  BDPMDisponibilite,
+} from './BDPMSearchService'
 export { RAGService } from './RAGService'
 export { ProductIngestionService } from './ProductIngestionService'
 export { RAGAdmin } from './RAGAdmin'

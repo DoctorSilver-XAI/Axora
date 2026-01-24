@@ -1,11 +1,12 @@
 import { app, BrowserWindow } from 'electron'
+import { join } from 'path'
 import { WindowManager } from './windows/WindowManager'
 import { registerIpcHandlers } from './ipc/handlers'
 import { GlobalShortcuts } from './services/GlobalShortcuts'
 
 // Prevent "Error: write EIO" crash when stdout/stderr pipe is closed
-process.stdout?.on?.('error', () => {})
-process.stderr?.on?.('error', () => {})
+process.stdout?.on?.('error', () => { })
+process.stderr?.on?.('error', () => { })
 
 class AxoraApp {
   private windowManager: WindowManager
@@ -26,6 +27,7 @@ class AxoraApp {
 
     // S'assurer que l'app apparaît dans le dock sur macOS
     if (process.platform === 'darwin' && app.dock) {
+      app.dock.setIcon(join(__dirname, '../../resources/icon.png'))
       app.dock.show()
     }
 

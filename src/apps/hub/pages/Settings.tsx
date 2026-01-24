@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  User,
   Key,
   Palette,
   Keyboard,
@@ -10,7 +9,8 @@ import {
   LogOut,
   ChevronRight,
   Bot,
-  RotateCcw
+  RotateCcw,
+  Settings as SettingsIcon,
 } from 'lucide-react'
 import { useAIPreference } from '@features/assistant/hooks/useAIPreference'
 import {
@@ -21,10 +21,9 @@ import {
 } from '@features/assistant/constants/providers'
 import { cn } from '@shared/utils/cn'
 
-type SettingsSection = 'account' | 'api' | 'ai' | 'appearance' | 'shortcuts' | 'data' | 'notifications'
+type SettingsSection = 'ai' | 'api' | 'appearance' | 'shortcuts' | 'data' | 'notifications'
 
 const sections = [
-  { id: 'account' as const, label: 'Compte', icon: User },
   { id: 'ai' as const, label: 'Assistant IA', icon: Bot },
   { id: 'api' as const, label: 'Clés API', icon: Key },
   { id: 'appearance' as const, label: 'Apparence', icon: Palette },
@@ -34,13 +33,16 @@ const sections = [
 ]
 
 export function Settings() {
-  const [activeSection, setActiveSection] = useState<SettingsSection>('account')
+  const [activeSection, setActiveSection] = useState<SettingsSection>('ai')
 
   return (
     <div className="flex gap-6 h-full -m-6">
       {/* Sidebar */}
       <div className="w-64 bg-surface-50 border-r border-white/5 p-4">
-        <h1 className="text-lg font-semibold text-white px-3 mb-4">Paramètres</h1>
+        <h1 className="text-lg font-semibold text-white px-3 mb-4 flex items-center gap-2">
+          <SettingsIcon className="w-5 h-5 text-axora-400" />
+          Paramètres
+        </h1>
 
         <nav className="space-y-1">
           {sections.map((section) => {
@@ -77,45 +79,12 @@ export function Settings() {
 
       {/* Content */}
       <div className="flex-1 p-6 overflow-auto">
-        {activeSection === 'account' && <AccountSettings />}
         {activeSection === 'ai' && <AISettings />}
         {activeSection === 'api' && <APISettings />}
         {activeSection === 'appearance' && <AppearanceSettings />}
         {activeSection === 'shortcuts' && <ShortcutsSettings />}
         {activeSection === 'data' && <DataSettings />}
         {activeSection === 'notifications' && <NotificationsSettings />}
-      </div>
-    </div>
-  )
-}
-
-function AccountSettings() {
-  return (
-    <div className="max-w-2xl space-y-6">
-      <SectionHeader
-        title="Compte"
-        description="Gérez votre profil et vos informations personnelles"
-      />
-
-      <div className="glass rounded-2xl p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-axora-500 flex items-center justify-center">
-            <span className="text-2xl font-semibold text-white">P</span>
-          </div>
-          <div>
-            <h3 className="font-medium text-white">Pharmacien</h3>
-            <p className="text-sm text-white/50">Non connecté</p>
-          </div>
-          <button className="ml-auto px-4 py-2 rounded-xl bg-white/10 text-white text-sm hover:bg-white/15 transition-colors">
-            Se connecter
-          </button>
-        </div>
-
-        <div className="pt-4 border-t border-white/10">
-          <p className="text-sm text-white/60">
-            Connectez-vous pour synchroniser vos données et accéder à toutes les fonctionnalités.
-          </p>
-        </div>
       </div>
     </div>
   )

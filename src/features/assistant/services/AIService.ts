@@ -1,5 +1,17 @@
-import { AIProvider, Message, AIConfig, DEFAULT_SYSTEM_PROMPT } from '../types'
-import { RAGService } from '@shared/services/rag'
+import {
+  AIProvider,
+  Message,
+  AIConfig,
+  DEFAULT_SYSTEM_PROMPT,
+  RAGTrace,
+  RAGSource,
+  AgentStreamCallbacks,
+  AgentExecution,
+  ToolCall,
+  ToolResult,
+} from '../types'
+import { RAGService, RAGContext } from '@shared/services/rag'
+import { AgentService } from './AgentService'
 
 const MISTRAL_API_KEY = import.meta.env.VITE_MISTRAL_API_KEY
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY
@@ -12,10 +24,19 @@ interface StreamCallbacks {
 }
 
 interface SendMessageOptions {
-  /** Activer/désactiver le RAG (défaut: true) */
+  /** Activer/désactiver le RAG (défaut: true pour mode classique, ignoré en mode agent) */
   useRAG?: boolean
-  /** Callback quand le contexte RAG est utilisé */
-  onRAGContext?: (productsCount: number) => void
+  /** Callback avec trace RAG complète (mode classique uniquement) */
+  onRAGTrace?: (trace: RAGTrace) => void
+  /** Activer le mode agent avec Function Calling (défaut: true pour Mistral/OpenAI) */
+  useAgent?: boolean
+  /** Callbacks spécifiques au mode agent */
+  agentCallbacks?: {
+    onToolCall?: (toolCall: ToolCall) => void
+    onToolResult?: (result: ToolResult, toolName: string) => void
+    onAgentComplete?: (execution: AgentExecution) => void
+    onIterationStart?: (iteration: number) => void
+  }
 }
 
 export async function sendMessage(
@@ -25,33 +46,114 @@ export async function sendMessage(
   options: SendMessageOptions = {}
 ): Promise<void> {
   const { provider, model, temperature = 0.7, maxTokens = 2048, systemPrompt = DEFAULT_SYSTEM_PROMPT } = config
-  const { useRAG = true, onRAGContext } = options
+  const { useRAG = true, onRAGTrace, useAgent, agentCallbacks } = options
+
+  // === MODE AGENT (Function Calling) ===
+  // Par défaut activé pour les providers compatibles (Mistral, OpenAI)
+  const shouldUseAgent = useAgent ?? AgentService.supportsAgentMode(provider)
+
+  if (shouldUseAgent && AgentService.supportsAgentMode(provider)) {
+    console.log('[AIService] 🤖 Mode Agent activé')
+
+    const agentStreamCallbacks: AgentStreamCallbacks = {
+      onChunk: callbacks.onChunk,
+      onToolCall: agentCallbacks?.onToolCall || ((tc) => console.log('[Agent] Tool call:', tc.function.name)),
+      onToolResult:
+        agentCallbacks?.onToolResult || ((_tr, name) => console.log('[Agent] Tool result:', name)),
+      onComplete: (execution) => {
+        // Appeler le callback de complétion standard
+        callbacks.onComplete(execution.finalResponse || '')
+
+        // Appeler le callback agent si fourni
+        agentCallbacks?.onAgentComplete?.(execution)
+      },
+      onError: callbacks.onError,
+      onIterationStart: agentCallbacks?.onIterationStart,
+    }
+
+    await AgentService.execute(
+      messages,
+      {
+        provider,
+        model,
+        temperature,
+        maxIterations: 10,
+        timeoutMs: 60000,
+      },
+      agentStreamCallbacks
+    )
+
+    return
+  }
+
+  // === MODE CLASSIQUE (RAG auto-injecté) ===
+  console.log('[AIService] 📄 Mode classique (RAG auto-injecté)')
 
   let enhancedSystemPrompt = systemPrompt
 
-  // === INJECTION RAG ===
-  // Si RAG activé, enrichir le system prompt avec le contexte pharmaceutique
+  // === INJECTION RAG AVEC TRAÇABILITÉ ===
   if (useRAG) {
     const lastUserMessage = messages.filter((m) => m.role === 'user').pop()
 
     if (lastUserMessage) {
+      const startTime = Date.now()
+      let ragContext: RAGContext | null = null
+      let searchType: RAGTrace['searchType'] = 'none'
+
       try {
-        const ragContext = await RAGService.getContextForAssistant(lastUserMessage.content)
+        // Déterminer le type de recherche
+        const query = lastUserMessage.content
+        const hasCIP = /\b\d{13}\b/.test(query) || /\b\d{7}\b/.test(query)
+        const hasCIS = /\b\d{8}\b/.test(query)
+
+        if (hasCIP) searchType = 'exact_cip'
+        else if (hasCIS) searchType = 'exact_cis'
+        else if (RAGService.shouldUseRAG(query)) searchType = 'hybrid'
+
+        // Exécuter la recherche RAG
+        ragContext = await RAGService.getContextForAssistant(query)
 
         if (ragContext && ragContext.products.length > 0) {
           enhancedSystemPrompt = RAGService.buildEnhancedSystemPrompt(systemPrompt, ragContext)
-
-          // Notifier le nombre de produits trouvés
-          if (onRAGContext) {
-            onRAGContext(ragContext.products.length)
-          }
-
-          console.log(`[RAG] Contexte enrichi avec ${ragContext.products.length} produit(s)`)
+          console.log(`[RAG] ✅ Contexte enrichi avec ${ragContext.products.length} produit(s)`)
+        } else {
+          console.log(`[RAG] ⚠️ Aucun résultat trouvé pour: "${query.slice(0, 50)}..."`)
         }
       } catch (err) {
-        // En cas d'erreur RAG, continuer sans contexte
-        console.warn('[RAG] Erreur, fallback sans contexte:', err)
+        console.warn('[RAG] ❌ Erreur:', err)
+        searchType = 'none'
       }
+
+      // Générer la trace RAG
+      const durationMs = Date.now() - startTime
+      const trace: RAGTrace = {
+        used: ragContext !== null && ragContext.products.length > 0,
+        query: lastUserMessage.content,
+        sources: ragContext?.products.map((p): RAGSource => ({
+          id: p.id,
+          name: p.productName,
+          dci: p.dci || undefined,
+          type: p.productData?.rag_metadata?.confidence_level === 'BDPM officiel' ? 'bdpm' : 'custom',
+          score: p.combinedScore || p.vectorScore || 0,
+        })) || [],
+        searchType: ragContext?.products.length ? searchType : 'none',
+        durationMs,
+        timestamp: new Date(),
+      }
+
+      // Notifier avec la trace complète
+      if (onRAGTrace) {
+        onRAGTrace(trace)
+      }
+
+      // Log détaillé pour debugging
+      console.log('[RAG] Trace:', {
+        used: trace.used,
+        searchType: trace.searchType,
+        sourcesCount: trace.sources.length,
+        durationMs: trace.durationMs,
+        sources: trace.sources.map(s => `${s.name} (${s.type}, score: ${s.score.toFixed(2)})`),
+      })
     }
   }
 

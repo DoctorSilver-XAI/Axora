@@ -12,6 +12,7 @@ import { IndexCard } from './IndexCard'
 import { CreateIndexModal } from './CreateIndexModal'
 import { EditIndexModal } from './EditIndexModal'
 import { DeleteIndexDialog } from './DeleteIndexDialog'
+import { BDPMSection } from './BDPMSection'
 
 interface IndexDashboardProps {
   onExplore: (indexId: string) => void
@@ -126,6 +127,9 @@ export function IndexDashboard({ onExplore, onIngest }: IndexDashboardProps) {
           </button>
         </div>
       </div>
+
+      {/* Section BDPM - Données officielles ANSM */}
+      <BDPMSection />
 
       {/* Grille des index */}
       {isLoading ? (

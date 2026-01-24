@@ -1,0 +1,78 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Definitions for Gradients and Glows -->
+  <defs>
+    <!-- Background Gradient (Subtle depth) -->
+    <linearGradient id="bg_grad" x1="512" y1="0" x2="512" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1e293b" />
+      <stop offset="1" stop-color="#0f172a" />
+    </linearGradient>
+
+    <!-- Helix 1 Gradient (Indigo/Purple) -->
+    <linearGradient id="helix1_grad" x1="200" y1="200" x2="800" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#818cf8" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#6366f1" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#4f46e5" stop-opacity="0.1"/>
+    </linearGradient>
+
+    <!-- Helix 2 Gradient (Cyan/Teal) -->
+    <linearGradient id="helix2_grad" x1="800" y1="200" x2="200" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#06b6d4" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#0891b2" stop-opacity="0.1"/>
+    </linearGradient>
+
+    <!-- Central Glow -->
+    <radialGradient id="core_glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(512 512) rotate(90) scale(150)">
+      <stop stop-color="white" />
+      <stop offset="0.5" stop-color="white" stop-opacity="0.5" />
+      <stop offset="1" stop-color="white" stop-opacity="0" />
+    </radialGradient>
+    
+    <!-- Clip Path for Squircle -->
+    <clipPath id="squircle_clip">
+       <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224" />
+    </clipPath>
+  </defs>
+
+  <!-- Main Container applied with ClipPath -->
+  <g clip-path="url(#squircle_clip)">
+    <!-- Background Fill -->
+    <rect width="1024" height="1024" fill="#0B0F19"/>
+    
+    <!-- Subtle top shine for glass effect -->
+    <path d="M0 0H1024V400C1024 400 800 500 512 500C224 500 0 400 0 400V0Z" fill="url(#bg_grad)" fill-opacity="0.3"/>
+    
+    <!-- Central Composition Group -->
+    <g transform="translate(512 512)">
+      
+      <!-- Helix Ring 1 (Indigo) -->
+      <!-- Ellipse rotated 45 deg -->
+      <g transform="rotate(45)">
+        <ellipse cx="0" cy="0" rx="300" ry="100" stroke="url(#helix1_grad)" stroke-width="40" stroke-linecap="round" fill="none" opacity="0.9"/>
+      </g>
+
+      <!-- Helix Ring 2 (Cyan) -->
+      <!-- Ellipse rotated -45 deg -->
+      <g transform="rotate(-45)">
+        <ellipse cx="0" cy="0" rx="300" ry="100" stroke="url(#helix2_grad)" stroke-width="40" stroke-linecap="round" fill="none" opacity="0.9"/>
+      </g>
+      
+      <!-- Core -->
+      <circle cx="0" cy="0" r="30" fill="white" />
+      <circle cx="0" cy="0" r="180" fill="url(#core_glow)" opacity="0.5"/>
+      
+    </g>
+
+    <!-- Glossy Reflection Overlay (Standard Mac Style) -->
+    <linearGradient id="gloss_grad" x1="512" y1="0" x2="512" y2="1024" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="white" stop-opacity="0.15"/>
+        <stop offset="0.4" stop-color="white" stop-opacity="0.05"/>
+        <stop offset="0.41" stop-color="white" stop-opacity="0"/>
+        <stop offset="1" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <rect width="1024" height="1024" fill="url(#gloss_grad)" />
+    
+    <!-- Inner Border Ring to define edge clearly against dark backgrounds -->
+    <rect x="2" y="2" width="1020" height="1020" rx="222" ry="222" stroke="white" stroke-opacity="0.1" stroke-width="4" fill="none"/>
+  </g>
+</svg>

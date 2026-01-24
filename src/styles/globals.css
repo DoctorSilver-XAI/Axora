@@ -142,3 +142,115 @@
 .animate-pulse-ring {
   animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* ======================================
+   Highlight.js Custom Theme (Dark)
+   ====================================== */
+.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: rgba(255, 255, 255, 0.35);
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag {
+  color: #c792ea;
+}
+
+.hljs-string,
+.hljs-attr {
+  color: #c3e88d;
+}
+
+.hljs-number,
+.hljs-literal {
+  color: #f78c6c;
+}
+
+.hljs-variable,
+.hljs-template-variable {
+  color: #82aaff;
+}
+
+.hljs-function,
+.hljs-title {
+  color: #82aaff;
+}
+
+.hljs-type,
+.hljs-class .hljs-title,
+.hljs-built_in {
+  color: #ffcb6b;
+}
+
+.hljs-attribute,
+.hljs-symbol {
+  color: #89ddff;
+}
+
+.hljs-params {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.hljs-meta,
+.hljs-meta .hljs-keyword {
+  color: #f07178;
+}
+
+.hljs-tag {
+  color: #89ddff;
+}
+
+.hljs-name {
+  color: #f07178;
+}
+
+.hljs-deletion {
+  color: #ff5370;
+  background: rgba(255, 83, 112, 0.1);
+}
+
+.hljs-addition {
+  color: #c3e88d;
+  background: rgba(195, 232, 141, 0.1);
+}
+
+/* ======================================
+   KaTeX Formulas Styling
+   ====================================== */
+.katex {
+  font-size: 1.1em !important;
+}
+
+.katex-display {
+  margin: 1rem 0 !important;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow-x: auto;
+}
+
+.katex-display > .katex {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.katex .mord,
+.katex .mopen,
+.katex .mclose,
+.katex .mrel,
+.katex .mop,
+.katex .mpunct,
+.katex .mbin {
+  color: inherit;
+}
+
+/* Inline katex */
+.markdown-preview p .katex {
+  color: #89ddff;
+}
