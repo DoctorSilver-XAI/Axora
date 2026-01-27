@@ -3,10 +3,12 @@ import { IPC_CHANNELS } from './channels'
 import { WindowManager } from '../windows/WindowManager'
 import { LocalConversationRepository } from '../database/LocalConversationRepository'
 import { CashRegisterRepository } from '../database/CashRegisterRepository'
+import { BDPMRepository } from '../database/BDPMRepository'
 
 export function registerIpcHandlers(windowManager: WindowManager): void {
   const localRepo = new LocalConversationRepository()
   const cashRegisterRepo = new CashRegisterRepository()
+  const bdpmRepo = new BDPMRepository()
   // Window handlers
   ipcMain.on(IPC_CHANNELS.WINDOW.OPEN_HUB, () => {
     windowManager.openHub()
@@ -345,5 +347,54 @@ export function registerIpcHandlers(windowManager: WindowManager): void {
 
   ipcMain.handle(IPC_CHANNELS.CASH_REGISTER.DELETE, async (_event, id: string) => {
     return cashRegisterRepo.delete(id)
+  })
+
+  // BDPM handlers
+  ipcMain.handle(IPC_CHANNELS.BDPM.SEARCH, async (_event, query: string, limit?: number) => {
+    return bdpmRepo.search(query, limit)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BDPM.SEARCH_BY_CIP, async (_event, cip: string) => {
+    return bdpmRepo.searchByCIP(cip)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BDPM.GET_BY_CODE_CIS, async (_event, codeCis: string) => {
+    return bdpmRepo.getByCodeCIS(codeCis)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BDPM.GET_POSOLOGIE, async (_event, dci: string) => {
+    return bdpmRepo.getPosologieByDCI(dci)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BDPM.GET_ALL_POSOLOGIES, async () => {
+    return bdpmRepo.getAllPosologies()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BDPM.IS_INITIALIZED, async () => {
+    return bdpmRepo.isInitialized()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BDPM.COUNT, async () => {
+    return bdpmRepo.count()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BDPM.IMPORT_MEDICAMENTS, async (_event, medicaments) => {
+    return bdpmRepo.bulkInsertMedicaments(medicaments)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BDPM.IMPORT_COMPOSITIONS, async (_event, compositions) => {
+    return bdpmRepo.bulkInsertCompositions(compositions)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BDPM.IMPORT_PRESENTATIONS, async (_event, presentations) => {
+    return bdpmRepo.bulkInsertPresentations(presentations)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BDPM.IMPORT_POSOLOGIES, async (_event, posologies) => {
+    return bdpmRepo.bulkInsertPosologies(posologies)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BDPM.CLEAR_ALL, async () => {
+    return bdpmRepo.clearAll()
   })
 }

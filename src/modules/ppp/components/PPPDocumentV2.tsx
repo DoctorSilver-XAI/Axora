@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { PPPData } from '../types'
 import { getTheme } from '../utils/themes'
+import logoGPDT from '@/assets/images/logo-gpdt.png'
 import '../styles/ppp-document.css'
 
 interface PPPDocumentV2Props {
@@ -84,6 +85,55 @@ export function PPPDocumentV2({ data, onChange, readOnly = false }: PPPDocumentV
     )
   }
 
+  // Dynamic scaling for print 'Fit to Page'
+  useEffect(() => {
+    const handlePrint = () => {
+      const doc = document.querySelector('.ppp-document') as HTMLElement
+      const container = document.querySelector('.ppp-document-container') as HTMLElement
+
+      if (doc && container) {
+        // Reset scale before measuring
+        doc.style.transform = 'none'
+
+        // A4 dimensions in mm (approx) or px at 96dpi
+        // 297mm = 1122.5px | 210mm = 793.7px
+        // We use a safe height slightly less than 210mm for margins
+        const MAX_HEIGHT_PX = 790 // ~209mm
+        const MAX_WIDTH_PX = 1120 // ~296mm
+
+        const contentHeight = doc.scrollHeight
+        const contentWidth = doc.scrollWidth
+
+        let scale = 1
+
+        // Calculate needed scale
+        const scaleH = MAX_HEIGHT_PX / contentHeight
+        const scaleW = MAX_WIDTH_PX / contentWidth
+
+        // Use the most restrictive scale
+        scale = Math.min(scaleH, scaleW, 1)
+
+        // Apply scale specifically for print
+        // Note: CSS @media print should handle the positioning
+        if (scale < 1) {
+          doc.style.setProperty('--print-scale', scale.toString())
+          doc.classList.add('scaled-for-print')
+        } else {
+          doc.style.removeProperty('--print-scale')
+          doc.classList.remove('scaled-for-print')
+        }
+      }
+    }
+
+    window.addEventListener('beforeprint', handlePrint)
+    // Run once on mount for debugging/preview
+    // handlePrint()
+
+    return () => {
+      window.removeEventListener('beforeprint', handlePrint)
+    }
+  }, [localData]) // Re-calculate when data changes
+
   return (
     <div className="ppp-document-container">
       <div className="ppp-document">
@@ -92,7 +142,10 @@ export function PPPDocumentV2({ data, onChange, readOnly = false }: PPPDocumentV
           {/* Top Row: Logo + Pharmacy Name | Title + Age */}
           <div className="ppp-header-top">
             <div className="ppp-pharmacy-branding">
-              <div className="ppp-pharmacy-logo" />
+              {/* Use GPDT Logo Image */}
+              <div className="ppp-pharmacy-logo-wrapper">
+                <img src={logoGPDT} alt="Logo Pharmacie" className="w-full h-full object-contain" />
+              </div>
               <div
                 className="ppp-pharmacy-name"
                 contentEditable={!readOnly}

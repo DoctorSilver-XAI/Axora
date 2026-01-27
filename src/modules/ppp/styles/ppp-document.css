@@ -51,12 +51,19 @@
   gap: 12px;
 }
 
-.ppp-pharmacy-logo {
+.ppp-pharmacy-logo-wrapper {
   width: 42px;
   height: 42px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--ppp-primary), var(--ppp-accent));
   flex-shrink: 0;
+}
+
+/* Force logo visibility during print */
+@media print {
+  .ppp-pharmacy-logo-wrapper * {
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
 
 .ppp-pharmacy-name {
@@ -522,8 +529,59 @@
     border: none !important;
     page-break-after: avoid;
     page-break-inside: avoid;
-    transform: scale(1) !important;
-    /* Ensure no scaling artifacts */
+    transform-origin: top left;
+    /* Use the dynamically calculated scale, defaulting to 1 */
+    transform: scale(var(--print-scale, 1)) !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 
+     OPTIMIZED PRINT GRID (2x2 Layout) 
+     Maximize usage of A4 Landscape width
+  */
+  .ppp-grid {
+    display: grid;
+    /* Two equal columns */
+    grid-template-columns: 1fr 1fr !important;
+    /* Two rows, auto height */
+    grid-template-rows: auto auto !important;
+    column-gap: 20px !important;
+    row-gap: 20px !important;
+    margin-bottom: 10px;
+    flex: 1;
+    /* Take available vertical space */
+  }
+
+  /* Reset column paddings and separators for the 2x2 layout */
+  .ppp-column {
+    padding: 0 !important;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    /* Adding border for structure */
+    border-radius: 8px;
+    padding: 10px !important;
+    background: #fdfdfd;
+  }
+
+  /* Hide the old vertical separator */
+  .ppp-column+.ppp-column::before {
+    display: none !important;
+  }
+
+  /* Ensure lines use full width of new wider columns */
+  .ppp-lines {
+    width: 100%;
+  }
+
+  /* Header adjustments for print brightness */
+  .ppp-header {
+    border-bottom: 2px solid #000 !important;
+  }
+
+  /* If scaled, we might need to adjust the container to avoid extra white space */
+  .ppp-document.scaled-for-print {
+    width: auto !important;
+    height: auto !important;
   }
 
   .ppp-info-value,
@@ -543,7 +601,11 @@
    RESPONSIVE (for editing mode, not print)
    ============================================================================ */
 
-@media (max-width: 1400px) {
+/* ============================================================================
+   RESPONSIVE (for editing mode, not print) - MATCHING LAB PROTOTYPE
+   ============================================================================ */
+
+@media (max-width: 1250px) {
   .ppp-document-container {
     padding: 20px;
   }
@@ -552,6 +614,62 @@
     width: 100%;
     height: auto;
     max-width: 1200px;
-    aspect-ratio: 297/210;
+    aspect-ratio: auto;
+    min-height: auto;
+  }
+
+  .ppp-grid {
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    column-gap: 12px;
+  }
+
+  /* Cache la barre verticale pour le layout fluide */
+  .ppp-column+.ppp-column::before {
+    top: 68px;
+  }
+}
+
+@media (max-width: 900px) {
+  .ppp-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .ppp-header-right {
+    text-align: left;
+    width: 100%;
+  }
+
+  .ppp-grid {
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 10px;
+    row-gap: 20px;
+  }
+
+  .ppp-column+.ppp-column::before {
+    display: none;
+    /* Simplification visuelle sur petit écran */
+  }
+}
+
+@media (max-width: 640px) {
+  .ppp-document-container {
+    padding: 10px;
+  }
+
+  .ppp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ppp-header-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ppp-footer {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 }

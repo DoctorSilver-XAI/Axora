@@ -77,6 +77,21 @@ export interface AxoraAPI {
     delete: (id: string) => Promise<void>
   }
 
+  bdpm: {
+    search: (query: string, limit?: number) => Promise<LocalBDPMSearchResult[]>
+    searchByCIP: (cip: string) => Promise<LocalBDPMSearchResult | null>
+    getByCodeCIS: (codeCis: string) => Promise<LocalBDPMSearchResult | null>
+    getPosologie: (dci: string) => Promise<LocalBDPMPosologie | null>
+    getAllPosologies: () => Promise<LocalBDPMPosologie[]>
+    isInitialized: () => Promise<boolean>
+    count: () => Promise<number>
+    importMedicaments: (medicaments: Omit<LocalBDPMMedicament, 'created_at'>[]) => Promise<number>
+    importCompositions: (compositions: Omit<LocalBDPMComposition, 'id'>[]) => Promise<number>
+    importPresentations: (presentations: Omit<LocalBDPMPresentation, 'id'>[]) => Promise<number>
+    importPosologies: (posologies: Omit<LocalBDPMPosologie, 'id' | 'dci_normalized'>[]) => Promise<number>
+    clearAll: () => Promise<void>
+  }
+
   platform: NodeJS.Platform
 }
 
@@ -116,6 +131,60 @@ export interface CashClosureData {
   results_json: string
   notes: string | null
   created_at: string
+}
+
+// ========== BDPM Types ==========
+
+export interface LocalBDPMMedicament {
+  code_cis: string
+  denomination: string
+  forme_pharmaceutique: string | null
+  voies_administration: string | null
+  dci_principal: string | null
+  laboratoire: string | null
+  etat_commercialisation: string
+  surveillance_renforcee: number
+  created_at: string
+}
+
+export interface LocalBDPMComposition {
+  id: number
+  code_cis: string
+  substance: string
+  dosage: string | null
+  reference_dosage: string | null
+}
+
+export interface LocalBDPMPresentation {
+  id: number
+  code_cis: string
+  cip13: string
+  cip7: string | null
+  libelle: string
+  prix: number | null
+  remboursement: string | null
+  commercialise: number
+}
+
+export interface LocalBDPMPosologie {
+  id: number
+  dci: string
+  dci_normalized: string
+  mg_per_kg_per_day: number
+  max_daily_mg: number
+  max_single_dose_mg: number
+  default_frequency: number
+  min_interval_hours: number
+  min_age_months: number | null
+  max_age_years: number | null
+  notes: string
+}
+
+export interface LocalBDPMSearchResult {
+  medicament: LocalBDPMMedicament
+  compositions: LocalBDPMComposition[]
+  presentations: LocalBDPMPresentation[]
+  posologie: LocalBDPMPosologie | null
 }
 
 export interface IslandAPI {

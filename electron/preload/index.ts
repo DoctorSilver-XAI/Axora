@@ -142,6 +142,34 @@ const axoraAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.CASH_REGISTER.DELETE, id),
   },
 
+  // BDPM (Base de Données Publiques du Médicament)
+  bdpm: {
+    search: (query: string, limit?: number) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.SEARCH, query, limit),
+    searchByCIP: (cip: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.SEARCH_BY_CIP, cip),
+    getByCodeCIS: (codeCis: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.GET_BY_CODE_CIS, codeCis),
+    getPosologie: (dci: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.GET_POSOLOGIE, dci),
+    getAllPosologies: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.GET_ALL_POSOLOGIES),
+    isInitialized: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.IS_INITIALIZED),
+    count: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.COUNT),
+    importMedicaments: (medicaments: unknown[]) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.IMPORT_MEDICAMENTS, medicaments),
+    importCompositions: (compositions: unknown[]) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.IMPORT_COMPOSITIONS, compositions),
+    importPresentations: (presentations: unknown[]) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.IMPORT_PRESENTATIONS, presentations),
+    importPosologies: (posologies: unknown[]) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.IMPORT_POSOLOGIES, posologies),
+    clearAll: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.BDPM.CLEAR_ALL),
+  },
+
   // Platform info
   platform: process.platform,
 }

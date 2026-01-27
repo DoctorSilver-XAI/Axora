@@ -12,7 +12,7 @@ interface MenuItem {
   danger?: boolean
 }
 
-export function UserMenu() {
+export function UserMenu({ isCompact }: { isCompact?: boolean }) {
   const [isOpen, setIsOpen] = useState(false)
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
@@ -52,24 +52,35 @@ export function UserMenu() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200',
+          'flex items-center transition-all duration-200',
           'hover:bg-white/10',
-          isOpen && 'bg-white/10'
+          isOpen && 'bg-white/10',
+          isCompact
+            ? 'w-10 h-10 rounded-full justify-center mx-auto'
+            : 'w-full gap-3 px-3 py-2 rounded-xl'
         )}
       >
-        <div className="w-8 h-8 rounded-full bg-axora-500 flex items-center justify-center">
+        <div className={cn(
+          "rounded-full bg-axora-500 flex items-center justify-center flex-shrink-0",
+          isCompact ? "w-8 h-8" : "w-8 h-8"
+        )}>
           <span className="text-sm font-medium text-white">{initials}</span>
         </div>
-        <div className="flex-1 min-w-0 text-left">
-          <p className="text-sm font-medium text-white truncate">{displayName}</p>
-          <p className="text-xs text-white/50 truncate">{email}</p>
-        </div>
-        <ChevronUp
-          className={cn(
-            'w-4 h-4 text-white/40 transition-transform duration-200',
-            !isOpen && 'rotate-180'
-          )}
-        />
+
+        {!isCompact && (
+          <>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-medium text-white truncate">{displayName}</p>
+              <p className="text-xs text-white/50 truncate">{email}</p>
+            </div>
+            <ChevronUp
+              className={cn(
+                'w-4 h-4 text-white/40 transition-transform duration-200 flex-shrink-0',
+                !isOpen && 'rotate-180'
+              )}
+            />
+          </>
+        )}
       </button>
 
       <AnimatePresence>
@@ -80,14 +91,15 @@ export function UserMenu() {
               onClick={() => setIsOpen(false)}
             />
             <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              initial={{ opacity: 0, y: 10, scale: 0.95, x: isCompact ? 10 : 0 }}
+              animate={{ opacity: 1, y: 0, scale: 1, x: isCompact ? 10 : 0 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95, x: isCompact ? 10 : 0 }}
               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               className={cn(
-                'absolute bottom-full left-0 right-0 mb-2 z-50',
+                'absolute bottom-full mb-2 z-50',
                 'bg-surface-100 border border-white/10 rounded-xl',
-                'shadow-xl overflow-hidden'
+                'shadow-xl overflow-hidden',
+                isCompact ? 'left-full ml-2 w-48 origin-bottom-left' : 'left-0 right-0 origin-bottom'
               )}
             >
               {menuItems.map((item, index) => {
