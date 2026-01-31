@@ -5,6 +5,7 @@ import './ppp'
 import './rag-studio'
 import './cash-register'
 import './voice-memos'
+import './commercial-invoice'
 
 // Re-export core utilities
 export { ModuleRegistry, registerModule } from './core/ModuleRegistry'
