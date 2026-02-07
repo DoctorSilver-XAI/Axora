@@ -27,9 +27,11 @@ import {
     DEFAULT_SETTINGS,
     createEmptyLine,
     ClientType,
+    InputMode,
 } from '../types'
 import {
     calculateLineAmounts,
+    calculateLineAmountsFromTTC,
     calculateInvoiceTotals,
     generateInvoiceNumber,
     formatCurrency,
@@ -54,15 +56,27 @@ export function CommercialInvoiceGenerator() {
     // Recalculer les lignes quand les settings changent
     const computedLines = useMemo(() => {
         return lines.map(line => {
-            const amounts = calculateLineAmounts(
-                line.quantity,
-                line.unitPriceHT,
-                line.vatRate,
-                settings.applyVAT
-            )
-            return { ...line, ...amounts }
+            if (settings.inputMode === 'ttc') {
+                // Mode TTC: l'utilisateur saisit le prix TTC, on calcule le HT
+                const result = calculateLineAmountsFromTTC(
+                    line.quantity,
+                    line.unitPriceTTC,
+                    line.vatRate,
+                    settings.applyVAT
+                )
+                return { ...line, unitPriceHT: result.unitPriceHT, amountHT: result.amountHT, amountVAT: result.amountVAT, amountTTC: result.amountTTC }
+            } else {
+                // Mode HT: comportement classique
+                const amounts = calculateLineAmounts(
+                    line.quantity,
+                    line.unitPriceHT,
+                    line.vatRate,
+                    settings.applyVAT
+                )
+                return { ...line, ...amounts }
+            }
         })
-    }, [lines, settings.applyVAT])
+    }, [lines, settings.applyVAT, settings.inputMode])
 
     // Calculer les totaux
     const totals = useMemo(() => {
@@ -133,44 +147,69 @@ export function CommercialInvoiceGenerator() {
             <div className="flex-shrink-0 px-6 py-4 border-b border-white/10 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-emerald-500/20">
-                            <FileText className="w-5 h-5 text-emerald-400" />
+                        <div className="p-1.5 rounded-lg bg-emerald-500/20">
+                            <FileText className="w-4 h-4 text-emerald-400" />
                         </div>
                         <div>
-                            <h1 className="text-lg font-semibold">Facture Commerciale</h1>
-                            <p className="text-sm text-white/50">Génération avec TVA paramétrable</p>
+                            <h1 className="text-base font-semibold">Facture Commerciale</h1>
+                            <p className="text-xs text-white/50">Génération avec TVA paramétrable</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                        {/* Toggle HT / TTC - always visible */}
+                        <div className="flex rounded-md overflow-hidden border border-white/20 mr-2">
+                            <button
+                                onClick={() => setSettings(prev => ({ ...prev, inputMode: 'ht' as InputMode }))}
+                                className={cn(
+                                    'px-2.5 py-1 text-xs font-medium transition-colors',
+                                    settings.inputMode === 'ht'
+                                        ? 'bg-emerald-500 text-white'
+                                        : 'bg-white/5 text-white/50 hover:text-white/80'
+                                )}
+                            >
+                                HT
+                            </button>
+                            <button
+                                onClick={() => setSettings(prev => ({ ...prev, inputMode: 'ttc' as InputMode }))}
+                                className={cn(
+                                    'px-2.5 py-1 text-xs font-medium transition-colors',
+                                    settings.inputMode === 'ttc'
+                                        ? 'bg-emerald-500 text-white'
+                                        : 'bg-white/5 text-white/50 hover:text-white/80'
+                                )}
+                            >
+                                TTC
+                            </button>
+                        </div>
                         <button
                             onClick={() => setShowSettings(!showSettings)}
                             className={cn(
-                                'p-2 rounded-lg transition-colors',
+                                'p-1.5 rounded-lg transition-colors',
                                 showSettings ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-white/10 text-white/60'
                             )}
                         >
-                            <Settings2 className="w-5 h-5" />
+                            <Settings2 className="w-4 h-4" />
                         </button>
                         <button
                             onClick={() => setShowPreview(!showPreview)}
                             className={cn(
-                                'p-2 rounded-lg transition-colors',
+                                'p-1.5 rounded-lg transition-colors',
                                 showPreview ? 'bg-emerald-500/20 text-emerald-400' : 'hover:bg-white/10 text-white/60'
                             )}
                         >
-                            {showPreview ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                            {showPreview ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                         </button>
                         <button
                             onClick={handleReset}
-                            className="p-2 rounded-lg hover:bg-white/10 text-white/60 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-white/10 text-white/60 transition-colors"
                         >
-                            <RotateCcw className="w-5 h-5" />
+                            <RotateCcw className="w-4 h-4" />
                         </button>
                         <button
                             onClick={handleExportPDF}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-colors"
                         >
-                            <Download className="w-4 h-4" />
+                            <Download className="w-3.5 h-3.5" />
                             Exporter PDF
                         </button>
                     </div>
@@ -179,35 +218,35 @@ export function CommercialInvoiceGenerator() {
 
             {/* Settings Panel */}
             {showSettings && (
-                <div className="flex-shrink-0 px-6 py-4 border-b border-white/10 bg-white/5">
-                    <div className="flex flex-wrap items-center gap-6">
-                        <label className="flex items-center gap-2 cursor-pointer">
+                <div className="flex-shrink-0 px-4 py-2.5 border-b border-white/10 bg-white/5">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
                             <input
                                 type="checkbox"
                                 checked={settings.applyVAT}
                                 onChange={(e) => setSettings(prev => ({ ...prev, applyVAT: e.target.checked }))}
-                                className="w-4 h-4 rounded border-white/30 bg-white/10 text-emerald-500 focus:ring-emerald-500"
+                                className="w-3.5 h-3.5 rounded border-white/30 bg-white/10 text-emerald-500 focus:ring-emerald-500"
                             />
-                            <span className="text-sm">Appliquer la TVA</span>
+                            <span className="text-xs">Appliquer la TVA</span>
                         </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
                             <input
                                 type="checkbox"
                                 checked={settings.showDetails}
                                 onChange={(e) => setSettings(prev => ({ ...prev, showDetails: e.target.checked }))}
-                                className="w-4 h-4 rounded border-white/30 bg-white/10 text-emerald-500 focus:ring-emerald-500"
+                                className="w-3.5 h-3.5 rounded border-white/30 bg-white/10 text-emerald-500 focus:ring-emerald-500"
                             />
-                            <span className="text-sm">Afficher les détails</span>
+                            <span className="text-xs">Afficher les détails</span>
                         </label>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-white/60">TVA par défaut:</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-white/60">TVA :</span>
                             <select
                                 value={settings.defaultVATRate}
                                 onChange={(e) => setSettings(prev => ({ ...prev, defaultVATRate: parseFloat(e.target.value) as VATRate }))}
-                                className="px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-sm focus:outline-none focus:border-emerald-500"
+                                className="px-2 py-1 rounded-md bg-white/10 border border-white/20 text-xs focus:outline-none focus:border-emerald-500"
                             >
                                 {VAT_RATES.map(vat => (
-                                    <option key={vat.rate} value={vat.rate}>{vat.label} - {vat.description}</option>
+                                    <option key={vat.rate} value={vat.rate}>{vat.label}</option>
                                 ))}
                             </select>
                         </div>
@@ -219,87 +258,87 @@ export function CommercialInvoiceGenerator() {
             <div className="flex-1 flex overflow-hidden">
                 {/* Form Panel */}
                 <div className={cn(
-                    'flex-1 overflow-y-auto p-6 space-y-6',
-                    showPreview ? 'max-w-[50%]' : 'max-w-full'
+                    'flex-1 overflow-y-auto p-4 space-y-4',
+                    showPreview ? 'max-w-[45%]' : 'max-w-full'
                 )}>
                     {/* Invoice Info */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm text-white/60 flex items-center gap-2">
-                                <FileText className="w-4 h-4" />
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-xs text-white/60 flex items-center gap-1.5">
+                                <FileText className="w-3.5 h-3.5" />
                                 N° Facture
                             </label>
                             <input
                                 type="text"
                                 value={invoiceNumber}
                                 onChange={(e) => setInvoiceNumber(e.target.value)}
-                                className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none"
+                                className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm"
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm text-white/60 flex items-center gap-2">
-                                <Calendar className="w-4 h-4" />
+                        <div className="space-y-1">
+                            <label className="text-xs text-white/60 flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5" />
                                 Date
                             </label>
                             <input
                                 type="date"
                                 value={invoiceDate.toISOString().split('T')[0]}
                                 onChange={(e) => setInvoiceDate(new Date(e.target.value))}
-                                className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none"
+                                className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm"
                             />
                         </div>
                     </div>
 
                     {/* Client Info */}
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-4">
-                        <div className="flex items-center gap-2 text-white/80">
-                            <Users className="w-4 h-4" />
-                            <span className="font-medium">Informations Client</span>
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-3">
+                        <div className="flex items-center gap-1.5 text-white/80">
+                            <Users className="w-3.5 h-3.5" />
+                            <span className="text-sm font-medium">Client</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="col-span-2 space-y-2">
-                                <label className="text-sm text-white/60">Nom / Raison sociale</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="col-span-2 space-y-1">
+                                <label className="text-xs text-white/60">Nom / Raison sociale</label>
                                 <input
                                     type="text"
                                     value={client.name}
                                     onChange={(e) => setClient(prev => ({ ...prev, name: e.target.value }))}
                                     placeholder="Dr. Martin, Cabinet Infirmier..."
-                                    className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none placeholder:text-white/30"
+                                    className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm placeholder:text-white/30"
                                 />
                             </div>
-                            <div className="col-span-2 space-y-2">
-                                <label className="text-sm text-white/60">Adresse</label>
+                            <div className="col-span-2 space-y-1">
+                                <label className="text-xs text-white/60">Adresse</label>
                                 <input
                                     type="text"
                                     value={client.address}
                                     onChange={(e) => setClient(prev => ({ ...prev, address: e.target.value }))}
-                                    className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none"
+                                    className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm text-white/60">Code Postal</label>
+                            <div className="space-y-1">
+                                <label className="text-xs text-white/60">Code Postal</label>
                                 <input
                                     type="text"
                                     value={client.postalCode}
                                     onChange={(e) => setClient(prev => ({ ...prev, postalCode: e.target.value }))}
-                                    className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none"
+                                    className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm text-white/60">Ville</label>
+                            <div className="space-y-1">
+                                <label className="text-xs text-white/60">Ville</label>
                                 <input
                                     type="text"
                                     value={client.city}
                                     onChange={(e) => setClient(prev => ({ ...prev, city: e.target.value }))}
-                                    className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none"
+                                    className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm text-white/60">Type de client</label>
+                            <div className="space-y-1">
+                                <label className="text-xs text-white/60">Type de client</label>
                                 <select
                                     value={client.clientType}
                                     onChange={(e) => setClient(prev => ({ ...prev, clientType: e.target.value as ClientType }))}
-                                    className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none"
+                                    className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm"
                                 >
                                     {Object.entries(CLIENT_TYPE_LABELS).map(([value, label]) => (
                                         <option key={value} value={value}>{label}</option>
@@ -310,133 +349,151 @@ export function CommercialInvoiceGenerator() {
                     </div>
 
                     {/* Lines */}
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-4">
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-white/80">
-                                <Euro className="w-4 h-4" />
-                                <span className="font-medium">Lignes de produits</span>
+                            <div className="flex items-center gap-1.5 text-white/80">
+                                <Euro className="w-3.5 h-3.5" />
+                                <span className="text-sm font-medium">Lignes de produits</span>
                             </div>
                             <button
                                 onClick={addLine}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors text-sm"
+                                className="flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors text-xs"
                             >
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-3.5 h-3.5" />
                                 Ajouter
                             </button>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {lines.map((line, index) => (
-                                <div key={line.id} className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10">
-                                    <span className="text-sm text-white/40 w-6">{index + 1}</span>
-                                    <input
-                                        type="text"
-                                        value={line.designation}
-                                        onChange={(e) => updateLine(line.id, 'designation', e.target.value)}
-                                        placeholder="Désignation"
-                                        className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm"
-                                    />
-                                    <input
-                                        type="number"
-                                        value={line.quantity || ''}
-                                        onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                        placeholder="Qté"
-                                        min="0"
-                                        step="1"
-                                        className="w-20 px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm text-center"
-                                    />
-                                    <input
-                                        type="number"
-                                        value={line.unitPriceHT || ''}
-                                        onChange={(e) => updateLine(line.id, 'unitPriceHT', parseFloat(e.target.value) || 0)}
-                                        placeholder="Prix HT"
-                                        min="0"
-                                        step="0.01"
-                                        className="w-28 px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm text-right"
-                                    />
-                                    {settings.applyVAT && (
-                                        <select
-                                            value={line.vatRate}
-                                            onChange={(e) => updateLine(line.id, 'vatRate', parseFloat(e.target.value) as VATRate)}
-                                            className="w-24 px-2 py-2 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm"
+                                <div key={line.id} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1.5">
+                                    {/* Row 1: Designation */}
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-white/40 w-4 flex-shrink-0">{index + 1}</span>
+                                        <input
+                                            type="text"
+                                            value={line.designation}
+                                            onChange={(e) => updateLine(line.id, 'designation', e.target.value)}
+                                            placeholder="Désignation"
+                                            className="flex-1 px-2 py-1 rounded-md bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-xs"
+                                        />
+                                        <button
+                                            onClick={() => removeLine(line.id)}
+                                            disabled={lines.length === 1}
+                                            className="p-1 rounded-md hover:bg-red-500/20 text-red-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
                                         >
-                                            {VAT_RATES.map(vat => (
-                                                <option key={vat.rate} value={vat.rate}>{vat.label}</option>
-                                            ))}
-                                        </select>
-                                    )}
-                                    <div className="w-24 text-right text-sm text-white/60">
-                                        {formatCurrency(computedLines[index]?.amountTTC || 0)}
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => removeLine(line.id)}
-                                        disabled={lines.length === 1}
-                                        className="p-2 rounded-lg hover:bg-red-500/20 text-red-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                    {/* Row 2: Qty, Price, TVA, Total */}
+                                    <div className="flex items-center gap-1.5 pl-6">
+                                        <input
+                                            type="number"
+                                            value={line.quantity || ''}
+                                            onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                            placeholder="Qté"
+                                            min="0"
+                                            step="1"
+                                            className="w-14 px-2 py-1 rounded-md bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-xs text-center"
+                                        />
+                                        {settings.inputMode === 'ttc' ? (
+                                            <input
+                                                type="number"
+                                                value={line.unitPriceTTC || ''}
+                                                onChange={(e) => updateLine(line.id, 'unitPriceTTC', parseFloat(e.target.value) || 0)}
+                                                placeholder="Prix TTC"
+                                                min="0"
+                                                step="0.01"
+                                                className="w-20 px-2 py-1 rounded-md bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-xs text-right"
+                                            />
+                                        ) : (
+                                            <input
+                                                type="number"
+                                                value={line.unitPriceHT || ''}
+                                                onChange={(e) => updateLine(line.id, 'unitPriceHT', parseFloat(e.target.value) || 0)}
+                                                placeholder="Prix HT"
+                                                min="0"
+                                                step="0.01"
+                                                className="w-20 px-2 py-1 rounded-md bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-xs text-right"
+                                            />
+                                        )}
+                                        {settings.applyVAT && (
+                                            <select
+                                                value={line.vatRate}
+                                                onChange={(e) => updateLine(line.id, 'vatRate', parseFloat(e.target.value) as VATRate)}
+                                                className="w-16 px-1 py-1 rounded-md bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-xs"
+                                            >
+                                                {VAT_RATES.map(vat => (
+                                                    <option key={vat.rate} value={vat.rate}>{vat.label}</option>
+                                                ))}
+                                            </select>
+                                        )}
+                                        <div className="flex-1 text-right text-xs text-emerald-400 font-medium">
+                                            {formatCurrency(computedLines[index]?.amountTTC || 0)}
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
                     {/* Payment */}
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-4">
-                        <div className="flex items-center gap-2 text-white/80">
-                            <CreditCard className="w-4 h-4" />
-                            <span className="font-medium">Paiement</span>
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                        <div className="flex items-center gap-1.5 text-white/80">
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span className="text-sm font-medium">Paiement</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-sm text-white/60">Mode de paiement</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                                <label className="text-xs text-white/60">Mode de paiement</label>
                                 <select
                                     value={paymentMethod}
                                     onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                                    className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none"
+                                    className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm"
                                 >
                                     {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
                                         <option key={value} value={value}>{label}</option>
                                     ))}
                                 </select>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm text-white/60">Date de paiement</label>
+                            <div className="space-y-1">
+                                <label className="text-xs text-white/60">Date de paiement</label>
                                 <input
                                     type="date"
                                     value={paymentDate?.toISOString().split('T')[0] || ''}
                                     onChange={(e) => setPaymentDate(e.target.value ? new Date(e.target.value) : undefined)}
-                                    className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none"
+                                    className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-sm"
                                 />
                             </div>
                         </div>
                     </div>
 
                     {/* Notes */}
-                    <div className="space-y-2">
-                        <label className="text-sm text-white/60">Notes (optionnel)</label>
+                    <div className="space-y-1">
+                        <label className="text-xs text-white/60">Notes (optionnel)</label>
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             rows={2}
                             placeholder="Remarques, conditions particulières..."
-                            className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none resize-none placeholder:text-white/30"
+                            className="w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none resize-none text-sm placeholder:text-white/30"
                         />
                     </div>
 
                     {/* Totals Summary (mobile/small view) */}
                     {!showPreview && (
-                        <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 space-y-2">
-                            <div className="flex justify-between text-sm">
+                        <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 space-y-1.5">
+                            <div className="flex justify-between text-xs">
                                 <span className="text-white/60">Total HT</span>
                                 <span>{formatCurrency(totals.totalHT)}</span>
                             </div>
                             {settings.applyVAT && (
-                                <div className="flex justify-between text-sm">
+                                <div className="flex justify-between text-xs">
                                     <span className="text-white/60">Total TVA</span>
                                     <span>{formatCurrency(totals.totalVAT)}</span>
                                 </div>
                             )}
-                            <div className="flex justify-between text-lg font-bold pt-2 border-t border-white/10">
+                            <div className="flex justify-between text-base font-bold pt-1.5 border-t border-white/10">
                                 <span>NET À PAYER</span>
                                 <span className="text-emerald-400">{formatCurrency(totals.totalTTC)}</span>
                             </div>
@@ -446,9 +503,9 @@ export function CommercialInvoiceGenerator() {
 
                 {/* Preview Panel */}
                 {showPreview && (
-                    <div className="w-1/2 overflow-y-auto p-6 bg-white/5 border-l border-white/10">
-                        <div className="sticky top-0 z-10 pb-4">
-                            <h2 className="text-sm font-medium text-white/60 uppercase tracking-wider">Aperçu</h2>
+                    <div className="w-[55%] overflow-y-auto p-4 bg-white/5 border-l border-white/10">
+                        <div className="sticky top-0 z-10 pb-2">
+                            <h2 className="text-xs font-medium text-white/60 uppercase tracking-wider">Aperçu</h2>
                         </div>
                         <div ref={previewRef}>
                             <InvoicePreview

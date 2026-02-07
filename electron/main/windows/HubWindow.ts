@@ -36,10 +36,17 @@ export class HubWindow {
       icon: join(__dirname, '../../resources/icon.png'),
     })
 
-    // Afficher la fenêtre quand elle est prête
-    window.once('ready-to-show', () => {
-      window.show()
-    })
+    // Afficher la fenêtre quand elle est prête, avec un timeout de sécurité
+    let shown = false
+    const showWindow = () => {
+      if (!shown && !window.isDestroyed()) {
+        shown = true
+        window.show()
+      }
+    }
+    window.once('ready-to-show', showWindow)
+    // Timeout de sécurité: forcer l'affichage après 3s pour éviter un écran noir permanent
+    setTimeout(showWindow, 3000)
 
     if (isDev && process.env['ELECTRON_RENDERER_URL']) {
       await window.loadURL(process.env['ELECTRON_RENDERER_URL'])

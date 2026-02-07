@@ -56,6 +56,35 @@ export const calculateLineAmounts = (
 }
 
 /**
+ * Calcule tous les montants pour une ligne de facture à partir du prix TTC
+ * (mode reverse: l'utilisateur saisit le TTC, on calcule le HT et la TVA)
+ */
+export const calculateLineAmountsFromTTC = (
+    quantity: number,
+    unitPriceTTC: number,
+    vatRate: VATRate,
+    applyVAT: boolean
+): { unitPriceHT: number; amountHT: number; amountVAT: number; amountTTC: number } => {
+    const totalTTC = roundToTwoDecimals(quantity * unitPriceTTC)
+
+    if (!applyVAT || vatRate === 0) {
+        return {
+            unitPriceHT: unitPriceTTC,
+            amountHT: totalTTC,
+            amountVAT: 0,
+            amountTTC: totalTTC,
+        }
+    }
+
+    // Reverse: TTC → HT
+    const amountHT = calculateHT(totalTTC, vatRate)
+    const amountVAT = roundToTwoDecimals(totalTTC - amountHT)
+    const unitPriceHT = roundToTwoDecimals(calculateHT(unitPriceTTC, vatRate))
+
+    return { unitPriceHT, amountHT, amountVAT, amountTTC: totalTTC }
+}
+
+/**
  * Récapitule les montants de TVA par taux
  */
 export const summarizeByVATRate = (lines: InvoiceLine[], applyVAT: boolean): VATSummary[] => {

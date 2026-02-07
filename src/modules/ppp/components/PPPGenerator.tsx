@@ -736,8 +736,8 @@ export function PPPGenerator() {
                   </div>
                 </div>
 
-                {/* Document preview container */}
-                <div className="-mx-6 text-black bg-white rounded-t-2xl overflow-hidden shadow-2xl">
+                {/* Document preview container - Allow horizontal scroll for A4 */}
+                <div className="overflow-auto mx-auto rounded-2xl shadow-2xl border border-white/10" style={{ maxWidth: 'calc(100vw - 3rem)' }}>
                   <PPPDocumentV2 data={pppData} onChange={(updated) => setPppData(updated)} readOnly={false} />
                 </div>
               </motion.div>

@@ -42,6 +42,7 @@ export interface InvoiceLine {
     designation: string
     quantity: number
     unitPriceHT: number
+    unitPriceTTC: number   // Prix unitaire TTC (pour mode saisie TTC)
     vatRate: VATRate
     // Champs calculés
     amountHT: number
@@ -67,11 +68,15 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
     autre: 'Autre',
 }
 
+// Mode de saisie des prix
+export type InputMode = 'ht' | 'ttc'
+
 // Configuration de la facture
 export interface InvoiceSettings {
     applyVAT: boolean       // Appliquer la TVA ou non
     showDetails: boolean    // Afficher les détails des lignes
     defaultVATRate: VATRate // Taux TVA par défaut pour nouvelles lignes
+    inputMode: InputMode   // Mode de saisie: HT ou TTC
 }
 
 // Données complètes de la facture
@@ -104,6 +109,7 @@ export const DEFAULT_SETTINGS: InvoiceSettings = {
     applyVAT: true,
     showDetails: true,
     defaultVATRate: 20,
+    inputMode: 'ttc',
 }
 
 export const createEmptyLine = (): InvoiceLine => ({
@@ -111,6 +117,7 @@ export const createEmptyLine = (): InvoiceLine => ({
     designation: '',
     quantity: 1,
     unitPriceHT: 0,
+    unitPriceTTC: 0,
     vatRate: 20,
     amountHT: 0,
     amountVAT: 0,
