@@ -6,39 +6,45 @@
   <title>Axora - Plan Personnalisé de Prévention</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Syne:wght@400..800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --bg-deep: #0B0F19;
-      --bg-surface: #0f172a;
-      --bg-card: #1e293b;
+      --bg-deep: #080c16;
+      --bg-surface: #0d1424;
+      --bg-card: #151d30;
       --indigo: #6366f1;
       --indigo-light: #818cf8;
-      --indigo-glow: rgba(99, 102, 241, 0.3);
+      --indigo-glow: rgba(99, 102, 241, 0.35);
       --teal: #14b8a6;
       --teal-light: #2dd4bf;
-      --teal-glow: rgba(20, 184, 166, 0.3);
+      --teal-glow: rgba(20, 184, 166, 0.35);
       --cyan: #22d3ee;
-      --text-primary: #ffffff;
-      --text-secondary: rgba(255, 255, 255, 0.6);
-      --text-muted: rgba(255, 255, 255, 0.4);
-      --border-subtle: rgba(255, 255, 255, 0.06);
-      --border-light: rgba(255, 255, 255, 0.1);
-      --glass-bg: rgba(15, 23, 42, 0.6);
-      --glass-border: rgba(255, 255, 255, 0.05);
+      --text-primary: #f0f2f5;
+      --text-secondary: rgba(240, 242, 245, 0.6);
+      --text-muted: rgba(240, 242, 245, 0.35);
+      --border-subtle: rgba(255, 255, 255, 0.04);
+      --border-light: rgba(255, 255, 255, 0.08);
+      --glass-bg: rgba(13, 20, 36, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.06);
       --age-18: #EBBF23;
       --age-45: #009689;
       --age-60: #C34A81;
       --age-70: #F2804A;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     html { scroll-behavior: smooth; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: var(--font-body);
       background: var(--bg-deep);
       color: var(--text-primary);
       line-height: 1.6;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
     section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0; position: relative; }
@@ -69,10 +75,11 @@
       border-radius: 100px;
     }
     .section-title {
-      font-size: clamp(2rem, 4vw, 3rem);
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3.2rem);
       font-weight: 800;
-      letter-spacing: -0.02em;
-      line-height: 1.15;
+      letter-spacing: -0.03em;
+      line-height: 1.08;
       margin-bottom: 1rem;
     }
     .section-desc {
@@ -83,14 +90,14 @@
     }
     .reveal {
       opacity: 0;
-      transform: translateY(30px);
-      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(40px);
+      transition: opacity 0.9s var(--ease-expo), transform 0.9s var(--ease-expo);
     }
     .reveal.visible { opacity: 1; transform: translateY(0); }
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-1 { transition-delay: 0.15s; }
+    .reveal-delay-2 { transition-delay: 0.3s; }
+    .reveal-delay-3 { transition-delay: 0.45s; }
+    .reveal-delay-4 { transition-delay: 0.6s; }
 
     /* HERO */
     #hero {
@@ -146,15 +153,22 @@
       margin-bottom: 1.5rem;
     }
     .hero-title {
-      font-size: clamp(3rem, 8vw, 6rem);
-      font-weight: 900;
-      letter-spacing: -0.03em;
-      background: linear-gradient(135deg, #fff 0%, var(--indigo-light) 50%, var(--teal-light) 100%);
+      font-family: var(--font-display);
+      font-size: clamp(3.5rem, 9vw, 7rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, #fff 0%, #c7d2fe 30%, #99f6e4 60%, #e0e7ff 100%);
+      background-size: 300% 300%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      line-height: 1.1;
-      margin-bottom: 1rem;
+      line-height: 1.05;
+      margin-bottom: 1.5rem;
+      animation: hero-grad-flow 8s ease-in-out infinite;
+    }
+    @keyframes hero-grad-flow {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
     }
     .hero-subtitle {
       font-size: clamp(1.1rem, 2.5vw, 1.5rem);
@@ -218,16 +232,17 @@
       background: linear-gradient(90deg, transparent, var(--indigo), var(--teal), transparent);
     }
     .ppp-big-title {
-      font-size: clamp(2.5rem, 6vw, 4.5rem);
-      font-weight: 900;
-      letter-spacing: -0.03em;
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
       background: linear-gradient(135deg, var(--teal-light), var(--indigo-light));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
       position: relative;
       z-index: 1;
-      line-height: 1.15;
+      line-height: 1.08;
       margin-bottom: 1.5rem;
     }
     .ppp-subtitle {
@@ -1170,10 +1185,16 @@
       display: flex; flex-direction: column;
       justify-content: space-between;
       position: relative;
+      overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      --ppp-primary: #009689;
-      --ppp-accent: #009689;
-      --ppp-dotted: #00968988;
+      --ppp-primary: var(--active-age-color, #009689);
+      --ppp-accent: var(--active-age-color, #009689);
+      --ppp-dotted: var(--active-age-color-alpha, #00968988);
+    }
+    .ppp-a4-wrapper::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--ppp-accent);
+      transition: background 0.5s ease;
     }
     .ppp-a4-header {
       display: flex; flex-direction: column;
@@ -1187,7 +1208,9 @@
       width: 38px; height: 38px;
       background: var(--ppp-primary);
       display: flex; align-items: center; justify-content: center;
-      border-radius: 4px; color: white; font-size: 24px; font-weight: 700; flex-shrink: 0;
+      border-radius: 6px; color: white; font-size: 24px; font-weight: 700; flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: background 0.5s ease;
     }
     .ppp-a4-pharmacy-name { font-size: 14px; font-weight: 800; color: var(--ppp-primary); }
     .ppp-a4-header-right { text-align: right; }
@@ -1205,7 +1228,7 @@
       grid-template-columns: 1fr 0.85fr 1.3fr 0.85fr;
       column-gap: 8px; flex: 1; margin-bottom: 6px;
     }
-    .ppp-a4-column { padding: 0 8px; position: relative; display: flex; flex-direction: column; }
+    .ppp-a4-column { padding: 0 8px; position: relative; display: flex; flex-direction: column; min-width: 0; }
     .ppp-a4-column + .ppp-a4-column::before {
       content: ""; position: absolute; left: 0; top: 32px; bottom: 0;
       width: 1px; background: var(--ppp-accent); opacity: 0.5;
@@ -1216,6 +1239,8 @@
       padding: 4px 5px; min-height: 26px; border-radius: 8px;
       text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px;
       margin-bottom: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: background 0.5s ease;
     }
     .ppp-a4-col-icon {
       display: inline-flex; align-items: center; justify-content: center;
@@ -1323,6 +1348,143 @@
     .footer-powered { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
 
     /* ============================================================
+       THEMATIQUES SECTION - Interactive age-based prevention themes
+    ============================================================ */
+    .thematiques-card {
+      max-width: 920px; width: 100%; margin: 2.5rem auto 0;
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: 1.5rem;
+      padding: 2.5rem;
+      position: relative; overflow: hidden;
+    }
+    .thematiques-card::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    }
+    .age-pills {
+      display: flex; justify-content: center; gap: 0.75rem; margin-bottom: 2rem;
+    }
+    .age-pill {
+      padding: 0.65rem 1.5rem; border-radius: 100px; border: 2px solid transparent;
+      font-size: 0.85rem; font-weight: 700; cursor: pointer;
+      background: rgba(255,255,255,0.04); color: var(--text-muted);
+      transition: all 0.35s cubic-bezier(0.4,0,0.2,1); position: relative; overflow: hidden;
+    }
+    .age-pill::before {
+      content: ""; position: absolute; inset: 0; border-radius: 100px; opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+    .age-pill[data-age="18-25"]::before { background: linear-gradient(135deg, #EBBF23, #F5D85E); }
+    .age-pill[data-age="45-50"]::before { background: linear-gradient(135deg, #009689, #26B5A7); }
+    .age-pill[data-age="60-65"]::before { background: linear-gradient(135deg, #C34A81, #D76FA0); }
+    .age-pill[data-age="70-75"]::before { background: linear-gradient(135deg, #F2804A, #F5A070); }
+    .age-pill.active { color: white; border-color: transparent; transform: scale(1.05); }
+    .age-pill.active::before { opacity: 1; }
+    .age-pill.active span { position: relative; z-index: 1; }
+    .age-pill:not(.active):hover {
+      color: var(--text-secondary); background: rgba(255,255,255,0.08); transform: scale(1.02);
+    }
+    .age-pill .pill-label { position: relative; z-index: 1; }
+    .themes-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0.65rem; margin-bottom: 1.5rem;
+    }
+    .theme-tag {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.7rem 0.85rem; border-radius: 0.85rem;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      font-size: 0.78rem; color: var(--text-muted); cursor: default;
+      transition: all 0.4s cubic-bezier(0.4,0,0.2,1); position: relative;
+    }
+    .theme-tag .theme-emoji { font-size: 1.1rem; flex-shrink: 0; transition: transform 0.3s ease; }
+    .theme-tag .theme-name { flex: 1; line-height: 1.25; transition: color 0.3s ease; }
+    .theme-tag .priority-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+      opacity: 0; transform: scale(0);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .theme-tag.is-priority {
+      background: var(--priority-bg, rgba(255,255,255,0.06));
+      border-color: var(--priority-border, rgba(255,255,255,0.12));
+      color: var(--text-primary);
+    }
+    .theme-tag.is-priority .theme-emoji { transform: scale(1.15); }
+    .theme-tag.is-priority .priority-dot {
+      opacity: 1; transform: scale(1);
+      background: var(--priority-color, #fff);
+      box-shadow: 0 0 8px var(--priority-glow, transparent);
+    }
+    .theme-tag.is-star {
+      border-color: var(--priority-border-strong, rgba(255,255,255,0.2));
+    }
+    .theme-tag.is-star .star-badge {
+      display: inline-flex; opacity: 1; transform: scale(1);
+    }
+    .star-badge {
+      display: none; align-items: center; justify-content: center;
+      padding: 0.15rem 0.45rem; border-radius: 100px;
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.04em;
+      text-transform: uppercase; white-space: nowrap;
+      background: var(--priority-badge-bg, rgba(255,255,255,0.1));
+      color: var(--priority-badge-color, #fff);
+      opacity: 0; transform: scale(0.8);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .theme-tag.is-dimmed {
+      opacity: 0.45; transform: scale(0.97);
+    }
+    .age-pill:focus-visible {
+      outline: 2px solid var(--active-age-color, #009689);
+      outline-offset: 2px;
+    }
+    /* Tooltip */
+    .theme-tag .theme-tooltip {
+      position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%) translateY(6px);
+      background: #1a1f2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem;
+      padding: 0.65rem 0.85rem; font-size: 0.7rem; color: var(--text-secondary);
+      line-height: 1.4; white-space: normal; width: max-content; max-width: 240px;
+      pointer-events: none; opacity: 0; z-index: 50;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .theme-tag .theme-tooltip::after {
+      content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      border: 6px solid transparent; border-top-color: #1a1f2e;
+    }
+    .theme-tag:hover .theme-tooltip {
+      opacity: 1; transform: translateX(-50%) translateY(0);
+    }
+    /* Thematiques counters */
+    .themes-legend {
+      display: flex; justify-content: center; gap: 2rem; margin-top: 0.5rem;
+      font-size: 0.75rem; color: var(--text-muted);
+    }
+    .themes-legend-item { display: flex; align-items: center; gap: 0.5rem; }
+    .themes-legend-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .themes-legend-dot.star { background: var(--active-age-color, #009689); box-shadow: 0 0 6px var(--active-age-color, #009689); }
+    .themes-legend-dot.priority { background: rgba(255,255,255,0.4); }
+    .themes-legend-dot.other { background: rgba(255,255,255,0.15); }
+    /* Age-specific accent panel */
+    .thematiques-accent-line {
+      height: 3px; border-radius: 3px; margin: 0 auto 2rem;
+      width: 60px; background: var(--active-age-color, #009689);
+      transition: background 0.4s ease, width 0.4s ease;
+    }
+    /* Responsive */
+    @media (max-width: 768px) {
+      .themes-grid { grid-template-columns: repeat(2, 1fr); }
+      .age-pills { flex-wrap: wrap; }
+      .thematiques-card { padding: 1.5rem; }
+    }
+    @media (max-width: 480px) {
+      .themes-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ============================================================
        A4 document wrapper for dark bg display
     ============================================================ */
     .a4-display-wrapper {
@@ -1336,7 +1498,14 @@
       transform-origin: top center;
       transition: transform 0.3s ease;
     }
-    .ppp-a4-wrapper { box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+    .ppp-a4-wrapper {
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.15);
+      border-radius: 4px;
+      transition: box-shadow 0.5s ease;
+    }
+    .ppp-a4-wrapper:hover {
+      box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.2);
+    }
 
     /* ============================================================
        RESPONSIVE
@@ -1369,13 +1538,257 @@
       .wf-rx-synthesis-text { font-size: 0.65rem; }
     }
   </style>
+  <style>
+    /* ============================================================
+       ULTRA-DYNAMIC 2026 DESIGN SYSTEM
+    ============================================================ */
+
+    /* --- Typography Overrides --- */
+    h1, h2, h3, .footer-logo, .problem-number { font-family: var(--font-display); }
+
+    /* --- Grain Noise Overlay --- */
+    .grain-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none; z-index: 9999;
+    }
+
+    /* --- Scroll Progress Bar --- */
+    .scroll-progress {
+      position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 10000;
+    }
+    .scroll-progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--indigo), var(--teal), var(--cyan));
+      box-shadow: 0 0 10px var(--indigo-glow), 0 0 20px rgba(20,184,166,0.15);
+      will-change: width;
+    }
+
+    /* --- Ambient Cursor Glow --- */
+    .cursor-glow {
+      position: fixed; width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.07) 0%, rgba(20,184,166,0.03) 40%, transparent 70%);
+      pointer-events: none; z-index: 0;
+      opacity: 0; transition: opacity 0.5s ease;
+      transform: translate(-50%, -50%);
+      will-change: left, top;
+    }
+    .cursor-glow.active { opacity: 1; }
+
+    /* --- Hero Gradient Mesh --- */
+    .hero-mesh {
+      position: absolute; inset: 0; overflow: hidden; z-index: 0;
+      will-change: transform;
+    }
+    .hero-mesh-blob {
+      position: absolute; border-radius: 50%;
+      filter: blur(120px); will-change: transform;
+    }
+    .hero-mesh-blob:nth-child(1) {
+      width: 70vw; height: 70vw; max-width: 900px; max-height: 900px;
+      background: radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%);
+      top: -35%; right: -20%;
+      animation: mesh-a 22s ease-in-out infinite;
+    }
+    .hero-mesh-blob:nth-child(2) {
+      width: 50vw; height: 50vw; max-width: 650px; max-height: 650px;
+      background: radial-gradient(circle, rgba(20,184,166,0.3) 0%, transparent 70%);
+      bottom: -25%; left: -15%;
+      animation: mesh-b 28s ease-in-out infinite;
+    }
+    .hero-mesh-blob:nth-child(3) {
+      width: 35vw; height: 35vw; max-width: 450px; max-height: 450px;
+      background: radial-gradient(circle, rgba(34,211,238,0.15) 0%, transparent 70%);
+      top: 30%; left: 45%;
+      animation: mesh-c 18s ease-in-out infinite;
+    }
+    @keyframes mesh-a {
+      0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+      33% { transform: translate(-3%, 6%) scale(1.08) rotate(5deg); }
+      66% { transform: translate(4%, -4%) scale(0.95) rotate(-3deg); }
+    }
+    @keyframes mesh-b {
+      0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+      33% { transform: translate(6%, -5%) scale(1.05) rotate(-4deg); }
+      66% { transform: translate(-3%, 8%) scale(1.1) rotate(3deg); }
+    }
+    @keyframes mesh-c {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(5%, -10%) scale(1.2); }
+    }
+
+    /* --- Hero Floating Particles --- */
+    .hero-particle {
+      position: absolute; border-radius: 50%;
+      pointer-events: none; z-index: 1;
+      animation: particle-drift linear infinite;
+    }
+    @keyframes particle-drift {
+      0% { transform: translateY(0) scale(0); opacity: 0; }
+      15% { opacity: 1; transform: translateY(-15vh) scale(1); }
+      85% { opacity: 0.8; }
+      100% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
+    }
+
+    /* --- Eye Logo Glow --- */
+    .eye-outer {
+      width: 90px; height: 90px;
+      box-shadow: 0 0 40px var(--indigo-glow), 0 0 80px rgba(20,184,166,0.15);
+    }
+
+    /* --- Enhanced Glass --- */
+    .glass {
+      backdrop-filter: blur(24px) saturate(1.2);
+      border-radius: 1.25rem;
+    }
+
+    /* --- Feature Card 3D --- */
+    .feature-card {
+      transition: transform 0.5s var(--ease-expo), border-color 0.3s, box-shadow 0.5s ease;
+      transform-style: preserve-3d;
+    }
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25), 0 0 80px rgba(99,102,241,0.06);
+      border-color: rgba(255,255,255,0.1);
+    }
+    .feature-icon {
+      transition: transform 0.4s var(--ease-expo);
+    }
+    .feature-card:hover .feature-icon { transform: scale(1.12) translateY(-2px); }
+
+    /* --- Problem Numbers --- */
+    .problem-number {
+      font-size: 5rem;
+      background: linear-gradient(180deg, rgba(99,102,241,0.3) 0%, rgba(20,184,166,0.06) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: transform 0.5s var(--ease-expo);
+    }
+    .problem-card:hover .problem-number { transform: scale(1.1); }
+
+    /* --- Section Label --- */
+    .section-label {
+      background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(20,184,166,0.06));
+      border-color: rgba(99,102,241,0.15);
+      letter-spacing: 0.18em;
+    }
+
+    /* --- Hero Badge --- */
+    .hero-badge { backdrop-filter: blur(12px); background: rgba(255,255,255,0.04); }
+
+    /* --- Enhanced Footer --- */
+    footer#main-footer {
+      position: relative; overflow: hidden; padding: 5rem 0;
+    }
+    footer#main-footer::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 200px;
+      background: linear-gradient(180deg, transparent, rgba(99,102,241,0.02));
+      pointer-events: none;
+    }
+    .footer-logo { font-family: var(--font-display); font-size: 2rem; }
+
+    /* --- Custom Scrollbar --- */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--indigo), var(--teal));
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--indigo-light); }
+
+    /* --- Timeline Enhancement --- */
+    .wf-tl-circle { transition: all 0.4s var(--ease-back); }
+    .wf-tl-active { transform: scale(1.15); }
+
+    /* --- Thematiques Scenario Cards --- */
+    .scenario-cards {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+    .scenario-card {
+      padding: 1rem 1.15rem; border-radius: 1rem;
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05);
+      cursor: default; transition: all 0.35s var(--ease-expo);
+    }
+    .scenario-card:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: var(--active-age-color, rgba(255,255,255,0.1));
+      transform: translateY(-2px);
+    }
+    .scenario-card-header {
+      display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;
+    }
+    .scenario-card-icon { font-size: 1.1rem; }
+    .scenario-card-title {
+      font-size: 0.78rem; font-weight: 700; color: var(--text-primary);
+    }
+    .scenario-card-body {
+      font-size: 0.72rem; color: var(--text-secondary); line-height: 1.5;
+    }
+    .scenario-card-quote {
+      font-size: 0.7rem; color: var(--active-age-color, var(--teal-light));
+      font-style: italic; margin-top: 0.5rem; line-height: 1.45;
+      padding-left: 0.75rem;
+      border-left: 2px solid var(--active-age-color, var(--teal));
+    }
+
+    /* --- Theme Tag Expanded Info --- */
+    .theme-tag-expanded {
+      display: none; padding: 0.75rem 0.85rem 0.85rem;
+      font-size: 0.72rem; color: var(--text-secondary); line-height: 1.5;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      margin-top: 0.5rem;
+    }
+    .theme-tag.expanded {
+      flex-wrap: wrap;
+    }
+    .theme-tag.expanded .theme-tag-expanded { display: block; width: 100%; }
+
+    /* --- Stats Bar --- */
+    .stats-bar {
+      display: flex; justify-content: center; gap: 3rem;
+      padding: 1.25rem 0; margin-top: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .stat-item { text-align: center; }
+    .stat-value {
+      font-family: var(--font-display); font-size: 1.5rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--active-age-color, var(--indigo-light)), var(--text-primary));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .stat-label {
+      font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-top: 0.15rem;
+    }
+
+    /* --- Responsive 2026 --- */
+    @media (max-width: 768px) {
+      .cursor-glow, .hero-particle { display: none; }
+      .scenario-cards { grid-template-columns: 1fr; }
+      .stats-bar { gap: 1.5rem; flex-wrap: wrap; }
+    }
+    @media (max-width: 480px) {
+      .stats-bar { gap: 1rem; }
+      .stat-value { font-size: 1.2rem; }
+    }
+  </style>
 </head>
 <body>
 
+  <!-- 2026 DESIGN OVERLAYS -->
+  <div class="grain-overlay" aria-hidden="true"></div>
+  <div class="scroll-progress" aria-hidden="true"><div class="scroll-progress-fill"></div></div>
+  <div class="cursor-glow" aria-hidden="true"></div>
+
   <!-- SECTION 1: HERO -->
   <section id="hero">
-    <div class="gradient-orb orb-1"></div>
-    <div class="gradient-orb orb-2"></div>
+    <div class="hero-mesh" aria-hidden="true">
+      <div class="hero-mesh-blob"></div>
+      <div class="hero-mesh-blob"></div>
+      <div class="hero-mesh-blob"></div>
+    </div>
     <div class="hero-content">
       <div class="axora-logo reveal">
         <div class="eye-outer"><div class="eye-inner"><div class="eye-pupil"></div></div></div>
@@ -1949,6 +2362,188 @@ Traitements : Périndopril 5mg, Atorvastatine 20mg...</div>
     </div>
   </section>
 
+  <!-- SECTION 13b: THEMATIQUES PAR AGE -->
+  <section id="thematiques" style="min-height:auto;padding:4rem 0;">
+    <div class="container wf-center-col">
+      <div class="section-label reveal">Aide au reperage</div>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">Thematiques ciblees par age</h2>
+      <p class="section-desc reveal reveal-delay-2" style="text-align:center;">16 axes de prevention issus du referentiel Assurance Maladie, priorises selon la tranche d'age du patient.</p>
+
+      <div class="thematiques-card reveal reveal-delay-3" id="thematiques-card">
+        <!-- Age Selector Pills -->
+        <div class="age-pills" id="age-pills">
+          <button class="age-pill active" data-age="18-25"><span class="pill-label">18-25 ans</span></button>
+          <button class="age-pill" data-age="45-50"><span class="pill-label">45-50 ans</span></button>
+          <button class="age-pill" data-age="60-65"><span class="pill-label">60-65 ans</span></button>
+          <button class="age-pill" data-age="70-75"><span class="pill-label">70-75 ans</span></button>
+        </div>
+
+        <div class="thematiques-accent-line" id="thematiques-accent"></div>
+
+        <!-- Themes Grid -->
+        <div class="themes-grid" id="themes-grid">
+          <div class="theme-tag" data-theme="alimentation">
+            <span class="theme-emoji">&#x1F957;</span>
+            <span class="theme-name">Alimentation</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="activite-physique">
+            <span class="theme-emoji">&#x1F3C3;</span>
+            <span class="theme-name">Activite physique</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="tabac">
+            <span class="theme-emoji">&#x1F6AD;</span>
+            <span class="theme-name">Tabac</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="alcool-addictions">
+            <span class="theme-emoji">&#x1F377;</span>
+            <span class="theme-name">Alcool &amp; addictions</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="bien-etre-mental">
+            <span class="theme-emoji">&#x1F9E0;</span>
+            <span class="theme-name">Bien-etre mental</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="sommeil">
+            <span class="theme-emoji">&#x1F319;</span>
+            <span class="theme-name">Sommeil</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="prevention-cancers">
+            <span class="theme-emoji">&#x1F397;&#xFE0F;</span>
+            <span class="theme-name">Prevention cancers</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="maladies-chroniques">
+            <span class="theme-emoji">&#x2764;&#xFE0F;</span>
+            <span class="theme-name">Maladies chroniques</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="perte-autonomie">
+            <span class="theme-emoji">&#x1F9AF;</span>
+            <span class="theme-name">Perte d'autonomie</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="sante-bucco-dentaire">
+            <span class="theme-emoji">&#x1F9B7;</span>
+            <span class="theme-name">Sante bucco-dentaire</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="vaccinations">
+            <span class="theme-emoji">&#x1F489;</span>
+            <span class="theme-name">Vaccinations</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="sante-sexuelle">
+            <span class="theme-emoji">&#x1F512;</span>
+            <span class="theme-name">Sante sexuelle</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="menopause">
+            <span class="theme-emoji">&#x1F338;</span>
+            <span class="theme-name">Menopause</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="violences">
+            <span class="theme-emoji">&#x1F6E1;&#xFE0F;</span>
+            <span class="theme-name">Violences</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="sante-environnement">
+            <span class="theme-emoji">&#x1F33F;</span>
+            <span class="theme-name">Sante &amp; environnement</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+          <div class="theme-tag" data-theme="acces-droits">
+            <span class="theme-emoji">&#x2696;&#xFE0F;</span>
+            <span class="theme-name">Acces aux droits</span>
+            <span class="star-badge">Phare</span>
+            <span class="priority-dot"></span>
+            <div class="theme-tooltip"></div>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="themes-legend">
+          <div class="themes-legend-item"><span class="themes-legend-dot star"></span> Theme phare Ameli</div>
+          <div class="themes-legend-item"><span class="themes-legend-dot priority"></span> Pertinent</div>
+          <div class="themes-legend-item"><span class="themes-legend-dot other"></span> Secondaire</div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="stats-bar">
+          <div class="stat-item"><div class="stat-value" id="stat-star">5</div><div class="stat-label">Themes phares</div></div>
+          <div class="stat-item"><div class="stat-value" id="stat-priority">4</div><div class="stat-label">Pertinents</div></div>
+          <div class="stat-item"><div class="stat-value" id="stat-remb">30 &euro;</div><div class="stat-label">Remboursement</div></div>
+          <div class="stat-item"><div class="stat-value" id="stat-duree">30 min</div><div class="stat-label">Duree bilan</div></div>
+        </div>
+
+        <!-- Counter approach card -->
+        <div id="counter-card" style="margin-top:1.75rem;padding:1.25rem 1.5rem;border-radius:1rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);transition:border-color 0.4s ease;">
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.75rem;">
+            <span style="font-size:1.1rem;">&#x1F4AC;</span>
+            <span style="font-size:0.8rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Angle comptoir</span>
+            <span id="counter-age-badge" style="padding:0.2rem 0.6rem;border-radius:100px;font-size:0.7rem;font-weight:700;color:white;background:var(--active-age-color,#009689);transition:background 0.4s ease;">18-25 ans</span>
+          </div>
+          <p id="counter-text" style="font-size:0.82rem;color:var(--text-secondary);line-height:1.6;margin:0;transition:opacity 0.3s ease;"></p>
+        </div>
+
+        <!-- Scenario Cards -->
+        <div class="scenario-cards" id="scenario-cards">
+          <div class="scenario-card" id="scenario-1">
+            <div class="scenario-card-header">
+              <span class="scenario-card-icon"></span>
+              <span class="scenario-card-title"></span>
+            </div>
+            <div class="scenario-card-body"></div>
+            <div class="scenario-card-quote"></div>
+          </div>
+          <div class="scenario-card" id="scenario-2">
+            <div class="scenario-card-header">
+              <span class="scenario-card-icon"></span>
+              <span class="scenario-card-title"></span>
+            </div>
+            <div class="scenario-card-body"></div>
+            <div class="scenario-card-quote"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- SECTION 14: EDIT DEMO -->
   <section id="wf-step-14">
     <div class="container wf-center-col">
@@ -2266,6 +2861,372 @@ Traitements : Périndopril 5mg, Atorvastatine 20mg...</div>
       window.addEventListener('resize', scaleA4);
     }
 
+    // ============================================================
+    // THEMATIQUES ENGINE - Age-based theme prioritization
+    // ============================================================
+    var AGE_COLORS = {
+      '18-25': { color: '#EBBF23', alpha: '#EBBF2388', dark: '#C9A11E', glow: 'rgba(235,191,35,0.4)' },
+      '45-50': { color: '#009689', alpha: '#00968988', dark: '#007A6F', glow: 'rgba(0,150,137,0.4)' },
+      '60-65': { color: '#C34A81', alpha: '#C34A8188', dark: '#A33D6C', glow: 'rgba(195,74,129,0.4)' },
+      '70-75': { color: '#F2804A', alpha: '#F2804A88', dark: '#D06A3B', glow: 'rgba(242,128,74,0.4)' }
+    };
+
+    // Priority levels: 'star' = theme phare Ameli, 'priority' = pertinent, null = secondaire
+    var THEME_DATA = {
+      'alimentation': {
+        priorities: { '18-25': 'star', '45-50': 'priority', '60-65': 'star', '70-75': 'star' },
+        tips: {
+          '18-25': 'Equilibre alimentaire etudiant, budget contraint, fast-food, sauter des repas.',
+          '45-50': 'Reduction sucres rapides/AGS, prevention diabete et surpoids, bilan lipidique.',
+          '60-65': 'Equilibre nutritionnel, prevention denutrition, apports calcium et vitamine D.',
+          '70-75': 'Lutte contre la denutrition, proteines, hydratation, texture adaptee.'
+        }
+      },
+      'activite-physique': {
+        priorities: { '18-25': 'priority', '45-50': 'star', '60-65': 'star', '70-75': 'star' },
+        tips: {
+          '18-25': 'Sedentarite ecrans, reprise sportive, marche quotidienne, activite en groupe.',
+          '45-50': '150-180 min/semaine, renforcement musculaire 2x, prevention cardiovasculaire.',
+          '60-65': 'Activite adaptee, equilibre, prevention arthrose, programme APA local.',
+          '70-75': 'Prevention des chutes, marche, equilibre, programme ICOPE mobilite.'
+        }
+      },
+      'tabac': {
+        priorities: { '18-25': 'star', '45-50': 'priority', '60-65': null, '70-75': null },
+        tips: {
+          '18-25': 'Premiere experimentation, chicha, puff, accompagnement sevrage precoce.',
+          '45-50': 'Sevrage tabac, substituts nicotiniques, patch + forme orale, Tabac-info 3989.',
+          '60-65': 'Benefices meme tardifs, risque BPCO, accompagnement adapte.',
+          '70-75': 'Evaluation tabagisme residuel, benefice cardiovasculaire a tout age.'
+        }
+      },
+      'alcool-addictions': {
+        priorities: { '18-25': 'star', '45-50': 'priority', '60-65': null, '70-75': null },
+        tips: {
+          '18-25': 'Binge drinking, cannabis, ecrans, jeux, CJC (Consultation Jeunes Consommateurs).',
+          '45-50': 'Consommation chronique, reperes Sante publique France, bilan hepatique.',
+          '60-65': 'Interactions medicaments-alcool, risque chutes, isolement social.',
+          '70-75': 'Polymedication et alcool, risque iatrogene, deshydratation.'
+        }
+      },
+      'bien-etre-mental': {
+        priorities: { '18-25': 'star', '45-50': 'priority', '60-65': 'priority', '70-75': 'priority' },
+        tips: {
+          '18-25': 'Anxiete, stress examens, isolement social, numero 3114, Fil Sante Jeunes.',
+          '45-50': 'Burn-out, charge mentale, equilibre vie pro/perso, psychologue MonPsy.',
+          '60-65': 'Transition retraite, perte de role social, maintien du lien.',
+          '70-75': 'Isolement, deuil, depression masquee, visite de convivialite.'
+        }
+      },
+      'sommeil': {
+        priorities: { '18-25': 'priority', '45-50': 'priority', '60-65': null, '70-75': null },
+        tips: {
+          '18-25': 'Ecrans le soir, rythme decale, hygiene du sommeil, melatonine.',
+          '45-50': 'Apnees du sommeil, stress et insomnie, TCC-I, eviter somniferes au long cours.',
+          '60-65': 'Fragmentation du sommeil, reveil precoce, activite physique et lumiere.',
+          '70-75': 'Rythme circadien, somnolence diurne, risque chutes nocturnes.'
+        }
+      },
+      'prevention-cancers': {
+        priorities: { '18-25': null, '45-50': 'star', '60-65': 'star', '70-75': 'star' },
+        tips: {
+          '18-25': 'Sensibilisation HPV, protection solaire, auto-examen.',
+          '45-50': 'Depistage sein (mammographie), colorectal (test immunologique), col uterin.',
+          '60-65': 'Depistage organise 50-74 ans, kit colorectal, mammographie.',
+          '70-75': 'Poursuite depistages, vigilance signes d\'alerte, prostate.'
+        }
+      },
+      'maladies-chroniques': {
+        priorities: { '18-25': null, '45-50': 'star', '60-65': 'star', '70-75': 'star' },
+        tips: {
+          '18-25': 'Sensibilisation precoce, facteurs de risque familiaux.',
+          '45-50': 'Bilan cardiovasculaire, glycemie, tension, cholesterol, IMC.',
+          '60-65': 'Suivi FDRCV, observance traitements, prevention complications.',
+          '70-75': 'Polymedication, conciliation, iatrogenie, education therapeutique.'
+        }
+      },
+      'perte-autonomie': {
+        priorities: { '18-25': null, '45-50': null, '60-65': 'star', '70-75': 'star' },
+        tips: {
+          '18-25': 'Non concerne a cet age.',
+          '45-50': 'Sensibilisation pour aidants de parents ages.',
+          '60-65': 'Programme ICOPE, reperage fragilites, 6 fonctions cles.',
+          '70-75': 'ICOPE Monitor, mobilite/memoire/nutrition/vue/audition/bien-etre.'
+        }
+      },
+      'sante-bucco-dentaire': {
+        priorities: { '18-25': 'priority', '45-50': 'priority', '60-65': 'priority', '70-75': 'priority' },
+        tips: {
+          '18-25': 'Examen M\'T Dents gratuit, brossage, fil dentaire, orthodontie.',
+          '45-50': 'Parodontite, sensibilite, consultation annuelle, impact cardiovasculaire.',
+          '60-65': 'Secheresse buccale (medicaments), protheses, surveillance gencives.',
+          '70-75': 'Etat dentaire et denutrition, adaptation textures, soins reguliers.'
+        }
+      },
+      'vaccinations': {
+        priorities: { '18-25': 'star', '45-50': 'priority', '60-65': 'star', '70-75': 'star' },
+        tips: {
+          '18-25': 'Rattrapage HPV, rappel dTPolio, meningocoque, Covid, calendrier a jour.',
+          '45-50': 'Rappel dTPolio, grippe si comorbidites, rattrapage hepatite B.',
+          '60-65': 'Grippe annuelle, zona (Shingrix), pneumocoque si indique, Covid.',
+          '70-75': 'Grippe + Covid annuels, pneumocoque, zona, rappel dTPolio.'
+        }
+      },
+      'sante-sexuelle': {
+        priorities: { '18-25': 'star', '45-50': null, '60-65': null, '70-75': null },
+        tips: {
+          '18-25': 'Contraception, depistage IST/VIH gratuit, CeGIDD, preservatifs gratuits.',
+          '45-50': 'Troubles sexuels, menopause et sexualite, depistage IST si necessaire.',
+          '60-65': 'Sante intime, troubles prostatiques, lubrification, dialogue.',
+          '70-75': 'Bien-etre intime, respect du sujet, pas de tabou.'
+        }
+      },
+      'menopause': {
+        priorities: { '18-25': null, '45-50': 'star', '60-65': 'priority', '70-75': null },
+        tips: {
+          '18-25': 'Non concerne a cet age.',
+          '45-50': 'Bouffees de chaleur, THM, risque osteoporose, bilan hormonal.',
+          '60-65': 'Suivi post-menopause, osteoporose, sante cardiovasculaire feminine.',
+          '70-75': 'Consequences a long terme, osteoporose etablie, supplementation.'
+        }
+      },
+      'violences': {
+        priorities: { '18-25': 'star', '45-50': 'priority', '60-65': null, '70-75': null },
+        tips: {
+          '18-25': 'Harcelement, violences sexuelles, 3919, pharmacie refuge, signaux d\'alerte.',
+          '45-50': 'Violences conjugales, maltraitance, ecoute, orientation, 3919.',
+          '60-65': 'Maltraitance personnes agees, 3977, reperage au comptoir.',
+          '70-75': 'Reperage maltraitance, isolement, 3977, protection des personnes vulnerables.'
+        }
+      },
+      'sante-environnement': {
+        priorities: { '18-25': null, '45-50': null, '60-65': null, '70-75': null },
+        tips: {
+          '18-25': 'Perturbateurs endocriniens, cosmetiques, qualite air interieur.',
+          '45-50': 'Exposition professionnelle, qualite air, alimentation bio vs conventionnel.',
+          '60-65': 'Canicule, pollens, qualite de l\'eau, amenagement domicile.',
+          '70-75': 'Canicule et froid, pollution, vulnerabilite climatique accrue.'
+        }
+      },
+      'acces-droits': {
+        priorities: { '18-25': null, '45-50': null, '60-65': null, '70-75': null },
+        tips: {
+          '18-25': 'CSS, ACS, aide alimentaire, droits etudiants, CPAM.',
+          '45-50': 'Bilan de sante gratuit CPAM, ALD, reconnaissance handicap.',
+          '60-65': 'Droits a la retraite, APA, bilan de sante gratuit CPAM.',
+          '70-75': 'APA, aide a domicile, MDPH, carte mobilite inclusion.'
+        }
+      }
+    };
+
+    // Init thematiques engine
+    var themePills = document.querySelectorAll('.age-pill');
+    var themeGrid = document.getElementById('themes-grid');
+    var accentLine = document.getElementById('thematiques-accent');
+    var a4Wrapper = document.querySelector('.ppp-a4-wrapper');
+    var currentAge = '18-25';
+
+    function setActiveAge(age) {
+      currentAge = age;
+      var colors = AGE_COLORS[age];
+
+      // Update pills
+      themePills.forEach(function(p) {
+        p.classList.toggle('active', p.getAttribute('data-age') === age);
+      });
+
+      // Update accent line color
+      if (accentLine) {
+        accentLine.style.background = colors.color;
+      }
+
+      // Update CSS custom properties for legend dots
+      document.documentElement.style.setProperty('--active-age-color', colors.color);
+
+      // Update A4 document colors (link both sections)
+      if (a4Wrapper) {
+        a4Wrapper.style.setProperty('--active-age-color', colors.color);
+        a4Wrapper.style.setProperty('--active-age-color-alpha', colors.alpha);
+      }
+
+      // Update the age badge text in A4 document
+      var ageBadge = document.querySelector('.ppp-a4-age-badge');
+      if (ageBadge) ageBadge.textContent = age + ' ans';
+
+      // Update each theme tag
+      var tags = themeGrid ? themeGrid.querySelectorAll('.theme-tag') : [];
+      tags.forEach(function(tag, index) {
+        var themeKey = tag.getAttribute('data-theme');
+        var data = THEME_DATA[themeKey];
+        if (!data) return;
+
+        var level = data.priorities[age];
+        var tip = data.tips[age] || '';
+
+        // Reset classes
+        tag.classList.remove('is-star', 'is-priority', 'is-dimmed');
+
+        // Apply with staggered delay for animation effect
+        setTimeout(function() {
+          if (level === 'star') {
+            tag.classList.add('is-star', 'is-priority');
+            tag.style.setProperty('--priority-bg', colors.color + '12');
+            tag.style.setProperty('--priority-border', colors.color + '40');
+            tag.style.setProperty('--priority-border-strong', colors.color + '60');
+            tag.style.setProperty('--priority-color', colors.color);
+            tag.style.setProperty('--priority-glow', colors.glow);
+            tag.style.setProperty('--priority-badge-bg', colors.color + '25');
+            tag.style.setProperty('--priority-badge-color', colors.color);
+          } else if (level === 'priority') {
+            tag.classList.add('is-priority');
+            tag.style.setProperty('--priority-bg', 'rgba(255,255,255,0.05)');
+            tag.style.setProperty('--priority-border', 'rgba(255,255,255,0.12)');
+            tag.style.setProperty('--priority-color', 'rgba(255,255,255,0.5)');
+            tag.style.setProperty('--priority-glow', 'transparent');
+          } else {
+            tag.classList.add('is-dimmed');
+          }
+
+          // Update tooltip
+          var tooltip = tag.querySelector('.theme-tooltip');
+          if (tooltip) tooltip.textContent = tip;
+        }, index * 30);
+      });
+    }
+
+    // Bind pill clicks
+    themePills.forEach(function(pill) {
+      pill.addEventListener('click', function() {
+        setActiveAge(this.getAttribute('data-age'));
+      });
+    });
+
+    // Counter approach data (from expert report) - enriched
+    var COUNTER_DATA = {
+      '18-25': {
+        phrase: '"Entre 18 et 25 ans, vous pouvez beneficier d\'un bilan de prevention gratuit. On parle sante, bien-etre, et c\'est completement confidentiel."',
+        contexte: 'Pilule, preservatifs, tabac, stress examens, consultations ponctuelles',
+        stats: { star: 5, priority: 4 },
+        scenarios: [
+          {
+            icon: '\uD83D\uDC8A', title: 'Renouvellement contraception',
+            body: 'Jeune femme de 22 ans, vient chercher sa pilule. Profiter du moment pour aborder les IST, le frottis, la vaccination HPV.',
+            quote: '"En parlant de sante, saviez-vous que vous pouvez faire un bilan prevention gratuit ? On prend 30 min pour parler de tout ca, en toute confidentialite."'
+          },
+          {
+            icon: '\uD83C\uDF93', title: 'Etudiant stress & sommeil',
+            body: 'Etudiant de 20 ans, achete de la melatonine. Signal d\'alerte : stress, ecrans, rythme decale, anxiete.',
+            quote: '"Le stress des exams, le sommeil perturbe... on peut en parler ensemble dans le cadre d\'un bilan sante gratuit. Ca vous interesse ?"'
+          }
+        ]
+      },
+      '45-50': {
+        phrase: '"A votre age, vous avez droit a un bilan de prevention gratuit avec votre pharmacien. 30 minutes pour faire le point sur votre sante, 100% rembourse."',
+        contexte: 'Ordonnances chroniques, cholesterol, tension, check-up annuel',
+        stats: { star: 4, priority: 5 },
+        scenarios: [
+          {
+            icon: '\uD83D\uDC8A', title: 'Ordonnance chronique cardio',
+            body: 'Patient de 48 ans sous statine et antihypertenseur. Opportunite : bilan lipidique, sevrage tabac, activite physique.',
+            quote: '"Avec votre traitement, un bilan prevention serait tres utile. On fait le point sur vos risques cardio, vos depistages... C\'est gratuit et ca prend 30 minutes."'
+          },
+          {
+            icon: '\uD83C\uDF97\uFE0F', title: 'Depistage cancer colorectal',
+            body: 'Patient de 50 ans, n\'a jamais fait le test immunologique. Sensibilisation au depistage organise 50-74 ans.',
+            quote: '"A partir de 50 ans, le depistage du cancer colorectal est recommande. Je peux vous remettre le kit et on en profite pour faire votre bilan prevention."'
+          }
+        ]
+      },
+      '60-65': {
+        phrase: '"Il existe un bilan prevention gratuit pour les personnes de votre age. On fait le point ensemble sur votre sante, vos vaccins, votre equilibre."',
+        contexte: 'Polymedication, retraite, changements de vie, douleurs articulaires',
+        stats: { star: 5, priority: 3 },
+        scenarios: [
+          {
+            icon: '\uD83D\uDC89', title: 'Mise a jour vaccinale',
+            body: 'Patient de 62 ans, vient pour le vaccin grippe. Verifier zona (Shingrix), pneumocoque, rappel dTPolio.',
+            quote: '"Puisqu\'on parle vaccins, on pourrait faire un bilan prevention complet ? C\'est gratuit et ca inclut tous vos depistages."'
+          },
+          {
+            icon: '\uD83E\uDDBF', title: 'Prevention chutes & autonomie',
+            body: 'Patient de 64 ans, se plaint de vertiges et de fatigue. Signal ICOPE : equilibre, vision, audition.',
+            quote: '"Ces petits signes meritent attention. Dans le cadre du bilan prevention, on peut evaluer votre equilibre et votre forme generale."'
+          }
+        ]
+      },
+      '70-75': {
+        phrase: '"On prend 30 minutes ensemble pour faire le point sur votre sante et vos vaccins. C\'est gratuit et pris en charge a 100%."',
+        contexte: 'Renouvellements, piluliers, aidants, fragilite, isolement',
+        stats: { star: 5, priority: 4 },
+        scenarios: [
+          {
+            icon: '\uD83D\uDC8A', title: 'Polymedication & pilulier',
+            body: 'Patient de 73 ans, 8 medicaments, vient chercher son pilulier. Risque iatrogene, interactions, observance.',
+            quote: '"Avec autant de medicaments, un bilan prevention serait tres utile. On verifie ensemble que tout est bien equilibre."'
+          },
+          {
+            icon: '\uD83C\uDFE0', title: 'Aidant & maintien a domicile',
+            body: 'Conjointe de 71 ans vient chercher les medicaments de son mari. Fatigue de l\'aidant, nutrition, isolement.',
+            quote: '"Vous aussi, vous avez droit a un bilan prevention. On peut en parler la prochaine fois, en toute tranquillite."'
+          }
+        ]
+      }
+    };
+
+    var counterText = document.getElementById('counter-text');
+    var counterBadge = document.getElementById('counter-age-badge');
+    var counterCard = document.getElementById('counter-card');
+    var scenarioCards = document.getElementById('scenario-cards');
+    var statStar = document.getElementById('stat-star');
+    var statPriority = document.getElementById('stat-priority');
+
+    // Extend setActiveAge to update counter card + scenarios + stats
+    var _origSetActiveAge = setActiveAge;
+    setActiveAge = function(age) {
+      _origSetActiveAge(age);
+      var data = COUNTER_DATA[age];
+      if (!data) return;
+
+      // Update counter text
+      if (counterText) {
+        counterText.style.opacity = '0';
+        setTimeout(function() {
+          counterText.innerHTML = '<span style="color:var(--text-muted);font-size:0.75rem;">' + data.contexte + '</span><br><br>' + data.phrase;
+          counterText.style.opacity = '1';
+        }, 200);
+      }
+      if (counterBadge) counterBadge.textContent = age + ' ans';
+      if (counterCard) counterCard.style.borderColor = AGE_COLORS[age].color + '30';
+
+      // Update stats
+      if (statStar) statStar.textContent = data.stats.star;
+      if (statPriority) statPriority.textContent = data.stats.priority;
+
+      // Update scenario cards
+      if (scenarioCards && data.scenarios) {
+        data.scenarios.forEach(function(sc, i) {
+          var card = document.getElementById('scenario-' + (i + 1));
+          if (!card) return;
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(8px)';
+          setTimeout(function() {
+            card.querySelector('.scenario-card-icon').textContent = sc.icon;
+            card.querySelector('.scenario-card-title').textContent = sc.title;
+            card.querySelector('.scenario-card-body').textContent = sc.body;
+            card.querySelector('.scenario-card-quote').textContent = sc.quote;
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+            card.style.transition = 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+          }, 250 + i * 150);
+        });
+      }
+    };
+
+    // Init with default age
+    if (themeGrid) {
+      setActiveAge('18-25');
+    }
+
     // Timeline auto-advance
     var tlSteps = document.querySelectorAll('#wf-timeline .wf-tl-step');
     if (tlSteps.length) {
@@ -2282,6 +3243,139 @@ Traitements : Périndopril 5mg, Atorvastatine 20mg...</div>
       highlightTl();
       setInterval(highlightTl, 1500);
     }
+
+    // ============================================================
+    // 2026 DESIGN EFFECTS
+    // ============================================================
+
+    // --- Scroll Progress Bar ---
+    var scrollFill = document.querySelector('.scroll-progress-fill');
+    if (scrollFill) {
+      window.addEventListener('scroll', function() {
+        var h = document.documentElement.scrollHeight - window.innerHeight;
+        if (h > 0) scrollFill.style.width = ((window.scrollY / h) * 100).toFixed(1) + '%';
+      }, { passive: true });
+    }
+
+    // --- Ambient Cursor Glow ---
+    var cursorGlow = document.querySelector('.cursor-glow');
+    if (cursorGlow && window.matchMedia('(pointer: fine)').matches) {
+      var gX = 0, gY = 0, mX = 0, mY = 0;
+      document.addEventListener('mousemove', function(e) { mX = e.clientX; mY = e.clientY; });
+      cursorGlow.classList.add('active');
+      (function tickGlow() {
+        gX += (mX - gX) * 0.06;
+        gY += (mY - gY) * 0.06;
+        cursorGlow.style.left = gX + 'px';
+        cursorGlow.style.top = gY + 'px';
+        requestAnimationFrame(tickGlow);
+      })();
+    }
+
+    // --- Grain Texture (Canvas-generated) ---
+    var grainEl = document.querySelector('.grain-overlay');
+    if (grainEl) {
+      var gc = document.createElement('canvas');
+      gc.width = 256; gc.height = 256;
+      var gctx = gc.getContext('2d');
+      if (gctx) {
+        var gid = gctx.createImageData(256, 256);
+        for (var gi = 0; gi < gid.data.length; gi += 4) {
+          var gv = Math.random() * 255;
+          gid.data[gi] = gv; gid.data[gi+1] = gv; gid.data[gi+2] = gv;
+          gid.data[gi+3] = 15;
+        }
+        gctx.putImageData(gid, 0, 0);
+        grainEl.style.backgroundImage = 'url(' + gc.toDataURL() + ')';
+        grainEl.style.backgroundRepeat = 'repeat';
+      }
+    }
+
+    // --- 3D Card Tilt on Feature Cards ---
+    document.querySelectorAll('.feature-card').forEach(function(card) {
+      card.addEventListener('mousemove', function(e) {
+        var rect = card.getBoundingClientRect();
+        var x = (e.clientX - rect.left) / rect.width - 0.5;
+        var y = (e.clientY - rect.top) / rect.height - 0.5;
+        card.style.transform = 'perspective(800px) rotateY(' + (x * 6) + 'deg) rotateX(' + (-y * 6) + 'deg) translateY(-8px)';
+      });
+      card.addEventListener('mouseleave', function() {
+        card.style.transform = '';
+      });
+    });
+
+    // --- Hero Mesh Parallax ---
+    var heroMeshEl = document.querySelector('.hero-mesh');
+    if (heroMeshEl) {
+      window.addEventListener('scroll', function() {
+        if (window.scrollY < window.innerHeight * 1.5) {
+          heroMeshEl.style.transform = 'translateY(' + (window.scrollY * 0.25) + 'px)';
+        }
+      }, { passive: true });
+    }
+
+    // --- Hero Floating Particles ---
+    var heroSec = document.getElementById('hero');
+    if (heroSec && window.matchMedia('(pointer: fine)').matches) {
+      for (var pi = 0; pi < 25; pi++) {
+        var part = document.createElement('div');
+        part.className = 'hero-particle';
+        var pSize = 1 + Math.random() * 3;
+        part.style.width = pSize + 'px';
+        part.style.height = pSize + 'px';
+        part.style.left = Math.random() * 100 + '%';
+        part.style.bottom = '-5%';
+        part.style.background = Math.random() > 0.5
+          ? 'rgba(99,102,241,' + (0.2 + Math.random() * 0.3).toFixed(2) + ')'
+          : 'rgba(20,184,166,' + (0.2 + Math.random() * 0.3).toFixed(2) + ')';
+        part.style.animationDuration = (6 + Math.random() * 10).toFixed(1) + 's';
+        part.style.animationDelay = (Math.random() * 8).toFixed(1) + 's';
+        heroSec.appendChild(part);
+      }
+    }
+
+    // --- Animated Problem Counters ---
+    var counterEls = document.querySelectorAll('.problem-number');
+    if (counterEls.length) {
+      var cntObs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var el = entry.target;
+            var target = parseInt(el.textContent, 10);
+            if (isNaN(target)) return;
+            var t0 = null;
+            function cntTick(ts) {
+              if (!t0) t0 = ts;
+              var p = Math.min((ts - t0) / 900, 1);
+              var eased = 1 - Math.pow(1 - p, 4);
+              var val = Math.round(target * eased);
+              el.textContent = val < 10 ? '0' + val : '' + val;
+              if (p < 1) requestAnimationFrame(cntTick);
+            }
+            requestAnimationFrame(cntTick);
+            cntObs.unobserve(el);
+          }
+        });
+      }, { threshold: 0.5 });
+      counterEls.forEach(function(c) { cntObs.observe(c); });
+    }
+
+    // --- Gradient Orb Parallax on all sections ---
+    window.addEventListener('scroll', function() {
+      document.querySelectorAll('section').forEach(function(sec) {
+        var orbs = sec.querySelectorAll('.gradient-orb');
+        if (!orbs.length) return;
+        var rect = sec.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          var ratio = (window.innerHeight - rect.top) / (window.innerHeight + rect.height);
+          orbs.forEach(function(orb, oi) {
+            var speed = (oi % 2 === 0) ? 0.08 : -0.06;
+            orb.style.transform = 'translateY(' + ((ratio - 0.5) * 100 * speed) + 'px)';
+          });
+        }
+      });
+    }, { passive: true });
+
   })();
   </script>
 
