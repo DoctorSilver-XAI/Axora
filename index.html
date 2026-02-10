@@ -1,0 +1,2289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Axora - Plan Personnalisé de Prévention</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-deep: #0B0F19;
+      --bg-surface: #0f172a;
+      --bg-card: #1e293b;
+      --indigo: #6366f1;
+      --indigo-light: #818cf8;
+      --indigo-glow: rgba(99, 102, 241, 0.3);
+      --teal: #14b8a6;
+      --teal-light: #2dd4bf;
+      --teal-glow: rgba(20, 184, 166, 0.3);
+      --cyan: #22d3ee;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.6);
+      --text-muted: rgba(255, 255, 255, 0.4);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-light: rgba(255, 255, 255, 0.1);
+      --glass-bg: rgba(15, 23, 42, 0.6);
+      --glass-border: rgba(255, 255, 255, 0.05);
+      --age-18: #EBBF23;
+      --age-45: #009689;
+      --age-60: #C34A81;
+      --age-70: #F2804A;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+    section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0; position: relative; }
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+      border-radius: 1rem;
+    }
+    .gradient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .section-label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--indigo-light);
+      margin-bottom: 1rem;
+      padding: 0.35rem 1rem;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 100px;
+    }
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+    .section-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin-bottom: 3rem;
+    }
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* HERO */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #hero .orb-1 {
+      width: 600px; height: 600px;
+      background: var(--indigo-glow);
+      top: -200px; right: -100px;
+    }
+    #hero .orb-2 {
+      width: 500px; height: 500px;
+      background: var(--teal-glow);
+      bottom: -150px; left: -100px;
+    }
+    .hero-content { position: relative; z-index: 1; }
+    .axora-logo { margin-bottom: 2rem; }
+    .eye-outer {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, var(--indigo), var(--teal), var(--cyan), var(--indigo));
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto;
+      animation: spin-slow 8s linear infinite;
+    }
+    @keyframes spin-slow { to { transform: rotate(360deg); } }
+    .eye-inner {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: var(--bg-deep);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .eye-pupil {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--indigo-light), var(--teal-light));
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      padding: 0.4rem 1rem;
+      border: 1px solid var(--border-light);
+      border-radius: 100px;
+      margin-bottom: 1.5rem;
+    }
+    .hero-title {
+      font-size: clamp(3rem, 8vw, 6rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff 0%, var(--indigo-light) 50%, var(--teal-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+    .hero-subtitle {
+      font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+      color: var(--text-secondary);
+      font-weight: 400;
+      margin-bottom: 3rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .scroll-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .scroll-indicator:hover { color: var(--indigo-light); }
+    .scroll-arrow { width: 24px; height: 24px; animation: bounce-down 2s ease-in-out infinite; }
+    @keyframes bounce-down {
+      0%, 100% { transform: translateY(0); opacity: 0.5; }
+      50% { transform: translateY(8px); opacity: 1; }
+    }
+
+    /* OVERVIEW */
+    #overview { background: var(--bg-deep); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+    .feature-card { padding: 2rem; transition: transform 0.3s, border-color 0.3s; }
+    .feature-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.12); }
+    .feature-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+    .feature-icon svg { width: 24px; height: 24px; }
+    .feature-icon.indigo { background: rgba(99,102,241,0.15); color: var(--indigo-light); }
+    .feature-icon.teal { background: rgba(20,184,166,0.15); color: var(--teal-light); }
+    .feature-icon.cyan { background: rgba(34,211,238,0.15); color: var(--cyan); }
+    .feature-icon.violet { background: rgba(139,92,246,0.15); color: #a78bfa; }
+    .feature-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .feature-card p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55; }
+
+    /* PPP INTRO */
+    #ppp-intro { min-height: 70vh; text-align: center; position: relative; overflow: hidden; }
+    #ppp-intro::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--indigo), var(--teal), transparent);
+    }
+    .ppp-big-title {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--teal-light), var(--indigo-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+      z-index: 1;
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
+    }
+    .ppp-subtitle {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--text-secondary);
+      position: relative;
+      z-index: 1;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* PROBLEM */
+    #problem { background: var(--bg-deep); }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    .problem-card { padding: 2.5rem 2rem; text-align: center; }
+    .problem-number {
+      font-size: 4rem;
+      font-weight: 900;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 1rem;
+    }
+    .problem-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem; }
+    .problem-card p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
+  </style>
+  <style>
+    /* ============================================================
+       WORKFLOW CSS (Agent 2) - Sections 5-12, 14
+    ============================================================ */
+    .wf-center-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .wf-caption {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      text-align: center;
+      max-width: 600px;
+      margin-top: 1.5rem;
+    }
+
+    /* Phone mockup */
+    .wf-phone {
+      width: 280px;
+      height: 570px;
+      border-radius: 44px;
+      border: 4px solid #1a1a1a;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1);
+    }
+    .wf-phone-notch {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 30px;
+      background: #000;
+      border-radius: 20px;
+      z-index: 10;
+    }
+    .wf-phone-screen {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 40px;
+      overflow: hidden;
+      background: #111;
+    }
+
+    /* Desktop mockup */
+    .wf-desktop {
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      width: 100%;
+      max-width: 800px;
+    }
+    .wf-desktop-titlebar {
+      height: 36px;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 6px;
+    }
+    .wf-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .wf-dot-red { background: #ff5f57; }
+    .wf-dot-yellow { background: #febc2e; }
+    .wf-dot-green { background: #28c840; }
+    .wf-desktop-content {
+      background: var(--bg-deep);
+      min-height: 300px;
+    }
+
+    /* ---- SECTION 5: TIMELINE ---- */
+    .wf-timeline-wrap {
+      width: 100%;
+      overflow-x: auto;
+      padding: 2rem 0;
+    }
+    .wf-timeline {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      min-width: 900px;
+      position: relative;
+      padding: 0 1rem;
+    }
+    .wf-timeline::before {
+      content: '';
+      position: absolute;
+      top: 24px;
+      left: 40px;
+      right: 40px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--indigo), var(--teal), var(--cyan));
+      opacity: 0.3;
+    }
+    .wf-tl-step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      cursor: default;
+      transition: transform 0.3s;
+    }
+    .wf-tl-step-active { transform: translateY(-4px); }
+    .wf-tl-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 0.75rem;
+      transition: all 0.3s;
+      position: relative;
+      z-index: 2;
+    }
+    .wf-tl-active {
+      border-color: var(--indigo);
+      box-shadow: 0 0 20px var(--indigo-glow);
+      background: rgba(99,102,241,0.15);
+    }
+    .wf-tl-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+    .wf-tl-desc {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      max-width: 90px;
+    }
+
+    /* ---- SECTION 6: RECORDING ---- */
+    .wf-rec-screen {
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding-top: 50px;
+    }
+    .wf-rec-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+    .wf-rec-timer {
+      font-size: 2.5rem;
+      font-weight: 300;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 1.5rem;
+    }
+    .wf-waveform {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 80px;
+      margin-bottom: 2rem;
+    }
+    .wf-wave-bar {
+      width: 4px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, var(--indigo-light), var(--teal));
+      animation: wf-wave 1s ease-in-out infinite alternate;
+    }
+    @keyframes wf-wave {
+      0% { height: 8px; }
+      100% { height: var(--wf-h, 40px); }
+    }
+    .wf-rec-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 30px rgba(239,68,68,0.4);
+    }
+    .wf-rec-btn-inner {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      background: #fff;
+    }
+    .wf-rec-label {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.5);
+      margin-top: 1rem;
+    }
+    .wf-annotation {
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      color: var(--indigo-light);
+      margin-top: 1rem;
+    }
+
+    /* ---- SECTION 7: QR CODE ---- */
+    .wf-dual-mockup {
+      display: flex;
+      align-items: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .wf-cam-screen {
+      background: #111;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-top: 50px;
+      position: relative;
+    }
+    .wf-cam-viewfinder {
+      width: 180px;
+      height: 180px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .wf-cam-corners > div {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-color: var(--teal);
+      border-style: solid;
+      border-width: 0;
+    }
+    .wf-cam-corners .tl { top: -1px; left: -1px; border-top-width: 3px; border-left-width: 3px; border-radius: 4px 0 0 0; }
+    .wf-cam-corners .tr { top: -1px; right: -1px; border-top-width: 3px; border-right-width: 3px; border-radius: 0 4px 0 0; }
+    .wf-cam-corners .bl { bottom: -1px; left: -1px; border-bottom-width: 3px; border-left-width: 3px; border-radius: 0 0 0 4px; }
+    .wf-cam-corners .br { bottom: -1px; right: -1px; border-bottom-width: 3px; border-right-width: 3px; border-radius: 0 0 4px 0; }
+    .wf-scan-line {
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      background: var(--teal);
+      box-shadow: 0 0 10px var(--teal);
+      animation: wf-scan 2s ease-in-out infinite;
+    }
+    @keyframes wf-scan {
+      0%, 100% { top: 10%; }
+      50% { top: 85%; }
+    }
+    .wf-qr-mini {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      width: 60px;
+      height: 60px;
+    }
+    .wf-qr-cell { border-radius: 1px; }
+    .wf-qr-b { background: #fff; }
+    .wf-qr-w { background: transparent; }
+    .wf-cam-label {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.5);
+      margin-top: 1.5rem;
+    }
+
+    /* Desktop QR modal */
+    .wf-qr-modal {
+      background: var(--bg-surface);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 2rem;
+      text-align: center;
+      max-width: 320px;
+      margin: 2rem auto;
+    }
+    .wf-qr-modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .wf-qr-modal-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+    .wf-qr-block {
+      display: grid;
+      grid-template-columns: repeat(11, 1fr);
+      gap: 2px;
+      width: 160px;
+      height: 160px;
+      margin: 0 auto 1.5rem;
+      padding: 8px;
+      background: white;
+      border-radius: 8px;
+    }
+    .wf-qr-sq { border-radius: 1px; }
+    .wf-qr-sq.b { background: #000; }
+    .wf-qr-sq.w { background: #fff; }
+    .wf-qr-instructions {
+      text-align: left;
+      margin-bottom: 1rem;
+    }
+    .wf-qr-inst-item {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    .wf-qr-inst-num {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(99,102,241,0.2);
+      color: var(--indigo-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .wf-qr-expiry {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ---- SECTION 8: UPLOAD ---- */
+    .wf-upl-screen {
+      background: linear-gradient(180deg, #1a1a2e, #16213e);
+      height: 100%;
+      padding: 50px 16px 16px;
+      position: relative;
+    }
+    .wf-upl-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 1rem;
+    }
+    .wf-upl-state.wf-upl-visible {
+      display: flex;
+    }
+    .wf-upl-logo { font-size: 2rem; margin-bottom: 0.5rem; margin-top: 1rem; }
+    .wf-upl-title { font-size: 1rem; font-weight: 700; color: #fff; }
+    .wf-upl-subtitle { font-size: 0.7rem; color: rgba(255,255,255,0.6); margin-bottom: 1.5rem; }
+    .wf-upl-zone {
+      width: 100%;
+      border: 2px dashed rgba(255,255,255,0.2);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      text-align: center;
+      background: rgba(255,255,255,0.03);
+    }
+    .wf-upl-zone-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .wf-upl-zone-text { font-size: 0.8rem; color: rgba(255,255,255,0.7); }
+    .wf-upl-zone-hint { font-size: 0.65rem; color: rgba(255,255,255,0.4); margin-top: 0.25rem; }
+    .wf-upl-file-card {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .wf-upl-file-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(99,102,241,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+    .wf-upl-file-name { font-size: 0.75rem; font-weight: 600; color: #fff; }
+    .wf-upl-file-size { font-size: 0.6rem; color: rgba(255,255,255,0.5); }
+    .wf-upl-progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+    .wf-upl-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--indigo), var(--teal));
+      border-radius: 2px;
+      animation: wf-upl-fill 2s ease-out forwards;
+    }
+    @keyframes wf-upl-fill { from { width: 0; } to { width: 100%; } }
+    .wf-upl-btn {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--indigo), #8b5cf6);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .wf-upl-success {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+    .wf-upl-success-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .wf-upl-success-title { font-size: 1.1rem; font-weight: 700; color: #fff; }
+    .wf-upl-success-msg { font-size: 0.75rem; color: rgba(255,255,255,0.6); text-align: center; margin-top: 0.5rem; }
+
+    /* ---- SECTION 9: DESKTOP RECEPTION ---- */
+    .wf-rx-modal {
+      background: var(--bg-surface);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      max-width: 420px;
+      margin: 1.5rem auto;
+      overflow: hidden;
+    }
+    .wf-rx-modal-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .wf-rx-modal-body {
+      padding: 1.5rem;
+      min-height: 180px;
+    }
+    .wf-rx-state {
+      display: none;
+    }
+    .wf-rx-state.wf-rx-visible {
+      display: block;
+    }
+    .wf-rx-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+    .wf-rx-icon.amber { color: #f59e0b; }
+    .wf-rx-icon.green { color: #22c55e; }
+    .wf-rx-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .wf-rx-desc { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; }
+    .wf-rx-progress {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .wf-rx-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 2.5s ease-out;
+      width: 0%;
+    }
+    .wf-rx-progress-fill.blue { background: linear-gradient(90deg, var(--indigo), #8b5cf6); }
+    .wf-rx-progress-fill.amber { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+    .wf-rx-progress-text {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+    .wf-rx-synthesis {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .wf-rx-synthesis-label {
+      font-size: 0.65rem;
+      color: var(--teal-light);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .wf-rx-synthesis-text {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+    .wf-rx-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+    .wf-rx-btn-ghost {
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .wf-rx-btn-primary {
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      background: linear-gradient(135deg, var(--indigo), #8b5cf6);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ---- SECTION 10: PROMPT ---- */
+    .wf-prompt-form { display: flex; flex-direction: column; gap: 0.75rem; }
+    .wf-prompt-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .wf-prompt-audio-btn {
+      padding: 0.3rem 0.75rem;
+      border-radius: 8px;
+      background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.3);
+      color: #f59e0b;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .wf-prompt-textarea {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 1rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      min-height: 180px;
+      white-space: pre-line;
+      font-family: 'Inter', monospace;
+    }
+    .wf-cursor-blink {
+      display: inline-block;
+      width: 2px;
+      height: 14px;
+      background: var(--indigo-light);
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: wf-blink 1s step-end infinite;
+    }
+    @keyframes wf-blink { 50% { opacity: 0; } }
+
+    /* ---- SECTION 11: GENERATION ---- */
+    .wf-gen-form { display: flex; flex-direction: column; gap: 1rem; }
+    .wf-gen-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .wf-gen-field-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem; }
+    .wf-gen-field-input {
+      padding: 0.5rem 0.75rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--text-primary);
+    }
+    .wf-gen-age-btns { display: flex; gap: 0.5rem; }
+    .wf-gen-age-btn {
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-secondary);
+    }
+    .wf-gen-age-active {
+      background: rgba(0,150,137,0.2) !important;
+      border-color: var(--age-45) !important;
+      color: var(--age-45) !important;
+    }
+    .wf-gen-notes-preview {
+      padding: 0.75rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-height: 60px;
+      overflow: hidden;
+      white-space: pre-line;
+    }
+    .wf-gen-generate-btn {
+      padding: 0.75rem;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--indigo), #8b5cf6);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-align: center;
+      cursor: pointer;
+    }
+    .wf-gen-progress-wrap {
+      padding: 1rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+    }
+    .wf-gen-progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .wf-gen-progress-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .wf-gen-spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: var(--indigo-light);
+      border-radius: 50%;
+      animation: wf-spin 0.8s linear infinite;
+    }
+    @keyframes wf-spin { to { transform: rotate(360deg); } }
+    .wf-gen-progress-pct { font-size: 0.75rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .wf-gen-progress-bar {
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .wf-gen-progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      width: 0%;
+      transition: width 1.8s ease-out, background 0.5s;
+    }
+    .wf-gen-progress-phase {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    /* ---- SECTION 12: WOW REVEAL ---- */
+    .wf-wow-container {
+      position: relative;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #fff;
+      min-height: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .wf-wow-topbar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+    .wf-wow-topbar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--indigo), var(--teal), var(--cyan));
+    }
+    .wf-wow-loading {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      z-index: 5;
+      transition: opacity 0.3s;
+    }
+    .wf-wow-hidden { opacity: 0; pointer-events: none; }
+    .wf-wow-dots { display: flex; gap: 6px; margin-bottom: 1rem; }
+    .wf-wow-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--age-45);
+      animation: wf-wow-bounce 1.2s ease-in-out infinite;
+    }
+    .wf-wow-dot:nth-child(2) { animation-delay: 0.2s; }
+    .wf-wow-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes wf-wow-bounce {
+      0%, 100% { transform: scale(1); opacity: 0.4; }
+      50% { transform: scale(1.3); opacity: 1; }
+    }
+    .wf-wow-loading-text { font-size: 0.85rem; color: #666; }
+    .wf-wow-flash {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #fff;
+      opacity: 0;
+      z-index: 8;
+      pointer-events: none;
+    }
+    .wf-wow-document-slot {
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 0.6s cubic-bezier(0.34,1.56,0.64,1), transform 0.6s cubic-bezier(0.34,1.56,0.64,1);
+      position: relative;
+      z-index: 3;
+    }
+    .wf-wow-revealed { opacity: 1 !important; transform: scale(1) !important; }
+    .wf-wow-shimmer {
+      position: absolute;
+      top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+      z-index: 9;
+      pointer-events: none;
+    }
+    .wf-wow-sweep { animation: wf-shimmer-sweep 1.2s ease-out forwards; }
+    @keyframes wf-shimmer-sweep { to { left: 200%; } }
+
+    /* ---- SECTION 12: WOW Mini-doc ---- */
+    .wf-wow-mini-doc {
+      background: #fff;
+      padding: 1.5rem 2rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .wf-wow-mini-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #009689;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .wf-wow-mini-branding { display: flex; align-items: center; gap: 8px; }
+    .wf-wow-mini-logo {
+      width: 28px; height: 28px;
+      background: #009689; border-radius: 4px;
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px; flex-shrink: 0;
+    }
+    .wf-wow-mini-pharmacy { font-weight: 800; color: #009689; font-size: 12px; }
+    .wf-wow-mini-title-block { text-align: right; }
+    .wf-wow-mini-title { font-weight: 800; color: #009689; font-size: 13px; }
+    .wf-wow-mini-age { font-weight: 700; color: #009689; font-size: 10px; }
+    .wf-wow-mini-hero {
+      text-align: center; font-weight: 800; color: #009689;
+      font-size: 12px; margin: 6px 0 12px;
+    }
+    .wf-wow-mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .wf-wow-mini-col-title {
+      background: #009689; color: #fff;
+      font-size: 9px; font-weight: 700;
+      padding: 4px 6px; border-radius: 5px;
+      text-align: center; margin-bottom: 6px;
+    }
+    .wf-wow-mini-line {
+      font-size: 8.5px; color: #2d334f;
+      border-bottom: 1px dashed rgba(0,150,137,0.4);
+      padding: 2px 0; line-height: 1.4;
+    }
+    @media (max-width: 600px) {
+      .wf-wow-mini-grid { grid-template-columns: 1fr; }
+      .wf-wow-mini-header { flex-direction: column; gap: 6px; text-align: center; }
+      .wf-wow-mini-title-block { text-align: center; }
+    }
+
+    /* ---- SECTION 14: EDIT DEMO ---- */
+    .wf-edit-annotations-bar {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .wf-edit-annotation-chip {
+      font-size: 0.7rem;
+      color: var(--indigo-light);
+      font-weight: 600;
+      background: rgba(99,102,241,0.12);
+      border: 1px solid rgba(99,102,241,0.25);
+      padding: 0.3rem 0.75rem;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+    .wf-edit-doc {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .wf-edit-cursor {
+      position: absolute;
+      top: 40%; left: 25%;
+      z-index: 10;
+      animation: wf-cursor-move 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes wf-cursor-move {
+      0% { top: 40%; left: 15%; }
+      25% { top: 50%; left: 50%; }
+      50% { top: 45%; left: 78%; }
+      75% { top: 38%; left: 35%; }
+      100% { top: 40%; left: 15%; }
+    }
+    .wf-edit-doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--age-45);
+    }
+    .wf-edit-doc-title { font-size: 1rem; font-weight: 800; color: var(--age-45); }
+    .wf-edit-doc-subtitle { font-size: 0.65rem; color: #666; }
+    .wf-edit-doc-pharmacy { font-size: 0.7rem; color: var(--age-45); font-weight: 700; text-align: right; }
+    .wf-edit-doc-cols {
+      display: grid;
+      grid-template-columns: 1fr 0.85fr 1.3fr 0.85fr;
+      gap: 8px;
+    }
+    .wf-edit-doc-col {
+      padding: 6px;
+      border-radius: 6px;
+      transition: background 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+    .wf-edit-doc-col:hover {
+      background: rgba(99,102,241,0.06);
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
+    }
+    .wf-edit-col-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #fff;
+      padding: 0.3rem 0.5rem;
+      border-radius: 5px;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    .wf-edit-col-title.pri { background: var(--age-45); }
+    .wf-edit-col-title.fre { background: var(--age-45); }
+    .wf-edit-col-title.con { background: var(--age-45); }
+    .wf-edit-col-title.res { background: var(--age-45); }
+    .wf-edit-doc-line {
+      font-size: 0.6rem;
+      color: #2d334f;
+      border-bottom: 1px dashed rgba(0,150,137,0.3);
+      padding: 0.2rem 0;
+      line-height: 1.45;
+    }
+    .wf-edit-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .wf-edit-action-btn {
+      padding: 0.6rem 1.5rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .wf-print {
+      background: linear-gradient(135deg, var(--indigo), #8b5cf6);
+      color: #fff;
+    }
+    .wf-save {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: var(--text-secondary);
+    }
+
+    /* ============================================================
+       A4 DOCUMENT CSS (Agent 1)
+    ============================================================ */
+    .ppp-a4-wrapper {
+      width: 297mm; height: 210mm;
+      background: white;
+      padding: 8mm 10mm;
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --ppp-primary: #009689;
+      --ppp-accent: #009689;
+      --ppp-dotted: #00968988;
+    }
+    .ppp-a4-header {
+      display: flex; flex-direction: column;
+      gap: 6px; margin-bottom: 10px;
+      border-bottom: 2px solid var(--ppp-accent);
+      padding-bottom: 6px;
+    }
+    .ppp-a4-header-top { display: flex; justify-content: space-between; align-items: center; }
+    .ppp-a4-pharmacy-branding { display: flex; align-items: center; gap: 10px; }
+    .ppp-a4-pharmacy-logo {
+      width: 38px; height: 38px;
+      background: var(--ppp-primary);
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px; color: white; font-size: 24px; font-weight: 700; flex-shrink: 0;
+    }
+    .ppp-a4-pharmacy-name { font-size: 14px; font-weight: 800; color: var(--ppp-primary); }
+    .ppp-a4-header-right { text-align: right; }
+    .ppp-a4-report-title { font-size: 16px; font-weight: 800; color: var(--ppp-primary); margin: 0; line-height: 1.1; }
+    .ppp-a4-age-badge { font-size: 12px; font-weight: 800; color: var(--ppp-accent); margin-top: 2px; }
+    .ppp-a4-header-info { display: flex; align-items: center; gap: 8px 24px; font-size: 10px; color: #333; padding-left: 2px; }
+    .ppp-a4-info-item { display: flex; align-items: center; gap: 5px; }
+    .ppp-a4-info-label { font-weight: 700; color: var(--ppp-primary); }
+    .ppp-a4-info-value { font-weight: 600; color: #000; border-bottom: 1px dashed var(--ppp-dotted); padding: 1px 4px; }
+    .ppp-a4-hero { text-align: center; margin: 2px 0 6px; }
+    .ppp-a4-hero h1 { font-size: 14px; color: var(--ppp-primary); font-weight: 800; margin-bottom: 2px; line-height: 1.1; }
+    .ppp-a4-hero p { font-size: 10px; color: #33384d; margin: 0; line-height: 1.3; }
+    .ppp-a4-grid {
+      display: grid;
+      grid-template-columns: 1fr 0.85fr 1.3fr 0.85fr;
+      column-gap: 8px; flex: 1; margin-bottom: 6px;
+    }
+    .ppp-a4-column { padding: 0 8px; position: relative; display: flex; flex-direction: column; }
+    .ppp-a4-column + .ppp-a4-column::before {
+      content: ""; position: absolute; left: 0; top: 32px; bottom: 0;
+      width: 1px; background: var(--ppp-accent); opacity: 0.5;
+    }
+    .ppp-a4-col-title {
+      background: var(--ppp-accent); color: white;
+      font-weight: 700; font-size: 10.5px;
+      padding: 4px 5px; min-height: 26px; border-radius: 8px;
+      text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px;
+      margin-bottom: 6px;
+    }
+    .ppp-a4-col-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: rgba(255,255,255,0.24); font-size: 9px; flex-shrink: 0;
+    }
+    .ppp-a4-col-title sup { font-size: 0.65em; position: relative; top: -5px; margin-left: 2px; line-height: 0; }
+    .ppp-a4-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+    .ppp-a4-line {
+      border-bottom: 1.25px dashed var(--ppp-dotted);
+      min-height: 12px; padding-bottom: 2px;
+      font-size: 9.5px; line-height: 1.35;
+      white-space: pre-line; word-break: break-word; color: #2d334f;
+    }
+    .ppp-a4-follow-up { margin: 4px 0 2px; }
+    .ppp-a4-follow-title {
+      display: inline-block; background: var(--ppp-accent); color: white;
+      font-weight: 800; font-size: 10px;
+      padding: 3px 8px; border-radius: 4px; margin-bottom: 2px;
+    }
+    .ppp-a4-follow-line {
+      border-bottom: 1px dashed var(--ppp-dotted);
+      min-height: 13px; padding-bottom: 2px;
+      font-size: 9.5px; margin-bottom: 2px; color: #2d334f;
+    }
+    .ppp-a4-separator { border-bottom: 1px dotted #c5c5c5; margin: 4px 0 8px; }
+    .ppp-a4-motivation { font-size: 8px; color: #2d334f; margin: 3px 0; font-style: italic; opacity: 0.8; line-height: 1.3; }
+    .ppp-a4-checkbox-row { display: flex; align-items: center; gap: 6px; margin: 2px 0 4px; }
+    .ppp-a4-checkbox {
+      width: 10px; height: 10px;
+      border: 2px solid var(--ppp-accent); border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .ppp-a4-checkbox-label { font-size: 7px; color: #111; opacity: 0.85; }
+    .ppp-a4-footer {
+      display: grid; grid-template-columns: 1fr 0.8fr 1fr;
+      gap: 8px; margin-top: auto;
+      border-top: 1px solid rgba(0,0,0,0.08); padding-top: 4px;
+    }
+    .ppp-a4-legal-mentions {
+      background: rgba(15,42,115,0.02);
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 8px; padding: 6px 8px;
+    }
+    .ppp-a4-legal-title { font-weight: 700; font-size: 7px; margin-bottom: 2px; color: var(--ppp-primary); }
+    .ppp-a4-legal-mentions ul {
+      list-style: disc; padding-left: 14px; margin: 0;
+      color: #555; font-size: 6.5px; line-height: 1.25;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .ppp-a4-footer-notes { font-size: 6.5px; line-height: 1.25; color: #555; }
+    .ppp-a4-note-item { margin-bottom: 4px; }
+    .ppp-a4-note-num { font-weight: 700; margin-right: 3px; color: var(--ppp-accent); }
+    .ppp-a4-sig-label { font-size: 7px; font-weight: 700; color: var(--ppp-primary); margin-bottom: 4px; }
+    .ppp-a4-sig-area {
+      height: 50px;
+      border: 1px dashed rgba(0,0,0,0.2);
+      border-radius: 4px;
+      background: rgba(0,0,0,0.02);
+    }
+
+    /* ============================================================
+       INTELLIGENCE CLINIQUE + FOOTER (Agent 3)
+    ============================================================ */
+    #intelligence { background: var(--bg-deep); position: relative; overflow: hidden; }
+    .intel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 3rem; align-items: start; }
+    .age-ranges { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .age-card {
+      padding: 1.5rem; border-radius: 1rem;
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      text-align: center; transition: transform 0.3s;
+    }
+    .age-card:hover { transform: scale(1.03); }
+    .age-badge {
+      display: inline-block; padding: 0.3rem 1rem;
+      border-radius: 100px; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.75rem;
+    }
+    .age-18 .age-badge { background: rgba(235,191,35,0.2); color: var(--age-18); border: 1px solid rgba(235,191,35,0.3); }
+    .age-45 .age-badge { background: rgba(0,150,137,0.2); color: var(--age-45); border: 1px solid rgba(0,150,137,0.3); }
+    .age-60 .age-badge { background: rgba(195,74,129,0.2); color: var(--age-60); border: 1px solid rgba(195,74,129,0.3); }
+    .age-70 .age-badge { background: rgba(242,128,74,0.2); color: var(--age-70); border: 1px solid rgba(242,128,74,0.3); }
+    .age-card .age-title { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .age-card .age-examples { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }
+    .intel-features { display: flex; flex-direction: column; gap: 1.25rem; }
+    .intel-item { display: flex; gap: 1rem; align-items: flex-start; }
+    .intel-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+    .intel-dot.indigo { background: var(--indigo); box-shadow: 0 0 12px var(--indigo-glow); }
+    .intel-dot.teal { background: var(--teal); box-shadow: 0 0 12px var(--teal-glow); }
+    .intel-dot.cyan { background: var(--cyan); box-shadow: 0 0 12px rgba(34,211,238,0.3); }
+    .intel-dot.violet { background: #8b5cf6; box-shadow: 0 0 12px rgba(139,92,246,0.3); }
+    .intel-dot.amber { background: #f59e0b; box-shadow: 0 0 12px rgba(245,158,11,0.3); }
+    .intel-item h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .intel-item p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+    footer#main-footer {
+      padding: 4rem 0; text-align: center;
+      border-top: 1px solid var(--border-subtle); background: var(--bg-deep);
+    }
+    .footer-logo {
+      font-size: 1.5rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--indigo-light), var(--teal-light));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    .footer-sub { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+    .footer-powered { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+    /* ============================================================
+       A4 document wrapper for dark bg display
+    ============================================================ */
+    .a4-display-wrapper {
+      display: flex;
+      justify-content: center;
+      padding: 2rem 0;
+      overflow: visible;
+      width: 100%;
+    }
+    .a4-scale-container {
+      transform-origin: top center;
+      transition: transform 0.3s ease;
+    }
+    .ppp-a4-wrapper { box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 1200px) {
+      .intel-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .wf-dual-mockup { flex-direction: column; }
+      .wf-edit-doc-cols { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .wf-gen-row { grid-template-columns: 1fr; }
+      .wf-gen-age-btns { flex-wrap: wrap; }
+      .wf-rx-modal { max-width: 100%; }
+      .wf-phone { width: 260px; height: 530px; }
+    }
+    @media (max-width: 600px) {
+      section { padding: 4rem 0; min-height: auto; }
+      .container { padding: 0 1.25rem; }
+      .age-ranges { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .problem-grid { grid-template-columns: 1fr; }
+      .wf-edit-doc-cols { grid-template-columns: 1fr; }
+      .wf-phone { width: 240px; height: 490px; }
+      .wf-desktop { max-width: 100%; }
+      .wf-prompt-textarea { min-height: 120px; font-size: 0.65rem; }
+      .wf-timeline { min-width: 700px; }
+      .wf-tl-desc { max-width: 70px; font-size: 0.6rem; }
+      .wf-edit-annotations-bar { gap: 0.4rem; }
+      .wf-edit-annotation-chip { font-size: 0.6rem; padding: 0.2rem 0.5rem; }
+      .wf-rx-synthesis-text { font-size: 0.65rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SECTION 1: HERO -->
+  <section id="hero">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="hero-content">
+      <div class="axora-logo reveal">
+        <div class="eye-outer"><div class="eye-inner"><div class="eye-pupil"></div></div></div>
+      </div>
+      <div class="hero-badge reveal reveal-delay-1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Application pour pharmaciens d'officine
+      </div>
+      <h1 class="hero-title reveal reveal-delay-2">Axora</h1>
+      <p class="hero-subtitle reveal reveal-delay-3">L'assistant intelligent qui transforme votre pratique officinale avec l'IA</p>
+      <a href="#overview" class="scroll-indicator reveal reveal-delay-4">
+        Découvrir
+        <svg class="scroll-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- SECTION 2: OVERVIEW -->
+  <section id="overview">
+    <div class="container">
+      <div class="section-label reveal">Plateforme</div>
+      <h2 class="section-title reveal reveal-delay-1">Un écosystème complet pour le pharmacien</h2>
+      <p class="section-desc reveal reveal-delay-2">Axora combine capture intelligente, IA conversationnelle et modules métier dans une interface toujours accessible.</p>
+      <div class="features-grid">
+        <div class="feature-card glass reveal reveal-delay-1">
+          <div class="feature-icon indigo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <h3>PhiVision</h3>
+          <p>Capturez l'écran de votre LGO et obtenez une analyse intelligente en quelques secondes.</p>
+        </div>
+        <div class="feature-card glass reveal reveal-delay-2">
+          <div class="feature-icon teal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3>Assistant IA</h3>
+          <p>Chat pharmaceutique multi-provider pour répondre à vos questions cliniques et rédiger des notes.</p>
+        </div>
+        <div class="feature-card glass reveal reveal-delay-3">
+          <div class="feature-icon violet">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+          <h3>Nexus</h3>
+          <p>Écosystème de modules métier : posologie, calcul de caisse, factures, notes et le générateur PPP.</p>
+        </div>
+        <div class="feature-card glass reveal reveal-delay-4">
+          <div class="feature-icon cyan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="7"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <h3>Dynamic Island</h3>
+          <p>Mini-fenêtre flottante toujours visible. Accédez à toutes les fonctions sans quitter votre LGO.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: PPP INTRO -->
+  <section id="ppp-intro">
+    <div class="gradient-orb" style="width:800px;height:400px;background:linear-gradient(135deg,var(--indigo-glow),var(--teal-glow));top:50%;left:50%;transform:translate(-50%,-50%);"></div>
+    <div class="container" style="text-align:center;">
+      <div class="section-label reveal">Module phare</div>
+      <h2 class="ppp-big-title reveal reveal-delay-1">Plan Personnalisé<br>de Prévention</h2>
+      <p class="ppp-subtitle reveal reveal-delay-2">Générez des bilans de prévention personnalisés, professionnels et conformes aux recommandations 2025, en quelques minutes.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 4: PROBLEM -->
+  <section id="problem">
+    <div class="container">
+      <div style="text-align:center;">
+        <div class="section-label reveal">Le constat</div>
+        <h2 class="section-title reveal reveal-delay-1">Pourquoi le PPP est nécessaire</h2>
+      </div>
+      <div class="problem-grid">
+        <div class="problem-card glass reveal reveal-delay-1">
+          <div class="problem-number">01</div>
+          <h3>Obligation réglementaire</h3>
+          <p>Le bilan de prévention s'inscrit dans les missions du pharmacien et constitue un acte remboursé.</p>
+        </div>
+        <div class="problem-card glass reveal reveal-delay-2">
+          <div class="problem-number">02</div>
+          <h3>Temps limité</h3>
+          <p>Entre dispensation, conseil et gestion, le temps consacré aux entretiens structurés est précieux.</p>
+        </div>
+        <div class="problem-card glass reveal reveal-delay-3">
+          <div class="problem-number">03</div>
+          <h3>Qualité documentaire</h3>
+          <p>Produire un document professionnel et conforme aux recommandations cliniques demande expertise et temps.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: TIMELINE -->
+  <section id="wf-step-5">
+    <div class="container wf-center-col">
+      <div class="section-label reveal">Parcours</div>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">De l'entretien au document imprimé</h2>
+      <p class="wf-caption reveal reveal-delay-2" style="margin-bottom:2rem;">10 étapes fluides pour transformer votre entretien en plan de prévention personnalisé</p>
+      <div class="wf-timeline-wrap reveal reveal-delay-3">
+        <div class="wf-timeline" id="wf-timeline">
+          <div class="wf-tl-step"><div class="wf-tl-circle">🎙️</div><div class="wf-tl-label">Enregistrement</div><div class="wf-tl-desc">Capturer l'entretien</div></div>
+          <div class="wf-tl-step"><div class="wf-tl-circle">📱</div><div class="wf-tl-label">Scan QR</div><div class="wf-tl-desc">Connecter le mobile</div></div>
+          <div class="wf-tl-step"><div class="wf-tl-circle">☁️</div><div class="wf-tl-label">Upload</div><div class="wf-tl-desc">Transférer l'audio</div></div>
+          <div class="wf-tl-step"><div class="wf-tl-circle">📥</div><div class="wf-tl-label">Réception</div><div class="wf-tl-desc">Sync temps réel</div></div>
+          <div class="wf-tl-step"><div class="wf-tl-circle">✍️</div><div class="wf-tl-label">Injection</div><div class="wf-tl-desc">Intégrer la synthèse</div></div>
+          <div class="wf-tl-step"><div class="wf-tl-circle">🤖</div><div class="wf-tl-label">Génération IA</div><div class="wf-tl-desc">PhiGenix rédige le PPP</div></div>
+          <div class="wf-tl-step"><div class="wf-tl-circle">✨</div><div class="wf-tl-label">Révélation</div><div class="wf-tl-desc">Découvrir le plan</div></div>
+          <div class="wf-tl-step"><div class="wf-tl-circle">📄</div><div class="wf-tl-label">Document A4</div><div class="wf-tl-desc">Format officiel</div></div>
+          <div class="wf-tl-step"><div class="wf-tl-circle">✏️</div><div class="wf-tl-label">Édition</div><div class="wf-tl-desc">Personnaliser</div></div>
+          <div class="wf-tl-step"><div class="wf-tl-circle">🖨️</div><div class="wf-tl-label">Impression</div><div class="wf-tl-desc">Remettre au patient</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: RECORDING -->
+  <section id="wf-step-6">
+    <div class="container wf-center-col">
+      <div class="section-label reveal">Étape 1</div>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">Enregistrez l'entretien sur mobile</h2>
+      <div class="reveal reveal-delay-2" style="margin-top:2rem;">
+        <div class="wf-phone">
+          <div class="wf-phone-notch"></div>
+          <div class="wf-phone-screen">
+            <div class="wf-rec-screen">
+              <div class="wf-rec-title">Dictaphone</div>
+              <div class="wf-rec-timer" id="wf-rec-timer">03:24</div>
+              <div class="wf-waveform" id="wf-waveform"></div>
+              <div class="wf-rec-btn"><div class="wf-rec-btn-inner"></div></div>
+              <div class="wf-rec-label">Enregistrement en cours</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wf-annotation reveal reveal-delay-3">Audio 100% confidentiel</div>
+      <p class="wf-caption reveal reveal-delay-3">Un simple dictaphone suffit. Pas d'app dédiée requise — tout smartphone fait l'affaire.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 7: QR CODE -->
+  <section id="wf-step-7">
+    <div class="container wf-center-col">
+      <div class="section-label reveal">Étape 2</div>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">Scannez le QR Code depuis Axora</h2>
+      <div class="wf-dual-mockup reveal reveal-delay-2" style="margin-top:2rem;">
+        <!-- Phone -->
+        <div class="wf-phone" style="width:240px;height:490px;">
+          <div class="wf-phone-notch"></div>
+          <div class="wf-phone-screen">
+            <div class="wf-cam-screen">
+              <div class="wf-cam-viewfinder">
+                <div class="wf-cam-corners">
+                  <div class="tl"></div><div class="tr"></div><div class="bl"></div><div class="br"></div>
+                </div>
+                <div class="wf-qr-mini" id="wf-qr-mini-cam"></div>
+                <div class="wf-scan-line"></div>
+              </div>
+              <div class="wf-cam-label">Scannez le QR Code</div>
+            </div>
+          </div>
+        </div>
+        <!-- Desktop -->
+        <div class="wf-desktop" style="max-width:380px;">
+          <div class="wf-desktop-titlebar">
+            <div class="wf-dot wf-dot-red"></div>
+            <div class="wf-dot wf-dot-yellow"></div>
+            <div class="wf-dot wf-dot-green"></div>
+            <span style="margin-left:auto;font-size:0.7rem;color:rgba(255,255,255,0.4);">Axora</span>
+          </div>
+          <div class="wf-desktop-content" style="padding:1.5rem;">
+            <div class="wf-qr-modal">
+              <div class="wf-qr-modal-title">Scannez le QR Code</div>
+              <div class="wf-qr-modal-subtitle">Avec l'appareil photo de votre smartphone</div>
+              <div class="wf-qr-block" id="wf-qr-block-desktop"></div>
+              <div class="wf-qr-instructions">
+                <div class="wf-qr-inst-item"><div class="wf-qr-inst-num">1</div><span>Ouvrez l'appareil photo de votre téléphone</span></div>
+                <div class="wf-qr-inst-item"><div class="wf-qr-inst-num">2</div><span>Pointez vers le QR Code affiché ci-dessus</span></div>
+                <div class="wf-qr-inst-item"><div class="wf-qr-inst-num">3</div><span>Touchez la notification pour accéder à l'upload</span></div>
+              </div>
+              <div class="wf-qr-expiry">Ce code expire dans 5 minutes pour votre sécurité</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="wf-caption reveal reveal-delay-3">Axora génère un QR Code temporaire. Scannez-le pour établir la connexion sécurisée.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 8: UPLOAD MOBILE -->
+  <section id="wf-step-8">
+    <div class="container wf-center-col">
+      <div class="section-label reveal">Étape 3</div>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">Transférez l'audio depuis le mobile</h2>
+      <div class="reveal reveal-delay-2" style="margin-top:2rem;">
+        <div class="wf-phone">
+          <div class="wf-phone-notch"></div>
+          <div class="wf-phone-screen">
+            <div class="wf-upl-screen" id="wf-upload-screen">
+              <!-- State 1: Upload zone -->
+              <div class="wf-upl-state wf-upl-visible" data-upl-state="1">
+                <div class="wf-upl-logo">🎙️</div>
+                <div class="wf-upl-title">Axora PPP</div>
+                <div class="wf-upl-subtitle">Importez votre enregistrement d'entretien</div>
+                <div class="wf-upl-zone">
+                  <div class="wf-upl-zone-icon">📁</div>
+                  <div class="wf-upl-zone-text">Touchez pour sélectionner</div>
+                  <div class="wf-upl-zone-hint">M4A, MP3, WAV • Max 50 MB</div>
+                </div>
+              </div>
+              <!-- State 2: File selected -->
+              <div class="wf-upl-state" data-upl-state="2">
+                <div class="wf-upl-logo">🎙️</div>
+                <div class="wf-upl-title">Axora PPP</div>
+                <div class="wf-upl-subtitle">Fichier sélectionné</div>
+                <div class="wf-upl-file-card">
+                  <div class="wf-upl-file-icon">🎵</div>
+                  <div>
+                    <div class="wf-upl-file-name">Entretien_M_Dupont.m4a</div>
+                    <div class="wf-upl-file-size">12.4 MB</div>
+                  </div>
+                </div>
+                <div class="wf-upl-btn">Envoyer le fichier</div>
+              </div>
+              <!-- State 3: Uploading -->
+              <div class="wf-upl-state" data-upl-state="3">
+                <div class="wf-upl-logo">🎙️</div>
+                <div class="wf-upl-title">Axora PPP</div>
+                <div class="wf-upl-subtitle">Envoi en cours...</div>
+                <div class="wf-upl-file-card">
+                  <div class="wf-upl-file-icon">🎵</div>
+                  <div>
+                    <div class="wf-upl-file-name">Entretien_M_Dupont.m4a</div>
+                    <div class="wf-upl-file-size">12.4 MB</div>
+                  </div>
+                </div>
+                <div class="wf-upl-progress-bar"><div class="wf-upl-progress-fill"></div></div>
+              </div>
+              <!-- State 4: Success -->
+              <div class="wf-upl-state" data-upl-state="4">
+                <div class="wf-upl-success">
+                  <div class="wf-upl-success-icon">✅</div>
+                  <div class="wf-upl-success-title">Upload réussi !</div>
+                  <div class="wf-upl-success-msg">Retournez sur Axora pour voir la synthèse.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="wf-caption reveal reveal-delay-3">Interface web responsive optimisée pour mobile. Upload direct, chiffré de bout en bout.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 9: DESKTOP RECEPTION -->
+  <section id="wf-step-9">
+    <div class="container wf-center-col">
+      <div class="section-label reveal">Étape 4</div>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">Réception et traitement instantané</h2>
+      <div class="reveal reveal-delay-2" style="margin-top:2rem;width:100%;max-width:800px;">
+        <div class="wf-desktop">
+          <div class="wf-desktop-titlebar">
+            <div class="wf-dot wf-dot-red"></div>
+            <div class="wf-dot wf-dot-yellow"></div>
+            <div class="wf-dot wf-dot-green"></div>
+            <span style="margin-left:auto;font-size:0.7rem;color:rgba(255,255,255,0.4);">Axora — Transcription</span>
+          </div>
+          <div class="wf-desktop-content" style="padding:1.5rem;">
+            <div class="wf-rx-modal" id="wf-rx-modal">
+              <div class="wf-rx-modal-header">Traitement de l'enregistrement</div>
+              <div class="wf-rx-modal-body">
+                <!-- State 1: Uploading -->
+                <div class="wf-rx-state wf-rx-visible" data-rx-state="1">
+                  <div class="wf-rx-icon" style="color:var(--indigo-light);">📥</div>
+                  <div class="wf-rx-title">Réception de l'audio...</div>
+                  <div class="wf-rx-desc">Transfert de l'enregistrement en cours</div>
+                  <div class="wf-rx-progress"><div class="wf-rx-progress-fill blue" id="wf-rx-fill-1"></div></div>
+                  <div class="wf-rx-progress-text">Téléchargement du fichier...</div>
+                </div>
+                <!-- State 2: Processing -->
+                <div class="wf-rx-state" data-rx-state="2">
+                  <div class="wf-rx-icon amber">✨</div>
+                  <div class="wf-rx-title">Traitement en cours...</div>
+                  <div class="wf-rx-desc">Transcription et génération de la synthèse</div>
+                  <div class="wf-rx-progress"><div class="wf-rx-progress-fill amber" id="wf-rx-fill-2"></div></div>
+                  <div class="wf-rx-progress-text">Analyse par l'IA...</div>
+                </div>
+                <!-- State 3: Completed -->
+                <div class="wf-rx-state" data-rx-state="3">
+                  <div class="wf-rx-icon green">✅</div>
+                  <div class="wf-rx-title">Synthèse prête !</div>
+                  <div class="wf-rx-desc">Vérifiez le résultat avant de l'injecter dans les notes</div>
+                  <div class="wf-rx-synthesis">
+                    <div class="wf-rx-synthesis-label">Synthèse générée</div>
+                    <div class="wf-rx-synthesis-text"><strong>Motif :</strong> Bilan de prévention annuel, patient 48 ans
+
+<strong>Traitements évoqués :</strong>
+• Périndopril 5mg, Atorvastatine 20mg
+• Bonne observance déclarée
+
+<strong>Points de santé abordés :</strong>
+• Tabagisme actif (15 cig/j)
+• Sédentarité importante
+• Stress professionnel</div>
+                  </div>
+                </div>
+              </div>
+              <div class="wf-rx-footer" id="wf-rx-footer">
+                <div class="wf-rx-btn-ghost">Annuler</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="wf-caption reveal reveal-delay-3">Axora reçoit l'audio, le transcrit via PhiScribe, puis génère une synthèse structurée automatiquement.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 10: PROMPT & EDIT -->
+  <section id="wf-step-10">
+    <div class="container wf-center-col">
+      <div class="section-label reveal">Étape 5</div>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">Injectez la synthèse dans le prompt IA</h2>
+      <div class="reveal reveal-delay-2" style="margin-top:2rem;width:100%;max-width:800px;">
+        <div class="wf-desktop">
+          <div class="wf-desktop-titlebar">
+            <div class="wf-dot wf-dot-red"></div>
+            <div class="wf-dot wf-dot-yellow"></div>
+            <div class="wf-dot wf-dot-green"></div>
+            <span style="margin-left:auto;font-size:0.7rem;color:rgba(255,255,255,0.4);">Axora — PPP Generator</span>
+          </div>
+          <div class="wf-desktop-content" style="padding:1.5rem;">
+            <div class="wf-prompt-form">
+              <div class="wf-prompt-label">
+                <span>Notes de l'entretien</span>
+                <div class="wf-prompt-audio-btn">🎙️ Importer un enregistrement</div>
+              </div>
+              <div class="wf-prompt-textarea">--- Synthèse de l'entretien audio ---
+Motif : Bilan de prévention annuel
+Patient : 48 ans, homme
+Traitements : Périndopril 5mg 1/j, Atorvastatine 20mg 1/j
+Observance : Bonne, déclarée par le patient
+
+Points abordés :
+• Tabagisme actif : 15 cigarettes/jour depuis 25 ans
+• Sédentarité : aucune activité physique régulière
+• Stress professionnel important
+• Sommeil perturbé (réveils nocturnes)
+• Dernier bilan lipidique il y a 8 mois<span class="wf-cursor-blink"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="wf-caption reveal reveal-delay-3">La synthèse s'insère automatiquement. Le pharmacien peut l'enrichir ou la modifier avant génération.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 11: GENERATION -->
+  <section id="wf-step-11">
+    <div class="container wf-center-col">
+      <div class="section-label reveal">Étape 6</div>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">Génération du PPP par l'IA</h2>
+      <div class="reveal reveal-delay-2" style="margin-top:2rem;width:100%;max-width:800px;">
+        <div class="wf-desktop">
+          <div class="wf-desktop-titlebar">
+            <div class="wf-dot wf-dot-red"></div>
+            <div class="wf-dot wf-dot-yellow"></div>
+            <div class="wf-dot wf-dot-green"></div>
+            <span style="margin-left:auto;font-size:0.7rem;color:rgba(255,255,255,0.4);">Axora — PPP Generator</span>
+          </div>
+          <div class="wf-desktop-content" style="padding:1.5rem;">
+            <div class="wf-gen-form">
+              <div class="wf-gen-row">
+                <div><div class="wf-gen-field-label">Nom du patient *</div><div class="wf-gen-field-input">M. Dupont Jean-Pierre</div></div>
+                <div><div class="wf-gen-field-label">Pharmacien *</div><div class="wf-gen-field-input">Clara El Rawadi</div></div>
+              </div>
+              <div style="margin-bottom:1rem;">
+                <div class="wf-gen-field-label">Tranche d'âge</div>
+                <div class="wf-gen-age-btns">
+                  <div class="wf-gen-age-btn">18-25</div>
+                  <div class="wf-gen-age-btn wf-gen-age-active">45-50</div>
+                  <div class="wf-gen-age-btn">60-65</div>
+                  <div class="wf-gen-age-btn">70-75</div>
+                </div>
+              </div>
+              <div class="wf-gen-notes-preview">--- Synthèse de l'entretien audio ---
+Motif : Bilan prévention annuel, 48 ans
+Traitements : Périndopril 5mg, Atorvastatine 20mg...</div>
+              <div class="wf-gen-generate-btn" id="wf-gen-btn">✨ Générer le PPP</div>
+              <div class="wf-gen-progress-wrap" id="wf-gen-progress">
+                <div class="wf-gen-progress-header">
+                  <div class="wf-gen-progress-label"><div class="wf-gen-spinner"></div><span id="wf-gen-phase-label">Analyse en cours avec l'IA...</span></div>
+                  <div class="wf-gen-progress-pct" id="wf-gen-pct">0%</div>
+                </div>
+                <div class="wf-gen-progress-bar"><div class="wf-gen-progress-fill" id="wf-gen-fill" style="background:linear-gradient(90deg,#6366f1,#8b5cf6,#22d3ee);"></div></div>
+                <div class="wf-gen-progress-phase" id="wf-gen-phase-text">Analyse du dossier pharmaceutique...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="wf-caption reveal reveal-delay-3">PhiGenix croise la synthèse avec les recommandations HAS 2025 pour rédiger un plan sur-mesure.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 12: WOW REVEAL -->
+  <section id="wf-step-12">
+    <div class="container wf-center-col">
+      <div class="section-label reveal">Résultat</div>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">Un document professionnel en 30 secondes</h2>
+      <div class="reveal reveal-delay-2" style="margin-top:2rem;width:100%;max-width:900px;">
+        <div class="wf-wow-container" id="wf-wow-container">
+          <div class="wf-wow-topbar"><div class="wf-wow-topbar-fill" id="wf-wow-topbar-fill"></div></div>
+          <div class="wf-wow-loading" id="wf-wow-loading">
+            <div class="wf-wow-dots"><div class="wf-wow-dot"></div><div class="wf-wow-dot"></div><div class="wf-wow-dot"></div></div>
+            <div class="wf-wow-loading-text">Génération du PPP en cours...</div>
+          </div>
+          <div class="wf-wow-flash" id="wf-wow-flash"></div>
+          <div class="wf-wow-document-slot" id="wf-wow-document">
+            <!-- Mini A4 preview inside WOW — 2-column layout for readability -->
+            <div class="wf-wow-mini-doc">
+              <div class="wf-wow-mini-header">
+                <div class="wf-wow-mini-branding">
+                  <div class="wf-wow-mini-logo">✚</div>
+                  <span class="wf-wow-mini-pharmacy">Grande Pharmacie de Tassigny</span>
+                </div>
+                <div class="wf-wow-mini-title-block">
+                  <div class="wf-wow-mini-title">Mon Bilan Prévention</div>
+                  <div class="wf-wow-mini-age">45-50 ans</div>
+                </div>
+              </div>
+              <div class="wf-wow-mini-hero">Plan Personnalisé de Prévention</div>
+              <div class="wf-wow-mini-grid">
+                <div class="wf-wow-mini-col">
+                  <div class="wf-wow-mini-col-title">★ Mes priorités en santé</div>
+                  <div class="wf-wow-mini-line">1) Risque cardio global : PA, LDL-c, IMC</div>
+                  <div class="wf-wow-mini-line">2) Sevrage tabac/alcool</div>
+                  <div class="wf-wow-mini-line">3) Dépistage cancer colorectal</div>
+                  <div class="wf-wow-mini-line">4) Activité physique 150 min/sem</div>
+                </div>
+                <div class="wf-wow-mini-col">
+                  <div class="wf-wow-mini-col-title">⚠ Freins rencontrés</div>
+                  <div class="wf-wow-mini-line">Temps contraint (travail/famille)</div>
+                  <div class="wf-wow-mini-line">Tabagisme ancien, crainte sevrage</div>
+                  <div class="wf-wow-mini-line">Stress/sommeil fragmenté</div>
+                </div>
+                <div class="wf-wow-mini-col">
+                  <div class="wf-wow-mini-col-title">✓ Conseils pratiques</div>
+                  <div class="wf-wow-mini-line">Mesure TA et bilan lipidique 3-6 mois</div>
+                  <div class="wf-wow-mini-line">Marche rapide 30 min/j + renfo 2x/sem</div>
+                  <div class="wf-wow-mini-line">Plan arrêt tabac : substituts nicotiniques</div>
+                </div>
+                <div class="wf-wow-mini-col">
+                  <div class="wf-wow-mini-col-title">➜ Ressources et suivi</div>
+                  <div class="wf-wow-mini-line">Officine : bilan PA à J+14</div>
+                  <div class="wf-wow-mini-line">MT : bilan lipidique à M+1</div>
+                  <div class="wf-wow-mini-line">Tabac-info-service 3989</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="wf-wow-shimmer" id="wf-wow-shimmer"></div>
+        </div>
+      </div>
+      <p class="wf-caption reveal reveal-delay-3">Le PPP est généré au format A4 paysage, prêt à imprimer et à remettre au patient.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 13: A4 DOCUMENT -->
+  <section id="a4-document" style="min-height:auto;padding:4rem 0;">
+    <div class="container wf-center-col">
+      <div class="section-label reveal">Document</div>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">Format A4 paysage, fidélité d'impression</h2>
+      <p class="section-desc reveal reveal-delay-2" style="text-align:center;">Mise en page professionnelle optimisée pour l'impression. Rendu identique à l'écran et sur papier.</p>
+      <div class="a4-display-wrapper reveal reveal-delay-3">
+        <div class="a4-scale-container" id="a4-scale-container">
+        <div class="ppp-a4-wrapper">
+          <header class="ppp-a4-header">
+            <div class="ppp-a4-header-top">
+              <div class="ppp-a4-pharmacy-branding">
+                <div class="ppp-a4-pharmacy-logo">✚</div>
+                <div class="ppp-a4-pharmacy-name">Grande Pharmacie de Tassigny</div>
+              </div>
+              <div class="ppp-a4-header-right">
+                <div class="ppp-a4-report-title">Mon Bilan Prévention</div>
+                <div class="ppp-a4-age-badge">45-50 ans</div>
+              </div>
+            </div>
+            <div class="ppp-a4-header-info">
+              <div class="ppp-a4-info-item"><span class="ppp-a4-info-label">Patient :</span><span class="ppp-a4-info-value">Jean Dupont</span></div>
+              <div class="ppp-a4-info-item"><span class="ppp-a4-info-label">Pharmacien :</span><span class="ppp-a4-info-value">Pierre Gil</span></div>
+              <div class="ppp-a4-info-item"><span class="ppp-a4-info-label">Date :</span><span class="ppp-a4-info-value">10/02/2026</span></div>
+            </div>
+          </header>
+          <section class="ppp-a4-hero"><h1>Plan Personnalisé de Prévention</h1><p>Rédaction partagée (par la personne et le professionnel de santé), à l'issue de l'intervention brève.</p></section>
+          <section class="ppp-a4-grid">
+            <div class="ppp-a4-column">
+              <div class="ppp-a4-col-title"><span class="ppp-a4-col-icon">★</span><span>Mes priorités en santé<sup>1</sup></span></div>
+              <ul class="ppp-a4-lines">
+                <li class="ppp-a4-line">1) Risque cardio global
+• Objectif : stabiliser PA, LDL-c, IMC, tour de taille</li>
+                <li class="ppp-a4-line">2) Sevrage tabac/alcool
+• Objectif : stratégie de sevrage ou réduction cadrée</li>
+                <li class="ppp-a4-line">3) Dépistage cancer colorectal
+• Objectif : test immunologique à jour (50-74 ans)</li>
+                <li class="ppp-a4-line">4) Activité physique
+• Objectif : 150-180 min/sem + renforcement 2x</li>
+                <li class="ppp-a4-line">5) Sommeil et stress
+• Objectif : hygiène et récupération</li>
+                <li class="ppp-a4-line">6) Nutrition cardioprotectrice
+• Objectif : réduction sucres rapides/AGS</li>
+              </ul>
+            </div>
+            <div class="ppp-a4-column">
+              <div class="ppp-a4-col-title"><span class="ppp-a4-col-icon">⚠</span><span>Freins rencontrés</span></div>
+              <ul class="ppp-a4-lines">
+                <li class="ppp-a4-line">Temps contraint (travail/famille), repas pris à l'extérieur</li>
+                <li class="ppp-a4-line">Tabagisme ancien, crainte de prise de poids au sevrage</li>
+                <li class="ppp-a4-line">Stress/sommeil écourté, chroniquement fragmenté</li>
+                <li class="ppp-a4-line">Faible régularité sportive, douleurs initiales</li>
+              </ul>
+            </div>
+            <div class="ppp-a4-column">
+              <div class="ppp-a4-col-title"><span class="ppp-a4-col-icon">✓</span><span>Conseils, modalités pratiques<sup>2</sup></span></div>
+              <ul class="ppp-a4-lines">
+                <li class="ppp-a4-line">Mesure TA et bilan lipidique tous les 3-6 mois • Auto-surveillance tensionnelle 3 jours avant consultation • Alerte si PA > 180/110 mmHg</li>
+                <li class="ppp-a4-line">Marche rapide 30 min/j + renfo 2x/sem • Rejoindre un groupe marche locale • Application podomètre</li>
+                <li class="ppp-a4-line">Plan d'arrêt tabac : substituts dosés, patch + forme orale • Tabac-info-service 3989 • Pileje Formule Magnésium D3</li>
+                <li class="ppp-a4-line">Test immunologique colorectal à retirer et réaliser • Dépistage organisé 50-74 ans • Prescription médecin traitant</li>
+              </ul>
+            </div>
+            <div class="ppp-a4-column">
+              <div class="ppp-a4-col-title"><span class="ppp-a4-col-icon">➜</span><span>Ressources et intervenants</span></div>
+              <ul class="ppp-a4-lines">
+                <li class="ppp-a4-line">Officine : bilan PA + accompagnement sevrage tabac à J+14</li>
+                <li class="ppp-a4-line">Médecin traitant : bilan lipidique et prescription test colorectal à M+1</li>
+                <li class="ppp-a4-line">Tabac-info-service 3989 : accompagnement personnalisé sevrage</li>
+                <li class="ppp-a4-line">Groupe marche / programme APA locale : inscription recommandée</li>
+              </ul>
+            </div>
+          </section>
+          <section class="ppp-a4-follow-up">
+            <div class="ppp-a4-follow-title">Modalités de suivi</div>
+            <div class="ppp-a4-follow-line">Point officine dans 1 mois : tabac/PA, tolérance substituts nicotiniques</div>
+            <div class="ppp-a4-follow-line">Revue dépistage colorectal et bilans lipides/glycémie sous 3 mois</div>
+          </section>
+          <div class="ppp-a4-separator"></div>
+          <p class="ppp-a4-motivation">Changer d'habitude n'est pas facile. Échanger avec une ou plusieurs personnes de confiance sur vos objectifs est un facteur de succès important pour maintenir votre motivation.</p>
+          <div class="ppp-a4-checkbox-row"><span class="ppp-a4-checkbox"></span><span class="ppp-a4-checkbox-label">Je m'oppose à ce que ce document soit communiqué à mon médecin traitant.</span></div>
+          <footer class="ppp-a4-footer">
+            <section class="ppp-a4-legal-mentions">
+              <div class="ppp-a4-legal-title">Mentions informatives</div>
+              <ul>
+                <li>Document à disposition du patient à l'issue du bilan de prévention.</li>
+                <li>Données issues du dossier pharmaceutique et de l'entretien.</li>
+                <li>Document pouvant être partagé avec le médecin traitant après accord du patient.</li>
+              </ul>
+            </section>
+            <div class="ppp-a4-footer-notes">
+              <div class="ppp-a4-note-item"><span class="ppp-a4-note-num">1</span>Les priorités sont définies avec l'appui du professionnel de santé.</div>
+              <div class="ppp-a4-note-item"><span class="ppp-a4-note-num">2</span>Actions précises : numéro d'écoute, Consultation Jeunes Consommateurs...</div>
+            </div>
+            <div class="ppp-a4-signature-block">
+              <div class="ppp-a4-sig-label">Cachet de l'officine et Signature du professionnel de santé</div>
+              <div class="ppp-a4-sig-area"></div>
+            </div>
+          </footer>
+        </div>
+        </div><!-- /a4-scale-container -->
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 14: EDIT DEMO -->
+  <section id="wf-step-14">
+    <div class="container wf-center-col">
+      <div class="section-label reveal">Personnalisation</div>
+      <h2 class="section-title reveal reveal-delay-1" style="text-align:center;">Édition en ligne avant impression</h2>
+      <div class="reveal reveal-delay-2" style="margin-top:2rem;width:100%;max-width:800px;">
+        <div class="wf-desktop">
+          <div class="wf-desktop-titlebar">
+            <div class="wf-dot wf-dot-red"></div>
+            <div class="wf-dot wf-dot-yellow"></div>
+            <div class="wf-dot wf-dot-green"></div>
+            <span style="margin-left:auto;font-size:0.7rem;color:rgba(255,255,255,0.4);">Axora — Aperçu du document</span>
+          </div>
+          <div class="wf-desktop-content" style="padding:1rem;">
+            <div class="wf-edit-annotations-bar">
+              <div class="wf-edit-annotation-chip">✏️ Modifier les priorités</div>
+              <div class="wf-edit-annotation-chip">✏️ Affiner les conseils</div>
+              <div class="wf-edit-annotation-chip">✏️ Personnaliser le suivi</div>
+            </div>
+            <div class="wf-edit-doc" id="wf-edit-doc">
+              <div class="wf-edit-cursor">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 3l14 8-6.5 2L9 19.5z" fill="#6366f1" stroke="#fff" stroke-width="1.5"/></svg>
+              </div>
+              <div class="wf-edit-doc-header">
+                <div>
+                  <div class="wf-edit-doc-title">Mon Bilan Prévention</div>
+                  <div class="wf-edit-doc-subtitle">Plan Personnalisé de Prévention</div>
+                </div>
+                <div class="wf-edit-doc-pharmacy">Grande Pharmacie de Tassigny<br><span style="font-size:0.55rem;color:#aaa;">10/02/2026 • M. Dupont</span></div>
+              </div>
+              <div class="wf-edit-doc-cols">
+                <div class="wf-edit-doc-col">
+                  <div class="wf-edit-col-title pri">★ Priorités en santé</div>
+                  <div class="wf-edit-doc-line">1) Prévention cardiovasculaire</div>
+                  <div class="wf-edit-doc-line">2) Dépistage cancer colorectal</div>
+                  <div class="wf-edit-doc-line">3) Activité physique régulière</div>
+                  <div class="wf-edit-doc-line">4) Sevrage tabagique</div>
+                </div>
+                <div class="wf-edit-doc-col">
+                  <div class="wf-edit-col-title fre">⚠ Freins rencontrés</div>
+                  <div class="wf-edit-doc-line">Manque de temps</div>
+                  <div class="wf-edit-doc-line">Crainte sevrage tabac</div>
+                  <div class="wf-edit-doc-line">Stress professionnel</div>
+                  <div class="wf-edit-doc-line">Suivi médical irrégulier</div>
+                </div>
+                <div class="wf-edit-doc-col">
+                  <div class="wf-edit-col-title con">✓ Conseils pratiques</div>
+                  <div class="wf-edit-doc-line">Auto-mesure tensionnelle 3j</div>
+                  <div class="wf-edit-doc-line">Marche rapide 30 min/j</div>
+                  <div class="wf-edit-doc-line">Substituts nicotiniques</div>
+                  <div class="wf-edit-doc-line">Pileje Magnésium D3</div>
+                </div>
+                <div class="wf-edit-doc-col">
+                  <div class="wf-edit-col-title res">➜ Ressources &amp; Suivi</div>
+                  <div class="wf-edit-doc-line">Officine : bilan PA J+14</div>
+                  <div class="wf-edit-doc-line">MT : bilan lipidique M+1</div>
+                  <div class="wf-edit-doc-line">Tabac-info-service 3989</div>
+                  <div class="wf-edit-doc-line">Groupe marche local</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wf-edit-actions reveal reveal-delay-3">
+        <div class="wf-edit-action-btn wf-print">🖨️ Imprimer</div>
+        <div class="wf-edit-action-btn wf-save">💾 Sauvegarder PDF</div>
+      </div>
+      <p class="wf-caption reveal reveal-delay-4">Modifiez n'importe quelle section en un clic. Ajustez les priorités, affinez les conseils, personnalisez le suivi.</p>
+    </div>
+  </section>
+
+  <!-- SECTION 15: INTELLIGENCE CLINIQUE -->
+  <section id="intelligence">
+    <div class="container">
+      <div class="section-label reveal">IA clinique</div>
+      <h2 class="section-title reveal reveal-delay-1">Une intelligence clinique de haut niveau</h2>
+      <p class="section-desc reveal reveal-delay-2">L'IA agit comme un pharmacien clinicien expert, adapté à chaque profil patient.</p>
+      <div class="intel-grid">
+        <div class="reveal reveal-delay-2">
+          <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:1.25rem;">4 tranches d'âge, 4 approches</h3>
+          <div class="age-ranges">
+            <div class="age-card age-18"><div class="age-badge">18 - 25 ans</div><div class="age-title">Jeune adulte</div><div class="age-examples">Contraception, IST, santé mentale, addictions</div></div>
+            <div class="age-card age-45"><div class="age-badge">45 - 50 ans</div><div class="age-title">Adulte</div><div class="age-examples">Cardiovasculaire, dépistage cancers, ménopause</div></div>
+            <div class="age-card age-60"><div class="age-badge">60 - 65 ans</div><div class="age-title">Senior</div><div class="age-examples">Iatrogénie, ostéoporose, vaccins, chutes</div></div>
+            <div class="age-card age-70"><div class="age-badge">70 - 75 ans</div><div class="age-title">Senior avancé</div><div class="age-examples">Dénutrition, cognitif, maintien à domicile</div></div>
+          </div>
+        </div>
+        <div class="intel-features reveal reveal-delay-3">
+          <div class="intel-item"><div class="intel-dot indigo"></div><div><h4>50 thématiques de prévention</h4><p>Chaque thématique est scorée de 1 à 5 selon la tranche d'âge.</p></div></div>
+          <div class="intel-item"><div class="intel-dot teal"></div><div><h4>Détection pathologies et risques</h4><p>Polymédication, interactions, AINS à risque, psychotropes.</p></div></div>
+          <div class="intel-item"><div class="intel-dot cyan"></div><div><h4>Vaccinations et dépistages 2025</h4><p>Grippe, COVID, Prevenar 20, zona, HPV et dépistages adaptés.</p></div></div>
+          <div class="intel-item"><div class="intel-dot violet"></div><div><h4>Micronutrition ciblée</h4><p>Références précises NHCO, Pileje, ArkoPharma et composés actifs.</p></div></div>
+          <div class="intel-item"><div class="intel-dot amber"></div><div><h4>Équilibre méd./non-méd.</h4><p>2-3 conseils médicamenteux max + mesures hygiéno-diététiques.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 16: FOOTER -->
+  <footer id="main-footer">
+    <div class="container">
+      <div class="footer-logo">Axora</div>
+      <div class="footer-sub">L'assistant intelligent du pharmacien d'officine</div>
+      <div class="footer-powered">Antigravity • PhiGenix</div>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT -->
+  <script>
+  (function() {
+    'use strict';
+
+    // IntersectionObserver for reveal animations
+    var revealObs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+    document.querySelectorAll('.reveal').forEach(function(el) { revealObs.observe(el); });
+
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        var t = document.querySelector(this.getAttribute('href'));
+        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // Waveform bars for recording section
+    var waveform = document.getElementById('wf-waveform');
+    if (waveform) {
+      for (var i = 0; i < 20; i++) {
+        var bar = document.createElement('div');
+        bar.className = 'wf-wave-bar';
+        bar.style.setProperty('--wf-h', (15 + Math.random() * 60) + 'px');
+        bar.style.animationDelay = (Math.random() * 1.2).toFixed(2) + 's';
+        bar.style.animationDuration = (0.8 + Math.random() * 0.8).toFixed(2) + 's';
+        waveform.appendChild(bar);
+      }
+    }
+
+    // Timer for recording
+    var timerEl = document.getElementById('wf-rec-timer');
+    if (timerEl) {
+      var seconds = 204;
+      setInterval(function() {
+        seconds++;
+        if (seconds >= 600) seconds = 0;
+        var m = Math.floor(seconds / 60), s = seconds % 60;
+        timerEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+      }, 1000);
+    }
+
+    // QR patterns
+    function genQR(container, size) {
+      if (!container) return;
+      for (var i = 0; i < size * size; i++) {
+        var cell = document.createElement('div');
+        cell.className = 'wf-qr-cell';
+        var r = Math.floor(i / size), c = i % size;
+        var isFinder = (r < 3 && c < 3) || (r < 3 && c >= size - 3) || (r >= size - 3 && c < 3);
+        cell.classList.add(isFinder ? 'wf-qr-b' : (Math.random() > 0.5 ? 'wf-qr-b' : 'wf-qr-w'));
+        container.appendChild(cell);
+      }
+    }
+    genQR(document.getElementById('wf-qr-mini-cam'), 7);
+
+    var desktopQR = document.getElementById('wf-qr-block-desktop');
+    if (desktopQR) {
+      for (var i = 0; i < 121; i++) {
+        var sq = document.createElement('div');
+        sq.className = 'wf-qr-sq';
+        var r = Math.floor(i / 11), c = i % 11;
+        var isFinder = (r < 3 && c < 3) || (r < 3 && c >= 8) || (r >= 8 && c < 3);
+        sq.classList.add(isFinder ? 'b' : (Math.random() > 0.45 ? 'b' : 'w'));
+        desktopQR.appendChild(sq);
+      }
+    }
+
+    // Upload state cycling
+    var uplStates = document.querySelectorAll('#wf-upload-screen .wf-upl-state');
+    if (uplStates.length) {
+      var uplCurrent = 0;
+      var uplTimings = [2500, 2000, 2000, 2500];
+      function cycleUpload() {
+        uplStates.forEach(function(s) { s.classList.remove('wf-upl-visible'); });
+        uplCurrent = (uplCurrent + 1) % uplStates.length;
+        uplStates[uplCurrent].classList.add('wf-upl-visible');
+        setTimeout(cycleUpload, uplTimings[uplCurrent]);
+      }
+      setTimeout(cycleUpload, uplTimings[0]);
+    }
+
+    // Desktop reception state cycling
+    var rxStates = document.querySelectorAll('#wf-rx-modal .wf-rx-state');
+    var rxFooter = document.getElementById('wf-rx-footer');
+    if (rxStates.length) {
+      var rxCurrent = 0;
+      var rxTimings = [3000, 3000, 3500];
+      function setRxFooter(state) {
+        if (!rxFooter) return;
+        rxFooter.innerHTML = state === 2
+          ? '<div class="wf-rx-btn-ghost">Ignorer</div><div class="wf-rx-btn-primary">Utiliser cette synthèse</div>'
+          : '<div class="wf-rx-btn-ghost">Annuler</div>';
+      }
+      function cycleRx() {
+        rxStates.forEach(function(s) { s.classList.remove('wf-rx-visible'); });
+        rxCurrent = (rxCurrent + 1) % rxStates.length;
+        rxStates[rxCurrent].classList.add('wf-rx-visible');
+        setRxFooter(rxCurrent);
+        if (rxCurrent === 0) {
+          var f1 = document.getElementById('wf-rx-fill-1');
+          if (f1) { f1.style.width = '0%'; setTimeout(function() { f1.style.width = '40%'; }, 50); }
+        } else if (rxCurrent === 1) {
+          var f2 = document.getElementById('wf-rx-fill-2');
+          if (f2) { f2.style.width = '0%'; setTimeout(function() { f2.style.width = '80%'; }, 50); }
+        }
+        setTimeout(cycleRx, rxTimings[rxCurrent]);
+      }
+      setTimeout(function() {
+        var f1 = document.getElementById('wf-rx-fill-1');
+        if (f1) f1.style.width = '40%';
+      }, 100);
+      setTimeout(cycleRx, rxTimings[0]);
+    }
+
+    // Generation progress phases
+    var genSection = document.getElementById('wf-step-11');
+    if (genSection) {
+      var genFill = document.getElementById('wf-gen-fill');
+      var genPct = document.getElementById('wf-gen-pct');
+      var genPhaseLabel = document.getElementById('wf-gen-phase-label');
+      var genPhaseText = document.getElementById('wf-gen-phase-text');
+      var genPhases = [
+        { target: 35, label: 'Analyse en cours...', phase: 'Analyse du dossier pharmaceutique...', duration: 2000 },
+        { target: 65, label: 'Analyse en cours...', phase: 'Croisement avec les recommandations 2025...', duration: 2000 },
+        { target: 92, label: 'Analyse en cours...', phase: 'Rédaction du plan personnalisé...', duration: 2000 },
+        { target: 100, label: 'PPP généré !', phase: 'PPP généré avec succès !', duration: 1500 }
+      ];
+      var genPhaseIdx = 0, genRunning = false;
+      function runGenPhase() {
+        if (genPhaseIdx >= genPhases.length) {
+          setTimeout(function() {
+            genPhaseIdx = 0;
+            if (genFill) { genFill.style.transition = 'none'; genFill.style.width = '0%'; }
+            if (genPct) genPct.textContent = '0%';
+            if (genPhaseText) genPhaseText.textContent = genPhases[0].phase;
+            if (genPhaseLabel) genPhaseLabel.textContent = genPhases[0].label;
+            setTimeout(function() { if (genFill) genFill.style.transition = 'width 1.8s ease-out'; runGenPhase(); }, 50);
+          }, 2500);
+          return;
+        }
+        var p = genPhases[genPhaseIdx];
+        if (genFill) genFill.style.width = p.target + '%';
+        if (genPct) genPct.textContent = p.target + '%';
+        if (genPhaseLabel) genPhaseLabel.textContent = p.label;
+        if (genPhaseText) genPhaseText.textContent = p.phase;
+        genPhaseIdx++;
+        setTimeout(runGenPhase, p.duration);
+      }
+      var genObs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !genRunning) { genRunning = true; setTimeout(runGenPhase, 500); }
+        });
+      }, { threshold: 0.3 });
+      genObs.observe(genSection);
+    }
+
+    // WOW Reveal
+    var wowContainer = document.getElementById('wf-wow-container');
+    if (wowContainer) {
+      var wowTriggered = false;
+      var wowObs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !wowTriggered) { wowTriggered = true; triggerWow(); }
+        });
+      }, { threshold: 0.4 });
+      wowObs.observe(wowContainer);
+      function triggerWow() {
+        var topbar = document.getElementById('wf-wow-topbar-fill');
+        var loading = document.getElementById('wf-wow-loading');
+        var flash = document.getElementById('wf-wow-flash');
+        var doc = document.getElementById('wf-wow-document');
+        var shimmer = document.getElementById('wf-wow-shimmer');
+        setTimeout(function() { if (topbar) { topbar.style.transition = 'width 1s ease-out'; topbar.style.width = '100%'; } }, 500);
+        setTimeout(function() { if (loading) loading.classList.add('wf-wow-hidden'); }, 1000);
+        setTimeout(function() {
+          if (flash) {
+            flash.style.transition = 'opacity 0.08s ease-in'; flash.style.opacity = '0.6';
+            setTimeout(function() { flash.style.transition = 'opacity 0.15s ease-out'; flash.style.opacity = '0'; }, 80);
+          }
+        }, 1100);
+        setTimeout(function() { if (doc) doc.classList.add('wf-wow-revealed'); }, 1200);
+        setTimeout(function() { if (shimmer) shimmer.classList.add('wf-wow-sweep'); }, 1800);
+      }
+    }
+
+    // A4 Document responsive scaling
+    var a4Container = document.getElementById('a4-scale-container');
+    if (a4Container) {
+      function scaleA4() {
+        var wrapper = a4Container.closest('.a4-display-wrapper');
+        if (!wrapper) return;
+        var containerW = wrapper.clientWidth - 32; // 2rem padding
+        var a4W = 1122; // 297mm in px approx
+        var scale = Math.min(1, containerW / a4W);
+        a4Container.style.transform = 'scale(' + scale + ')';
+        // Adjust wrapper height to prevent layout collapse
+        var a4H = 793; // 210mm in px approx
+        wrapper.style.height = (a4H * scale + 64) + 'px';
+      }
+      scaleA4();
+      window.addEventListener('resize', scaleA4);
+    }
+
+    // Timeline auto-advance
+    var tlSteps = document.querySelectorAll('#wf-timeline .wf-tl-step');
+    if (tlSteps.length) {
+      var tlIdx = 0;
+      function highlightTl() {
+        tlSteps.forEach(function(s) {
+          s.querySelector('.wf-tl-circle').classList.remove('wf-tl-active');
+          s.classList.remove('wf-tl-step-active');
+        });
+        tlSteps[tlIdx].querySelector('.wf-tl-circle').classList.add('wf-tl-active');
+        tlSteps[tlIdx].classList.add('wf-tl-step-active');
+        tlIdx = (tlIdx + 1) % tlSteps.length;
+      }
+      highlightTl();
+      setInterval(highlightTl, 1500);
+    }
+  })();
+  </script>
+
+</body>
+</html>
