@@ -27,7 +27,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Récupérer la session initiale
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setState({
+          user: session?.user ?? null,
+          session,
+          isLoading: false,
+          isAuthenticated: !!session,
+        })
+      })
+      .catch((err) => {
+        console.error('[AuthContext] Failed to get session:', err)
+        setState({
+          user: null,
+          session: null,
+          isLoading: false,
+          isAuthenticated: false,
+        })
+      })
+
+    // Écouter les changements d'auth
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setState({
         user: session?.user ?? null,
         session,
@@ -35,18 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!session,
       })
     })
-
-    // Écouter les changements d'auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setState({
-          user: session?.user ?? null,
-          session,
-          isLoading: false,
-          isAuthenticated: !!session,
-        })
-      }
-    )
 
     return () => subscription.unsubscribe()
   }, [])
