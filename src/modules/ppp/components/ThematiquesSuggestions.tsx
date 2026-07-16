@@ -18,9 +18,7 @@ export function ThematiquesSuggestions({ ageRange, onInsert, insertedTags }: The
   const [filterMode, setFilterMode] = useState<FilterMode>('priority')
   const [showAll, setShowAll] = useState(false)
 
-  // TODO(human): Implement the filtering logic
-  // This function should categorize thematiques based on their relevance score
-  // and return { priority: Thematique[], secondary: Thematique[], other: Thematique[] }
+  // Répartit les 50 thématiques en 3 groupes selon leur score de pertinence pour l'âge.
   const categorizedThematiques = useMemo(() => {
     return categorizeByRelevance(THEMATIQUES, ageRange)
   }, [ageRange])
@@ -257,28 +255,20 @@ interface CategorizedThematiques {
   other: Thematique[]      // Thématiques peu pertinentes mais à conserver
 }
 
+// Seuils de pertinence (score 1→5 défini dans data/thematiques.ts) :
+//   - priority  : score >= 4  → thématiques très pertinentes pour cette tranche d'âge
+//   - secondary : score == 3  → moyennement pertinentes
+//   - other     : score <= 2  → peu pertinentes, mais conservées (onglet « Toutes »)
 function categorizeByRelevance(
   thematiques: Thematique[],
   ageRange: AgeRange
 ): CategorizedThematiques {
-  // TODO(human): Implement the categorization logic here
-  // You should decide the score thresholds for each category
-  // Consider: What makes a thematique "priority" vs "secondary"?
-  // Hint: Use the thematique.scores[ageRange] value (1-5)
-
   const priority: Thematique[] = []
   const secondary: Thematique[] = []
   const other: Thematique[] = []
 
   for (const t of thematiques) {
     const score = t.scores[ageRange]
-    // Your categorization logic here...
-    // Example structure:
-    // if (score >= X) priority.push(t)
-    // else if (score >= Y) secondary.push(t)
-    // else other.push(t)
-
-    // Placeholder - replace with your logic
     if (score >= 4) priority.push(t)
     else if (score >= 3) secondary.push(t)
     else other.push(t)
