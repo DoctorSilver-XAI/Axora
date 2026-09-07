@@ -191,7 +191,7 @@ function FacturationView({ data }: { data: FacturationOrdoResult }) {
           </table>
 
           {/* Total */}
-          {data.total_eur !== null && (
+          {data.total_eur != null && (
             <div className="px-4 py-3 bg-axora-500/10 border-t border-white/5 flex justify-between items-center">
               <span className="text-xs font-semibold text-white/50 uppercase tracking-wide">Total</span>
               <span className="text-lg font-bold text-axora-400 font-mono">
